@@ -42,9 +42,9 @@ yskj:
     gatewayservice:
     multipleAuthentication: 0
   mina:
-    name: shopifymarketingweb
-    addr: 127.0.0.1
-    port: 7053
+    name:
+    addr:
+    port:
     dataid:
     unitid:
   net:
