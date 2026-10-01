@@ -1,0 +1,58 @@
+server:
+  port: 7050
+  servlet:
+    context-path: /shopify-marketing-web
+    encoding:
+      force: true
+      charset: UTF-8
+      enabled: true
+
+spring:
+  application:
+    name: shopify-marketing-web
+  servlet:
+    multipart:
+      max-file-size: 64MB
+      max-request-size: 66MB
+
+shopify:
+  web:
+    theme: ${SHOPIFY_WEB_THEME:classic}
+    dev-resource-root: ${SHOPIFY_WEB_DEV_RESOURCE_ROOT:}
+    static-cache-seconds: ${SHOPIFY_WEB_STATIC_CACHE_SECONDS:0}
+    customer-import:
+      temp-directory: ${SHOPIFY_CUSTOMER_IMPORT_TEMP_DIRECTORY:${java.io.tmpdir}/shopify-marketing-web-imports}
+      backend-base-url: ${SHOPIFY_CUSTOMER_IMPORT_BACKEND_BASE_URL:http://127.0.0.1:7020/shopify-marketing}
+      allowed-backend-hosts: ${SHOPIFY_CUSTOMER_IMPORT_ALLOWED_BACKEND_HOSTS:localhost,127.0.0.1}
+      max-bytes: 67108864
+
+yskj:
+  center:
+    addr: 127.0.0.1
+    port: 16057
+  app:
+    id: shopify-marketing-web-local
+  server:
+    id: shopify-marketing-web-local-server
+    name: Shopify营销外挂页面
+    homepage: http://127.0.0.1:7050/shopify-marketing-web/
+    mainpage: /dashboard
+    noFilters: /health,/runstate
+    ssoenable: 1
+    gatewayservice:
+    multipleAuthentication: 0
+  mina:
+    name: shopifymarketingweb
+    addr: 127.0.0.1
+    port: 7053
+    dataid:
+    unitid:
+  net:
+    ip0:
+    ip1:
+
+logging:
+  level:
+    org.apache.mina: ERROR
+    com.yskj.minaclient: ERROR
+    com.yskj.minaserver: ERROR

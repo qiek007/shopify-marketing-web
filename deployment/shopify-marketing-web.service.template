@@ -1,0 +1,18 @@
+[Unit]
+Description=Shopify Marketing Web
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=REPLACE_WITH_RUN_USER
+Group=REPLACE_WITH_RUN_GROUP
+WorkingDirectory=REPLACE_WITH_INSTALL_DIR/config
+EnvironmentFile=-REPLACE_WITH_INSTALL_DIR/config/application.env
+ExecStart=/usr/bin/java -Xms128m -Xmx768m -jar REPLACE_WITH_INSTALL_DIR/app/shopify-marketing-web.war --spring.config.additional-location=file:./application.yml
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

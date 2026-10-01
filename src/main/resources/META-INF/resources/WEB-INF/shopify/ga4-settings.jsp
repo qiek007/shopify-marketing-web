@@ -1,0 +1,113 @@
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page language="java" pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GA4 连接 - Shopify 邮件营销</title>
+    <c:set var="ctx" value="${pageContext.request.contextPath}"/>
+    <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
+    <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
+    <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20260922-ga4-settings-dialog">
+</head>
+<body class="shopify-console">
+<%@ include file="fragments/header.jspf" %>
+<div class="console-layout">
+    <%@ include file="fragments/navigation.jspf" %>
+    <main class="console-main ga4-settings-page">
+        <section class="page-heading">
+            <div>
+                <p class="eyebrow">营销数据连接</p>
+                <h1>Google Analytics 4</h1>
+                <p>为当前店铺连接 GA4 Property，用于邮件活动级购买评估。</p>
+            </div>
+        </section>
+
+        <c:if test="${not empty successMessage}"><div class="flash-message success"><i class="fa fa-check-circle"></i><c:out value="${successMessage}"/></div></c:if>
+        <section class="ga4-settings-card" aria-labelledby="ga4-current-connection-title">
+            <div class="ga4-card-heading">
+                <div class="ga4-card-title"><span class="ga4-card-icon"><i class="fa fa-link" aria-hidden="true"></i></span><div><h2 id="ga4-current-connection-title">当前连接</h2><p><c:out value="${selectedShop}"/></p></div></div>
+                <div class="ga4-heading-actions">
+                    <c:choose>
+                        <c:when test="${ga4Connection.status eq 'CONNECTED'}"><span class="ga4-connection-badge"><i class="fa fa-check-circle" aria-hidden="true"></i> 已连接</span></c:when>
+                        <c:when test="${not empty ga4Connection}"><span class="ga4-connection-badge pending"><c:out value="${ga4Connection.status}"/></span></c:when>
+                        <c:otherwise><span class="ga4-connection-badge pending">未连接</span></c:otherwise>
+                    </c:choose>
+                    <button class="action-button ga4-config-trigger" type="button" data-ga4-dialog-open aria-haspopup="dialog" aria-controls="ga4-connection-dialog"><i class="fa fa-cog" aria-hidden="true"></i> 配置连接</button>
+                </div>
+            </div>
+            <c:choose>
+                <c:when test="${not empty ga4Connection}">
+                    <div class="ga4-connection-content">
+                        <div class="ga4-property-panel">
+                            <div class="ga4-property-identity">
+                                <span class="ga4-overline">已绑定 GA4 属性</span>
+                                <strong><c:choose><c:when test="${not empty ga4Connection.propertyName}"><c:out value="${ga4Connection.propertyName}"/></c:when><c:otherwise>未命名属性</c:otherwise></c:choose></strong>
+                                <code><c:out value="${ga4Connection.propertyId}"/></code>
+                            </div>
+                            <div class="ga4-health-summary">
+                                <span>数据状态</span>
+                                <c:choose>
+                                    <c:when test="${ga4Connection.healthStatus eq 'DATA'}"><strong class="ga4-health-good"><i class="fa fa-circle" aria-hidden="true"></i> 数据正常</strong></c:when>
+                                    <c:when test="${ga4Connection.healthStatus eq 'ZERO'}"><strong>暂无邮件购买</strong></c:when>
+                                    <c:when test="${ga4Connection.healthStatus eq 'NO_PURCHASE_EVENT'}"><strong>未检测到 purchase</strong></c:when>
+                                    <c:when test="${ga4Connection.healthStatus eq 'UTM_NOT_MATCHED'}"><strong>未匹配邮件 UTM</strong></c:when>
+                                    <c:when test="${ga4Connection.healthStatus eq 'SYNC_FAILED'}"><strong>最近同步失败</strong></c:when>
+                                    <c:when test="${ga4Connection.healthStatus eq 'CONNECTED'}"><strong>等待首次同步</strong></c:when>
+                                    <c:otherwise><strong><c:out value="${ga4Connection.healthStatus}"/></strong></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <dl class="ga4-connection-facts">
+                            <div><dt><i class="fa fa-clock-o" aria-hidden="true"></i> Property 时区</dt><dd><c:out value="${ga4Connection.propertyTimeZone}"/></dd></div>
+                            <div><dt><i class="fa fa-money" aria-hidden="true"></i> 报告币种</dt><dd><c:out value="${ga4Connection.reportCurrency}"/></dd></div>
+                            <div><dt><i class="fa fa-refresh" aria-hidden="true"></i> 最后成功同步</dt><dd><c:choose><c:when test="${not empty ga4Connection.lastSuccessfulSyncAt}"><time data-browser-time="<c:out value='${ga4Connection.lastSuccessfulSyncAt}'/>" datetime="<c:out value='${ga4Connection.lastSuccessfulSyncAt}'/>"><c:out value="${ga4Connection.lastSuccessfulSyncAt}"/></time></c:when><c:otherwise>尚未同步</c:otherwise></c:choose></dd></div>
+                        </dl>
+                    </div>
+                </c:when>
+                <c:otherwise><div class="empty-state compact"><i class="fa fa-bar-chart"></i><strong>尚未连接 GA4</strong><span>准备 Service Account 和 Property ID 后，点击“配置连接”建立测试连接。</span></div></c:otherwise>
+            </c:choose>
+        </section>
+
+        <dialog id="ga4-connection-dialog" class="ga4-config-dialog" aria-labelledby="ga4-configure-title">
+            <div class="ga4-dialog-heading">
+                <div class="ga4-card-title"><span class="ga4-card-icon secondary"><i class="fa fa-sliders" aria-hidden="true"></i></span><div><h2 id="ga4-configure-title">Service Account 连接配置</h2><p>填写属性信息，选择密钥文件后保存并验证访问权限。</p></div></div>
+                <button class="action-button ga4-dialog-close" type="button" data-ga4-dialog-close aria-label="关闭连接配置"><i class="fa fa-times" aria-hidden="true"></i></button>
+            </div>
+            <div class="ga4-dialog-body">
+            <c:if test="${not empty errorMessage}"><div class="flash-message danger" role="alert"><i class="fa fa-exclamation-circle" aria-hidden="true"></i><c:out value="${errorMessage}"/></div></c:if>
+            <form method="post" action="${ctx}/settings/ga4/service-account" enctype="multipart/form-data" class="ga4-settings-form">
+                <input type="hidden" name="shop" value="${selectedShop}">
+                <div class="ga4-form-grid">
+                    <label><span>GA4 Property ID <em>必填</em></span><input name="propertyId" value="<c:out value='${ga4Connection.propertyId}'/>" required pattern="(?:properties/)?[0-9]+" placeholder="例如 555073931"><small>在 GA4 管理 → 属性设置中查看</small></label>
+                    <label><span>Property 名称</span><input name="propertyName" value="<c:out value='${ga4Connection.propertyName}'/>" maxlength="255" placeholder="例如 DIDA测试店"><small>便于在本平台识别该属性</small></label>
+                    <label><span>Property 时区 <em>必填</em></span><input name="propertyTimeZone" value="<c:out value='${empty ga4Connection.propertyTimeZone ? "Asia/Shanghai" : ga4Connection.propertyTimeZone}'/>" required maxlength="64"><small>与 GA4 属性中的报告时区保持一致</small></label>
+                    <label><span>报告币种 <em>必填</em></span><input name="reportCurrency" value="<c:out value='${empty ga4Connection.reportCurrency ? "USD" : ga4Connection.reportCurrency}'/>" required pattern="[A-Za-z]{3}" maxlength="3"><small>例如 USD、CNY</small></label>
+                </div>
+                <div class="ga4-credential-field">
+                    <label for="ga4-service-account-file">Service Account JSON <em>必填</em></label>
+                    <p>选择 Google Cloud 服务账号的 JSON 密钥文件。</p>
+                    <input id="ga4-service-account-file" type="file" name="serviceAccountFile" accept="application/json,.json" required>
+                </div>
+                <div class="ga4-credential-note"><i class="fa fa-shield" aria-hidden="true"></i><p><strong>凭据处理说明</strong><span>文件最大 64 KiB，仅在请求期间读取并立即转发 GA4 Connector；营销平台不写入本地文件或数据库。</span></p></div>
+                <div class="ga4-form-actions"><span>保存后将立即测试 GA4 属性访问权限。</span><button class="primary-button" type="submit"><i class="fa fa-plug" aria-hidden="true"></i> 保存并测试连接</button></div>
+            </form>
+            </div>
+        </dialog>
+<script>
+    (function () {
+        var dialog = document.getElementById('ga4-connection-dialog');
+        var trigger = document.querySelector('[data-ga4-dialog-open]');
+        if (!dialog || !trigger || !dialog.showModal) return;
+        trigger.addEventListener('click', function () { dialog.showModal(); });
+        dialog.querySelector('[data-ga4-dialog-close]').addEventListener('click', function () { dialog.close(); });
+        dialog.addEventListener('click', function (event) { if (event.target === dialog) dialog.close(); });
+        <c:if test="${not empty errorMessage}">dialog.showModal();</c:if>
+    }());
+</script>
+    </main>
+</div>
+</body>
+</html>

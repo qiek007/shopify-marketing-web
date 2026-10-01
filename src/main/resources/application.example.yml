@@ -1,0 +1,46 @@
+server:
+  port: 7050
+  servlet:
+    context-path: /shopify-marketing-web
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 64MB
+      max-request-size: 66MB
+
+shopify:
+  web:
+    theme: classic
+    dev-resource-root:
+    static-cache-seconds: 2592000
+    customer-import:
+      temp-directory: REPLACE_WITH_LOCAL_TEMP_DIRECTORY
+      backend-base-url: REPLACE_WITH_SHOPIFY_MARKETING_INTERNAL_URL
+      allowed-backend-hosts: REPLACE_WITH_COMMA_SEPARATED_TRUSTED_HOSTS
+      max-bytes: 67108864
+
+yskj:
+  center:
+    addr: REPLACE_WITH_CENTER_HOST
+    port: 11910
+  app:
+    id: REPLACE_WITH_CENTER_APP_ID
+  server:
+    id: REPLACE_WITH_UNIQUE_SERVER_ID
+    name: Shopify营销外挂页面
+    homepage: REPLACE_WITH_PUBLIC_WEB_URL
+    mainpage: /dashboard
+    noFilters: /health,/runstate
+    ssoenable: 1
+    gatewayservice:
+    multipleAuthentication: 0
+  mina:
+    name:
+    addr:
+    port:
+    dataid:
+    unitid:
+  net:
+    ip0:
+    ip1:

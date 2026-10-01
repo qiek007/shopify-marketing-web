@@ -1,0 +1,26 @@
+<%@ page pageEncoding="UTF-8" %>
+<div class="timeline-item timeline-type-<c:out value='${activity.type}'/>">
+    <span class="timeline-icon" aria-hidden="true"><c:choose>
+        <c:when test="${activity.type eq 'EMAIL_DELIVERED'}"><i class="fa fa-check"></i></c:when>
+        <c:when test="${activity.type eq 'EMAIL_OPENED'}"><i class="fa fa-envelope-open-o"></i></c:when>
+        <c:when test="${activity.type eq 'EMAIL_CLICKED'}"><i class="fa fa-mouse-pointer"></i></c:when>
+        <c:when test="${activity.type eq 'EMAIL_ACCEPTED'}"><i class="fa fa-paper-plane-o"></i></c:when>
+        <c:when test="${activity.type eq 'PRODUCT_ADDED_TO_CART'}"><i class="fa fa-cart-plus"></i></c:when>
+        <c:when test="${activity.type eq 'ORDER' or activity.type eq 'CHECKOUT_COMPLETED'}"><i class="fa fa-shopping-bag"></i></c:when>
+        <c:when test="${activity.type eq 'PAGE_VIEWED' or activity.type eq 'PRODUCT_VIEWED'}"><i class="fa fa-eye"></i></c:when>
+        <c:when test="${activity.type eq 'CLICKED'}"><i class="fa fa-mouse-pointer"></i></c:when>
+        <c:otherwise><i class="fa fa-circle"></i></c:otherwise>
+    </c:choose></span>
+    <div class="timeline-item-content">
+        <strong><c:out value="${activity.title}"/></strong>
+        <div><c:out value="${activity.description}"/></div>
+        <c:if test="${not empty activity.url}">
+            <a class="table-link" href="<c:out value='${activity.url}'/>" target="_blank" rel="noopener">查看点击链接</a>
+        </c:if>
+        <c:if test="${not group.collapsed and not empty activity.campaignId}">
+            <c:url var="activityCustomerPreviewUrl" value="/customers/campaign-preview"><c:param name="shop" value="${selectedShop}"/><c:param name="campaignId" value="${activity.campaignId}"/><c:param name="customerId" value="${customerDetail.customer.sourceId}"/></c:url>
+            <div class="timeline-item-actions"><c:if test="${canViewCampaigns}"><a class="timeline-action-link" href="${ctx}/campaigns/detail?shop=${selectedShop}&amp;campaignId=${activity.campaignId}">查看活动</a></c:if><a class="timeline-action-link" href="${activityCustomerPreviewUrl}" data-customer-email-preview>预览该客户邮件</a></div>
+        </c:if>
+        <div class="timeline-meta"><c:out value="${activity.type}"/> · <c:out value="${providerAliases[activity.provider]}"/> · <time data-browser-time="<c:out value='${activity.occurredAt}'/>" datetime="<c:out value='${activity.occurredAt}'/>"><c:out value="${activity.occurredAt}"/></time></div>
+    </div>
+</div>

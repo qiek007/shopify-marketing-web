@@ -1,0 +1,12 @@
+/target/
+/.idea/
+/.vscode/
+/.run/
+/data/
+/logs/
+/config/application-local.yml
+/config/application.yml
+*.war
+*.jar
+*.zip
+*.log

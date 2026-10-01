@@ -1,0 +1,62 @@
+<%@ page pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
+<link rel="stylesheet" href="${ctx}${uiAssetBase}/css/account-password.css?v=20260924-native-password">
+<script src="${ctx}/baseui/lib/jquery/3.6.1/jquery.min.js"></script>
+<script src="${ctx}/baseui/lib/layer/2.4/layer.js"></script>
+<script src="${ctx}/shopify/js/account-password.js?v=20260924-native-password" defer></script>
+<script id="session-keepalive" src="${ctx}/shopify/js/session-keepalive.js"
+        data-context-path="${ctx}" defer></script>
+<script id="console-navigation" src="${ctx}/shopify/js/console-navigation.js?v=20261001-navigation-recovery"
+        data-context-path="${ctx}" defer></script>
+<script src="${ctx}/shopify/js/browser-time.js" defer></script>
+<header class="console-header">
+    <div class="brand-block">
+        <img src="${ctx}${uiAssetBase}/img/auwlog-1.png" style="width: 100px">
+        <span style="width:20px"></span>
+        <div><strong>滴答营销工作台</strong><span>Workspace online</span></div>
+    </div>
+    <div class="header-actions">
+        <c:choose>
+            <c:when test="${not empty accessibleShops}">
+                <form class="shop-switcher" method="get" action="${ctx}/${currentPath}" data-shop-switcher>
+                    <label for="current-shop">当前店铺</label>
+                    <select id="current-shop" name="shop" data-shop-switcher-select>
+                        <c:forEach items="${accessibleShops}" var="shopItem">
+                            <option value="${shopItem.shopDomain}"
+                                    ${shopItem.shopDomain eq selectedShop ? 'selected' : ''}>
+                                <c:out value="${shopItem.displayName}" default="${shopItem.shopDomain}"/>
+                            </option>
+                        </c:forEach>
+                    </select>
+                </form>
+            </c:when>
+            <c:otherwise><span class="no-shop-label">尚未获得店铺授权</span></c:otherwise>
+        </c:choose>
+        <button class="icon-button" type="button" title="刷新当前页面" aria-label="刷新当前页面" onclick="window.location.reload()">
+            <i class="fa fa-refresh" aria-hidden="true"></i>
+        </button>
+        <button class="user-name merchant-user-name" id="merchant-password-trigger"
+                type="button" aria-haspopup="dialog" title="修改密码"
+                data-password-url="${ctx}/account/password">
+            <c:out value="${logineduser.lastName}"/>
+        </button>
+        <a class="logout-link" href="${ctx}/org/login/logout" title="退出登录">
+            <i class="fa fa-sign-out" aria-hidden="true"></i><span>退出</span>
+        </a>
+    </div>
+</header>
+<template id="merchant-password-template">
+    <form class="merchant-password-form" autocomplete="off">
+        <div class="merchant-password-intro">
+            <strong>修改登录密码</strong>
+            <span>为当前用户 <c:out value="${logineduser.lastName}"/> 设置新密码</span>
+        </div>
+        <label><span>原密码</span><input type="password" name="oldPassword" autocomplete="current-password" required></label>
+        <label><span>新密码</span><input type="password" name="newPassword" autocomplete="new-password" required></label>
+        <label><span>确认新密码</span><input type="password" name="confirmPassword" autocomplete="new-password" required></label>
+        <p class="merchant-password-feedback" data-password-feedback aria-live="polite"></p>
+        <div class="merchant-password-actions">
+            <button type="button" data-password-cancel>取消</button>
+            <button class="confirm" type="submit">确认修改</button>
+        </div>
+    </form>
+</template>

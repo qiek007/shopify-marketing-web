@@ -1,0 +1,42 @@
+.dashboard-trend { margin-top: 6px; overflow: hidden; }
+.dashboard-page-heading h1 { color: #111820; font-family: "Microsoft YaHei", "PingFang SC", "SimHei", sans-serif; font-size: 36px; font-weight: 800; letter-spacing: .02em; }
+.dashboard-page-heading .dashboard-page-subtitle { color: #52626e; font-size: 14px; font-weight: 600; }
+.dashboard-trend-details > summary { list-style: none; cursor: pointer; }
+.dashboard-trend-details > summary::-webkit-details-marker { display: none; }
+.dashboard-trend-details > summary:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+.dashboard-trend-details:not([open]) > summary { border-bottom: 0; }
+.trend-heading-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.trend-section-toggle { display: inline-flex; align-items: center; gap: 7px; color: #526574; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.trend-section-toggle::before { content: "收起"; }
+.trend-section-toggle i { transition: transform 160ms ease; transform: rotate(180deg); }
+.dashboard-trend-details:not([open]) .trend-section-toggle::before { content: "展开"; }
+.dashboard-trend-details:not([open]) .trend-section-toggle i { transform: rotate(0); }
+.trend-heading { gap: 18px; }
+.trend-updated { flex: 0 0 auto; padding: 6px 9px; border-radius: 4px; background: #f0f4f6; color: #5c6f7a; font-size: 12px; }
+.trend-body { padding: 16px 20px 18px; }
+.trend-legend { display: flex; flex-wrap: wrap; gap: 9px 20px; margin-bottom: 12px; color: #3f5360; font-size: 11px; }
+.trend-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.trend-key { display: inline-block; width: 11px; height: 11px; border-radius: 3px; }
+.trend-key.sent { background: #13805b; }
+.trend-key.orders { background: #697a91; }
+.trend-key.shopify-money { background: #bb7528; }
+.trend-key.ga4-money { background: #2a79b4; }
+.trend-state { display: flex; align-items: center; justify-content: center; min-height: 220px; border: 1px dashed #ced9df; border-radius: 7px; background: #fbfcfd; color: #627482; font-size: 13px; text-align: center; }
+.trend-visual { position: relative; overflow-x: auto; border: 1px solid #e2e9ed; border-radius: 7px; background: linear-gradient(180deg, #fcfefd, #f8fbfd); }
+.trend-svg { display: block; width: 100%; min-width: 820px; height: clamp(300px, 18vw, 430px); }
+.trend-svg text { fill: #657684; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; font-size: 11px; }
+.trend-tooltip { position: absolute; z-index: 2; min-width: 190px; padding: 10px 12px; border: 1px solid #cbd8dd; border-radius: 6px; background: #fff; color: #263c47; box-shadow: 0 10px 25px rgba(25, 48, 60, .13); font-size: 12px; line-height: 1.75; white-space: pre-line; pointer-events: none; }
+.trend-state[hidden], .trend-visual[hidden], .trend-tooltip[hidden], .trend-details[hidden] { display: none !important; }
+.trend-context { margin: 13px 0 0; color: #647785; font-size: 12px; line-height: 1.65; }
+.trend-detail-toolbar { position: relative; }
+.trend-details { margin-top: 14px; border-top: 1px solid #e8edf0; }
+.trend-details summary { display: inline-flex; align-items: center; gap: 7px; padding: 12px 2px 6px; color: #216b52; cursor: pointer; font-size: 12px; font-weight: 700; list-style: none; }
+.trend-details summary::-webkit-details-marker { display: none; }
+.trend-details summary:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.trend-details summary i { transition: transform 160ms ease; }
+.trend-details[open] summary i { transform: rotate(180deg); }
+.trend-details .table-wrap { max-height: 400px; overflow: auto; }
+.trend-details .status-table { min-width: 680px; }
+.trend-export-button { position: absolute; top: 7px; right: 2px; min-height: 32px; border-color: #a8c4b4; color: #176b4b; font-size: 12px; font-weight: 700; }
+.trend-export-button[hidden] { display: none !important; }
+@media (max-width: 760px) { .dashboard-page-heading h1 { font-size: 30px; } .trend-heading { align-items: flex-start; flex-direction: column; } .trend-heading-actions { width: 100%; justify-content: space-between; } .trend-updated { flex: none; } .trend-body { padding: 15px; } .trend-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 12px; } }

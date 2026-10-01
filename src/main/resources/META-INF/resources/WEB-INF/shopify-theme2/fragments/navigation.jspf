@@ -1,0 +1,44 @@
+<%@ page pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
+<aside class="console-sidebar" aria-label="主导航">
+    <nav data-console-navigation>
+        <a class="nav-item${activeMenu eq 'dashboard' ? ' active' : ''}" href="${ctx}/dashboard">
+            <i class="fa fa-dashboard" aria-hidden="true"></i><span>数据总览</span>
+        </a>
+        <a class="nav-item${activeMenu eq 'stores' ? ' active' : ''}" href="${ctx}/stores">
+            <i class="fa fa-shopping-bag" aria-hidden="true"></i><span>我的店铺</span>
+        </a>
+        <c:if test="${canViewCustomers}">
+        <a class="nav-item${activeMenu eq 'customers' ? ' active' : ''}" href="${ctx}/customers">
+            <i class="fa fa-users" aria-hidden="true"></i><span>客户管理</span>
+        </a>
+        <c:if test="${canManageCustomers}">
+        <a class="nav-item${activeMenu eq 'customer-imports' ? ' active' : ''}" href="${ctx}/customers/imports">
+            <i class="fa fa-upload" aria-hidden="true"></i><span>导入客户</span>
+        </a>
+        </c:if>
+            <a class="nav-item${activeMenu eq 'suppressions' ? ' active' : ''}" href="${ctx}/suppressions">
+                <i class="fa fa-ban" aria-hidden="true"></i><span>抑制名单</span>
+            </a>
+        </c:if>
+        <c:if test="${canViewCampaigns}">
+            <a class="nav-item${activeMenu eq 'segments' ? ' active' : ''}" href="${ctx}/segments">
+                <i class="fa fa-filter" aria-hidden="true"></i><span>客户分群</span>
+            </a>
+            <a class="nav-item${activeMenu eq 'templates' ? ' active' : ''}" href="${ctx}/templates">
+                <i class="fa fa-file-text-o" aria-hidden="true"></i><span>邮件模板</span>
+            </a>
+            <a class="nav-item${activeMenu eq 'campaigns' ? ' active' : ''}" href="${ctx}/campaigns">
+                <i class="fa fa-paper-plane-o" aria-hidden="true"></i><span>营销活动</span>
+            </a>
+            <a class="nav-item${activeMenu eq 'automations' ? ' active' : ''}" href="${ctx}/automations">
+                <i class="fa fa-random" aria-hidden="true"></i><span>自动营销</span>
+            </a>
+        </c:if>
+        <c:if test="${canViewReports}">
+            <a class="nav-item${activeMenu eq 'reports' ? ' active' : ''}" href="${ctx}/reports">
+                <i class="fa fa-line-chart" aria-hidden="true"></i><span>数据洞察</span>
+            </a>
+        </c:if>
+    </nav>
+</aside>
+<a class="nav-item ${activeMenu eq 'products' ? 'active' : ''}" href="${ctx}/products?shop=${selectedShop}"><i class="fa fa-tags"></i><span>商品</span></a>
