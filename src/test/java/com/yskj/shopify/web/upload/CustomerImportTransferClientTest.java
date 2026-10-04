@@ -109,4 +109,41 @@ class CustomerImportTransferClientTest {
         }).hasRootCauseInstanceOf(IllegalArgumentException.class)
                 .hasRootCauseMessage("客户导入传输地址不受信任");
     }
+
+    @Test
+    void downloadsCampaignRecipientExportsThroughTheDedicatedTokenHeader() throws Exception {
+        AtomicInteger received = new AtomicInteger();
+        HttpServer server = HttpServer.create(
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+        server.createContext("/shopify-marketing/internal/campaign-recipient-exports/job-1",
+                exchange -> {
+                    if ("token-1".equals(exchange.getRequestHeaders()
+                            .getFirst("X-Campaign-Export-Token"))) received.incrementAndGet();
+                    byte[] body = "xlsx".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                    exchange.sendResponseHeaders(200, body.length);
+                    exchange.getResponseBody().write(body); exchange.close();
+                });
+        server.start();
+        try {
+            CustomerImportTransferClient client = new CustomerImportTransferClient(
+                    "http://127.0.0.1:" + server.getAddress().getPort() + "/shopify-marketing");
+            var method = java.util.Arrays.stream(CustomerImportTransferClient.class.getMethods())
+                    .filter(candidate -> candidate.getName().equals("downloadCampaignExport")
+                            && candidate.getParameterCount() == 2)
+                    .findFirst().orElse(null);
+
+            assertThat(method).isNotNull();
+            @SuppressWarnings("unchecked")
+            java.net.http.HttpResponse<java.io.InputStream> response =
+                    (java.net.http.HttpResponse<java.io.InputStream>) method.invoke(
+                            client, "job-1", "token-1");
+            try (var input = response.body()) {
+                assertThat(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8))
+                        .isEqualTo("xlsx");
+            }
+            assertThat(received).hasValue(1);
+        } finally {
+            server.stop(0);
+        }
+    }
 }

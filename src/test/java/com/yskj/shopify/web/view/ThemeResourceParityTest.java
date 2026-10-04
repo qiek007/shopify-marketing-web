@@ -18,7 +18,7 @@ class ThemeResourceParityTest {
         Set<String> classic = views("shopify");
         Set<String> theme2 = views("shopify-theme2");
 
-        assertThat(classic).hasSize(36).containsExactlyInAnyOrderElementsOf(theme2);
+        assertThat(classic).hasSize(37).containsExactlyInAnyOrderElementsOf(theme2);
         assertThat(ROOT.resolve("WEB-INF/org/index.jsp")).exists();
         assertThat(ROOT.resolve("shopify/css/dashboard.css")).exists();
         assertThat(ROOT.resolve("shopify-theme2/css/dashboard.css")).exists();
@@ -199,6 +199,49 @@ class ThemeResourceParityTest {
             assertThat(templateEditor).contains("${not canManageCampaigns}");
             assertThat(campaignEditor).contains("${not canManageCampaigns}");
         }
+    }
+
+    @Test
+    void ga4DetailPanelsShowTheEffectiveUtmConfiguration() throws Exception {
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            Path root = ROOT.resolve("WEB-INF").resolve(theme);
+            String campaign = Files.readString(root.resolve("campaign-detail.jsp"));
+            String automations = Files.readString(root.resolve("automations.jsp"));
+            String campaignEditor = Files.readString(root.resolve("campaign-editor.jsp"));
+
+            assertThat(campaign).contains(
+                    "dashboard.css?v=20261004-recipient-export-v3",
+                    "ga4-utm-parameters",
+                    "UTM 来源",
+                    "${campaignDetail.utmSource}",
+                    "UTM 媒介",
+                    "${campaignDetail.utmMedium}",
+                    "UTM 活动", "${campaignDetail.utmCampaign}",
+                    "UTM 内容", "${campaignDetail.utmContentDisplayName}");
+            assertThat(automations).contains(
+                    "dashboard.css?v=20261002-utm-override",
+                    "automations.js?v=20261004-recipient-export",
+                    "ga4-utm-parameters",
+                    "data-automation-utm-source",
+                    "data-automation-utm-medium",
+                    "data-automation-utm-campaign",
+                    "data-automation-utm-content",
+                    "name=\"utmCampaign\"", "name=\"utmContent\"");
+            assertThat(campaignEditor).contains(
+                    "name=\"utmCampaign\"", "name=\"utmContent\"",
+                    "留空时使用活动名称", "留空时按链接自动生成");
+        }
+
+        String script = Files.readString(ROOT.resolve("shopify/js/automations.js"));
+        assertThat(script).contains(
+                "definition.utmSource, 'auw'",
+                "definition.utmMedium, 'email'",
+                "definition.utmCampaign || definition.name",
+                "definition.utmContent, '按链接自动生成'",
+                "[data-automation-utm-source]",
+                "[data-automation-utm-medium]",
+                "[data-automation-utm-campaign]",
+                "[data-automation-utm-content]");
     }
 
     private Set<String> views(String theme) throws Exception {

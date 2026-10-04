@@ -16,10 +16,14 @@
     <c:param name="campaignId" value="${campaignDetail.campaignId}"/>
 </c:url>
 <c:url var="campaignRecipientsUrl" value="/campaigns/detail/recipients"/>
+<c:url var="campaignRecipientExportsUrl" value="/campaigns/detail/recipients/exports">
+    <c:param name="shop" value="${campaignDetail.shopDomain}"/>
+    <c:param name="campaignId" value="${campaignDetail.campaignId}"/>
+</c:url>
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20260925-p123">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261004-recipient-export-v3">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -55,6 +59,9 @@
                 </c:if>
                 <c:if test="${campaignDetail.status eq 'DRAFT' or campaignDetail.status eq 'PENDING_APPROVAL'}">
                     <a class="action-button" href="${ctx}/campaigns/editor?shop=${campaignDetail.shopDomain}&amp;campaignId=${campaignDetail.campaignId}"><i class="fa fa-pencil"></i>编辑活动</a>
+                </c:if>
+                <c:if test="${canManageCampaigns && (campaignDetail.status eq 'DRAFT' or campaignDetail.status eq 'PENDING_APPROVAL' or campaignDetail.status eq 'APPROVED')}">
+                    <a class="action-button" href="${ctx}/campaigns/editor?shop=${campaignDetail.shopDomain}&amp;campaignId=${campaignDetail.campaignId}#campaign-test-send"><i class="fa fa-flask"></i>发送测试邮件</a>
                 </c:if>
                 <c:if test="${campaignDetail.pendingApproval}">
                     <form method="post" action="${ctx}/campaigns/action">
@@ -220,9 +227,15 @@
             <div class="section-heading">
                 <div>
                     <h2>GA4 活动级购买评估</h2>
-                    <p>按 utm_source=auw、utm_medium=email 和当前活动 ID 汇总</p>
+                    <p>按当前活动配置的 UTM 参数和活动 ID 汇总</p>
                 </div>
                 <span class="status-pill neutral"><c:out value="${campaignDetail.ga4Evaluation.statusDisplayName}"/></span>
+            </div>
+            <div class="ga4-utm-parameters" aria-label="当前活动 UTM 配置">
+                <div><span>UTM 来源</span><code><c:out value="${campaignDetail.utmSource}"/></code></div>
+                <div><span>UTM 媒介</span><code><c:out value="${campaignDetail.utmMedium}"/></code></div>
+                <div><span>UTM 活动</span><code><c:out value="${campaignDetail.utmCampaign}"/></code></div>
+                <div><span>UTM 内容</span><code><c:out value="${campaignDetail.utmContentDisplayName}"/></code></div>
             </div>
             <c:choose>
                 <c:when test="${campaignDetail.ga4Evaluation.showMetrics}">
@@ -269,7 +282,9 @@
                 <select name="provider"><option value="ALL">全部通道</option><c:forEach items="${campaignDetail.providers}" var="item"><option value="${item}" ${campaignFilter.provider eq item ? 'selected' : ''}><c:out value="${providerAliases[item]}"/></option></c:forEach></select>
                 <select name="lifecycle"><option value="ALL">全部状态</option><option value="PENDING" ${campaignFilter.lifecycle eq 'PENDING' ? 'selected' : ''}>待处理</option><option value="ACCEPTED" ${campaignFilter.lifecycle eq 'ACCEPTED' ? 'selected' : ''}>已接受</option><option value="DELIVERED" ${campaignFilter.lifecycle eq 'DELIVERED' ? 'selected' : ''}>已送达</option><option value="OPENED" ${campaignFilter.lifecycle eq 'OPENED' ? 'selected' : ''}>已打开</option><option value="CLICKED" ${campaignFilter.lifecycle eq 'CLICKED' ? 'selected' : ''}>已点击</option><option value="CONVERTED" ${campaignFilter.lifecycle eq 'CONVERTED' ? 'selected' : ''}>已下单</option><option value="FAILED" ${campaignFilter.lifecycle eq 'FAILED' ? 'selected' : ''}>失败</option><option value="BOUNCED" ${campaignFilter.lifecycle eq 'BOUNCED' ? 'selected' : ''}>退信</option></select>
                 <button class="action-button" type="submit"><i class="fa fa-search"></i>查询</button>
+                <c:if test="${canExportCustomerData}"><button class="action-button campaign-export-button" type="submit" formaction="${ctx}/campaigns/detail/recipients/export" formmethod="post" data-campaign-recipient-export disabled title="请先执行查询"><i class="fa fa-file-excel-o"></i>导出查询结果</button></c:if>
             </form>
+            <c:if test="${canExportCustomerData}"><details id="campaign-recipient-exports" class="campaign-export-panel" data-status-url="${campaignRecipientExportsUrl}" data-download-url="${ctx}/campaigns/detail/recipients/export/download" data-delete-url="${ctx}/campaigns/detail/recipients/export/delete"><summary class="campaign-export-heading"><div><strong>Excel 导出任务</strong><span>导出当前查询条件匹配的全部数据，文件保留 7 天</span></div><i class="fa fa-angle-down" aria-hidden="true"></i></summary><div id="campaign-recipient-export-list" class="campaign-export-list" aria-live="polite"><c:choose><c:when test="${empty recipientExports}"><div class="campaign-export-empty">尚未提交导出任务</div></c:when><c:otherwise><c:forEach items="${recipientExports}" var="exportJob"><article class="campaign-export-job"><div><strong><c:out value="${exportJob.status}"/></strong><span><c:out value="${exportJob.processedRows}"/> / <c:out value="${exportJob.totalRows}"/> 条</span></div><div class="campaign-export-actions"><c:if test="${exportJob.ready}"><a class="action-button" href="${ctx}/campaigns/detail/recipients/export/download?shop=${campaignDetail.shopDomain}&amp;jobId=${exportJob.jobId}"><i class="fa fa-download"></i>下载 Excel</a></c:if><c:if test="${exportJob.deletable}"><form method="post" action="${ctx}/campaigns/detail/recipients/export/delete" onsubmit="return confirm('确认删除这条导出记录及其文件吗？');"><input type="hidden" name="shop" value="${campaignDetail.shopDomain}"><input type="hidden" name="campaignId" value="${campaignDetail.campaignId}"><input type="hidden" name="jobId" value="${exportJob.jobId}"><input type="hidden" name="q" value="${campaignFilter.search}"><input type="hidden" name="provider" value="${campaignFilter.provider}"><input type="hidden" name="lifecycle" value="${campaignFilter.lifecycle}"><button class="action-button danger-text" type="submit"><i class="fa fa-trash-o"></i>删除</button></form></c:if></div></article></c:forEach></c:otherwise></c:choose></div></details></c:if>
             <div id="campaign-recipient-results" class="async-result-region" aria-live="polite">
                 <div class="empty-state compact"><i class="fa fa-list-alt"></i><strong>尚未加载执行明细</strong><span>活动概况已显示</span></div>
             </div>
@@ -643,16 +658,28 @@
                 return response.text();
             }).then(function (html) {
                 recipientHost.innerHTML = html;
+                markRecipientExportQueried();
             }).catch(function (error) {
                 if (error.name === 'AbortError') return;
+                markRecipientExportUnqueried();
                 recipientHost.innerHTML = '<div class="empty-state compact"><i class="fa fa-exclamation-circle"></i><strong>执行明细加载失败</strong><span>请稍后重新查询</span></div>';
             }).finally(function () {
                 recipientHost.removeAttribute('aria-busy');
             });
         }
 
+        var recipientExportPanel=document.getElementById('campaign-recipient-exports'), recipientExportList=document.getElementById('campaign-recipient-export-list'), recipientExportButton=document.querySelector('[data-campaign-recipient-export]'), recipientExportTimer;
+        function markRecipientExportUnqueried(){if(!recipientExportButton)return;recipientExportButton.disabled=true;recipientExportButton.title='请先执行查询';}
+        function markRecipientExportQueried(){if(!recipientExportButton)return;recipientExportButton.disabled=false;recipientExportButton.title='导出当前查询条件的全部结果';}
+        function exportStatusText(status){return {PENDING:'排队中',RUNNING:'生成中',READY:'已完成',FAILED:'生成失败',EXPIRED:'已过期'}[status]||status;}
+        function renderRecipientExports(items){if(!recipientExportList)return false;recipientExportList.replaceChildren();if(!items||items.length===0){var empty=document.createElement('div');empty.className='campaign-export-empty';empty.textContent='尚未提交导出任务';recipientExportList.appendChild(empty);return false;}var active=false;items.forEach(function(job){active=active||job.status==='PENDING'||job.status==='RUNNING';var article=document.createElement('article');article.className='campaign-export-job '+String(job.status||'').toLowerCase();var summary=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('span');title.textContent=exportStatusText(job.status);detail.textContent=(job.processedRows||0)+' / '+(job.totalRows||0)+' 条 · '+(job.progressPercent||0)+'%';summary.append(title,detail);article.appendChild(summary);var actions=document.createElement('div');actions.className='campaign-export-actions';if(job.status==='READY'){var link=document.createElement('a'),url=new URL(recipientExportPanel.dataset.downloadUrl,window.location.href);url.searchParams.set('shop',recipientForm.elements.shop.value);url.searchParams.set('jobId',job.jobId);link.href=url.toString();link.className='action-button';link.innerHTML='<i class="fa fa-download"></i>下载 Excel';actions.appendChild(link);}else if(job.status==='FAILED'){var error=document.createElement('span');error.className='campaign-export-error';error.textContent=job.errorSummary||'生成失败，请重新提交';article.appendChild(error);}if(job.status!=='PENDING'&&job.status!=='RUNNING'){var form=document.createElement('form');form.method='post';form.action=recipientExportPanel.dataset.deleteUrl;form.onsubmit=function(){return window.confirm('确认删除这条导出记录及其文件吗？');};[['shop',recipientForm.elements.shop.value],['campaignId',recipientForm.elements.campaignId.value],['jobId',job.jobId],['q',recipientForm.elements.q.value],['provider',recipientForm.elements.provider.value],['lifecycle',recipientForm.elements.lifecycle.value]].forEach(function(entry){var input=document.createElement('input');input.type='hidden';input.name=entry[0];input.value=entry[1];form.appendChild(input);});var remove=document.createElement('button');remove.type='submit';remove.className='action-button danger-text';remove.innerHTML='<i class="fa fa-trash-o"></i>删除';form.appendChild(remove);actions.appendChild(form);}if(actions.childElementCount)article.appendChild(actions);recipientExportList.appendChild(article);});return active;}
+        function refreshRecipientExports(){if(!recipientExportPanel||!recipientExportPanel.open)return;clearTimeout(recipientExportTimer);fetch(recipientExportPanel.dataset.statusUrl,{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(response){if(!response.ok)throw new Error('HTTP '+response.status);return response.json();}).then(function(payload){if(renderRecipientExports(payload.items||payload))recipientExportTimer=setTimeout(refreshRecipientExports,2000);}).catch(function(){recipientExportTimer=setTimeout(refreshRecipientExports,5000);});}
+
         if (recipientForm && recipientHost) {
+            recipientForm.addEventListener('input', markRecipientExportUnqueried);
+            recipientForm.addEventListener('change', markRecipientExportUnqueried);
             recipientForm.addEventListener('submit', function (event) {
+                if(event.submitter&&event.submitter.hasAttribute('data-campaign-recipient-export')){event.submitter.disabled=true;event.submitter.innerHTML='<i class="fa fa-spinner fa-spin"></i>已提交';return;}
                 event.preventDefault();
                 loadRecipients(1);
             });
@@ -669,6 +696,7 @@
                 loadRecipients(link.dataset.campaignRecipientPage);
             });
         }
+        if(recipientExportPanel)recipientExportPanel.addEventListener('toggle',function(){clearTimeout(recipientExportTimer);if(recipientExportPanel.open)refreshRecipientExports();});
 
         if (customerDialog) {
             customerDialogBody.addEventListener('click', function (event) {

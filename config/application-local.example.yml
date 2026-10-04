@@ -34,7 +34,7 @@ yskj:
     name: Shopify营销外挂页面-开发
     homepage: http://127.0.0.1:7050/shopify-marketing-web/
     mainpage: /dashboard
-    noFilters: /health,/runstate
+    noFilters: /health,/runstate,/campaigns/test-unsubscribe,/campaigns/test-unsubscribe/one-click
     ssoenable: 1
     gatewayservice:
     multipleAuthentication: 0

@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20260923-store-sync">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261004-store-quota">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -40,6 +40,20 @@
                 </c:otherwise>
             </c:choose>
         </section>
+        <c:if test="${not empty selectedShop}">
+            <c:url var="quotaHistoryUrl" value="/stores/quota/history"><c:param name="shop" value="${selectedShop}"/></c:url>
+            <section class="content-section spaced-section store-quota-section">
+                <div class="section-heading"><div><h2>邮件发送额度</h2><p>发送前预留，送达后核销；所有额度变化均可追溯</p></div><div class="section-heading-actions"><a class="action-button" href="${quotaHistoryUrl}"><i class="fa fa-history"></i><span>查看变更记录</span></a></div></div>
+                <c:choose><c:when test="${!storeEmailQuotaAvailable}"><div class="empty-state compact"><i class="fa fa-clock-o"></i><strong>暂时无法读取邮件额度</strong><span>请稍后刷新页面，其他店铺功能不受影响。</span></div></c:when><c:otherwise>
+                    <div class="store-quota-grid" aria-label="邮件发送额度概览">
+                        <article class="store-quota-metric available"><span>可发送数量</span><strong><c:out value="${storeEmailQuota.availableCount}"/></strong><small>当前可用于营销活动和自动营销</small></article>
+                        <article class="store-quota-metric balance"><span>额度总量</span><strong><c:out value="${storeEmailQuota.balanceCount}"/></strong><small>平台为当前店铺配置的总额度</small></article>
+                        <article class="store-quota-metric reserved"><span>活动预留</span><strong><c:out value="${storeEmailQuota.reservedCount}"/></strong><small>已进入发送流程、尚未完成核销</small></article>
+                        <article class="store-quota-metric consumed"><span>累计送达核销</span><strong><c:out value="${storeEmailQuota.consumedCount}"/></strong><small>按邮件通道接受数量累计核销</small></article>
+                    </div>
+                </c:otherwise></c:choose>
+            </section>
+        </c:if>
         <c:if test="${not empty selectedShop}">
             <c:if test="${shopifyStore}">
             <c:url var="pixelStatusUrl" value="/stores/web-pixel/status"><c:param name="shop" value="${selectedShop}"/></c:url>

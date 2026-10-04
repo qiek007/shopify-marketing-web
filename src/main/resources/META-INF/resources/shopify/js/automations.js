@@ -14,7 +14,12 @@
   var customerUrl = root.dataset.customerUrl || '/segments/customer/detail';
   var createAction = form.action;
   var updateAction = form.dataset.updateAction;
-  var detailState = { automationId: '', page: 1, totalPages: 1 };
+  var detailState = { automationId: '', page: 1, totalPages: 1, filterQueried: false };
+  var filterForm = detail.querySelector('[data-automation-filter]');
+  var exportButton = detail.querySelector('[data-automation-export]');
+  var exportPanel = detail.querySelector('[data-automation-export-panel]');
+  var exportList = detail.querySelector('[data-automation-export-list]');
+  var recipientExportTimer;
 
   function field(name) { return form.elements.namedItem(name); }
   function text(value, fallback) {
@@ -95,6 +100,10 @@
     field('automationId').value = '';
     field('status').value = 'PAUSED';
     field('couponMode').value = 'NONE';
+    field('utmSource').value = 'auw';
+    field('utmMedium').value = 'email';
+    field('utmCampaign').value = '';
+    field('utmContent').value = '';
     title.textContent = '新建自动营销';
     refreshSender();
     refreshCouponVisibility();
@@ -106,7 +115,7 @@
     var data = row.dataset;
     field('automationId').value = data.automationId;
     ['name', 'journeyType', 'triggerEvent', 'waitMinutes', 'templateId', 'provider',
-      'frequencyDays', 'couponMode'].forEach(function (key) {
+      'frequencyDays', 'couponMode', 'utmSource', 'utmMedium', 'utmCampaign', 'utmContent'].forEach(function (key) {
       field(key).value = data[key] || '';
     });
     field('status').value = data.status === 'ACTIVE' ? 'ACTIVE' : 'PAUSED';
@@ -136,6 +145,14 @@
       if (key === 'provider') value = providerLabel(value);
       node.textContent = labels[key] ? labelValue(String(value), labels[key]) : text(value);
     });
+    detail.querySelector('[data-automation-utm-source]').textContent =
+      text(definition.utmSource, 'auw');
+    detail.querySelector('[data-automation-utm-medium]').textContent =
+      text(definition.utmMedium, 'email');
+    detail.querySelector('[data-automation-utm-campaign]').textContent =
+      definition.utmCampaign || definition.name || '—';
+    detail.querySelector('[data-automation-utm-content]').textContent =
+      text(definition.utmContent, '按链接自动生成');
   }
   function renderMetrics(summary) {
     var metrics = [
@@ -230,10 +247,107 @@
     detail.querySelector('[data-automation-detail-page="previous"]').disabled = currentPage <= 1;
     detail.querySelector('[data-automation-detail-page="next"]').disabled = currentPage >= totalPages;
   }
-  function loadDetail(page) {
+  function filterValue(name) {
+    var control = filterForm && filterForm.elements.namedItem(name);
+    return control ? control.value : '';
+  }
+  function exportParameters() {
+    return new URLSearchParams({
+      shop: shop, automationId: detailState.automationId,
+      q: filterValue('q'), provider: filterValue('provider') || 'ALL',
+      lifecycle: filterValue('lifecycle') || 'ALL'
+    });
+  }
+  function conditionsChanged() {
+    detailState.filterQueried = false;
+    if (exportButton) {
+      exportButton.disabled = true;
+      exportButton.title = '请先执行查询';
+    }
+  }
+  function exportStatusLabel(status) {
+    return { PENDING: '等待生成', RUNNING: '正在生成', READY: '已完成',
+      FAILED: '生成失败', EXPIRED: '已过期' }[status] || text(status);
+  }
+  function renderExportJobs(items) {
+    if (!exportList) return;
+    exportList.replaceChildren();
+    if (!items.length) {
+      var empty = document.createElement('div');
+      empty.className = 'campaign-export-empty';
+      empty.textContent = '尚未提交导出任务';
+      exportList.appendChild(empty);
+      return;
+    }
+    items.forEach(function (item) {
+      var article = document.createElement('article');
+      article.className = 'campaign-export-job ' + String(item.status || '').toLowerCase();
+      var info = document.createElement('div');
+      var title = document.createElement('strong');
+      var progress = document.createElement('span');
+      title.textContent = exportStatusLabel(item.status);
+      progress.textContent = text(item.processedRows, '0') + ' / ' + text(item.totalRows, '0')
+        + ' 条 · ' + text(item.progressPercent, '0') + '%';
+      info.append(title, progress);
+      if (item.errorSummary) {
+        var error = document.createElement('small');
+        error.className = 'danger-text';
+        error.textContent = item.errorSummary;
+        info.appendChild(error);
+      }
+      var actions = document.createElement('div');
+      actions.className = 'campaign-export-actions';
+      if (item.ready) {
+        var download = document.createElement('a');
+        download.className = 'action-button';
+        download.href = root.dataset.exportDownloadUrl + '?' + new URLSearchParams({
+          shop: shop, jobId: item.jobId
+        }).toString();
+        download.textContent = '下载 Excel';
+        actions.appendChild(download);
+      }
+      if (item.deletable) {
+        var remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'action-button danger-text';
+        remove.setAttribute('data-automation-export-delete', item.jobId);
+        remove.textContent = '删除';
+        actions.appendChild(remove);
+      }
+      article.append(info, actions);
+      exportList.appendChild(article);
+    });
+  }
+  function refreshExportJobs() {
+    if (!exportPanel || !exportPanel.open || !detailState.automationId) return Promise.resolve();
+    clearTimeout(recipientExportTimer);
+    var params = new URLSearchParams({ shop: shop, automationId: detailState.automationId });
+    return fetch(root.dataset.exportStatusUrl + '?' + params.toString(),
+      { headers: { Accept: 'application/json' } })
+      .then(function (response) {
+        if (!response.ok) throw new Error('导出任务加载失败');
+        return response.json();
+      })
+      .then(function (payload) {
+        var items = Array.isArray(payload) ? payload : (payload.items || []);
+        renderExportJobs(items);
+        if (items.some(function (item) {
+          return item.status === 'PENDING' || item.status === 'RUNNING';
+        })) recipientExportTimer = setTimeout(refreshExportJobs, 2000);
+      })
+      .catch(function (error) {
+        renderExportJobs([{ status: 'FAILED', processedRows: 0, totalRows: 0,
+          progressPercent: 0, errorSummary: error.message }]);
+      });
+  }
+  function loadDetail(page, markQueried) {
     showDetailState('loading');
+    var queriedConditions = exportParameters().toString();
     var url = detailUrl + '?shop=' + encodeURIComponent(shop)
       + '&automationId=' + encodeURIComponent(detailState.automationId)
+      + '&q=' + encodeURIComponent(filterValue('q'))
+      + '&provider=' + encodeURIComponent(filterValue('provider') || 'ALL')
+      + '&lifecycle=' + encodeURIComponent(filterValue('lifecycle') || 'ALL')
       + '&page=' + encodeURIComponent(page || 1) + '&size=20';
     return fetch(url, { headers: { Accept: 'application/json' } })
       .then(function (response) {
@@ -245,6 +359,13 @@
         renderMetrics(data.summary || {});
         renderGa4Evaluation(data.ga4Evaluation);
         renderJourneys(data.journeys || { items: [], page: 1, totalPages: 1 });
+        if (markQueried && exportParameters().toString() === queriedConditions) {
+          detailState.filterQueried = true;
+          if (exportButton) {
+            exportButton.disabled = false;
+            exportButton.title = '';
+          }
+        }
         showDetailState('content');
       })
       .catch(function (error) {
@@ -255,8 +376,11 @@
   function openDetail(row) {
     detailState.automationId = row.dataset.automationId;
     detailState.page = 1;
+    if (filterForm) filterForm.reset();
+    conditionsChanged();
+    if (exportPanel) exportPanel.open = false;
     detail.showModal();
-    loadDetail(1);
+    loadDetail(1, false);
   }
   function openCustomer(customerId) {
     if (!customerDialog) return;
@@ -297,6 +421,50 @@
       field('discountSourceId').setCustomValidity('');
     }
   });
+  if (filterForm) {
+    filterForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      loadDetail(1, true);
+    });
+    filterForm.addEventListener('input', conditionsChanged);
+    filterForm.addEventListener('change', conditionsChanged);
+  }
+  if (exportButton) exportButton.addEventListener('click', function () {
+    if (!detailState.filterQueried) return;
+    var submittedConditions = exportParameters().toString();
+    exportButton.disabled = true;
+    fetch(root.dataset.exportRequestUrl, {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json' }, body: exportParameters().toString()
+    }).then(function (response) {
+      if (!response.ok) throw new Error('导出任务提交失败');
+      return response.json();
+    }).then(function () {
+      if (exportPanel) exportPanel.open = true;
+      return refreshExportJobs();
+    }).catch(function (error) {
+      window.alert(error.message);
+    }).finally(function () {
+      exportButton.disabled = !detailState.filterQueried
+        || exportParameters().toString() !== submittedConditions;
+    });
+  });
+  if (exportPanel) exportPanel.addEventListener('toggle', function () {
+    if (exportPanel.open) refreshExportJobs(); else clearTimeout(recipientExportTimer);
+  });
+  if (exportList) exportList.addEventListener('click', function (event) {
+    var remove = event.target.closest('[data-automation-export-delete]');
+    if (!remove || !window.confirm('确认删除这条导出记录及其文件吗？')) return;
+    var params = exportParameters();
+    params.set('jobId', remove.getAttribute('data-automation-export-delete'));
+    fetch(root.dataset.exportDeleteUrl, {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json' }, body: params.toString()
+    }).then(function (response) {
+      if (!response.ok) throw new Error('导出记录删除失败');
+      return refreshExportJobs();
+    }).catch(function (error) { window.alert(error.message); });
+  });
   document.addEventListener('click', function (event) {
     var newButton = event.target.closest('[data-automation-new]');
     if (newButton) { openNew(); return; }
@@ -307,7 +475,7 @@
     var pageButton = event.target.closest('[data-automation-detail-page]');
     if (pageButton && !pageButton.disabled) {
       loadDetail(pageButton.dataset.automationDetailPage === 'previous'
-        ? detailState.page - 1 : detailState.page + 1);
+        ? detailState.page - 1 : detailState.page + 1, false);
       return;
     }
     var button = event.target.closest('[data-automation-view],[data-automation-edit]');
@@ -318,6 +486,7 @@
   });
   [editor, detail, customerDialog].filter(Boolean).forEach(function (dialog) {
     dialog.addEventListener('cancel', function (event) { event.preventDefault(); });
+    dialog.addEventListener('close', function () { clearTimeout(recipientExportTimer); });
   });
   refreshSender();
   refreshCouponVisibility();

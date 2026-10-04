@@ -48,8 +48,10 @@ public class PlatformWebMvcConfiguration implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(springInterceptor).addPathPatterns("/**")
+                .excludePathPatterns("/campaigns/test-unsubscribe/**")
                 .excludePathPatterns(STATIC);
         registry.addInterceptor(orgInterceptor).addPathPatterns("/**")
+                .excludePathPatterns("/campaigns/test-unsubscribe/**")
                 .excludePathPatterns(STATIC);
     }
 

@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20260922-ga4">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261002-utm-override">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -20,7 +20,11 @@
       data-shop="<c:out value='${selectedShop}'/>"
       data-detail-url="${ctx}/automations/detail"
       data-discount-url="${ctx}/templates/discounts"
-      data-customer-url="${ctx}/segments/customer/detail">
+      data-customer-url="${ctx}/segments/customer/detail"
+      data-export-request-url="${ctx}/automations/detail/recipients/export"
+      data-export-status-url="${ctx}/automations/detail/recipients/exports"
+      data-export-download-url="${ctx}/automations/detail/recipients/export/download"
+      data-export-delete-url="${ctx}/automations/detail/recipients/export/delete">
     <style data-automation-inline-styles>
         .automation-dialog { width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); box-shadow: 0 20px 60px rgba(18,42,52,.28); }
         .automation-dialog:not([open]) { display: none !important; }
@@ -94,6 +98,10 @@
                                         data-frequency-days="${automation.frequencyDays}"
                                         data-coupon-mode="${automation.couponMode}"
                                         data-discount-source-id="<c:out value='${automation.discountSourceId}'/>"
+                                        data-utm-source="<c:out value='${automation.utmSource}'/>"
+                                        data-utm-medium="<c:out value='${automation.utmMedium}'/>"
+                                        data-utm-campaign="<c:out value='${automation.utmCampaign}'/>"
+                                        data-utm-content="<c:out value='${automation.utmContent}'/>"
                                         data-exit-on-purchase="${automation.exitOnPurchase}"
                                         data-status="${automation.status}">
                                         <td><strong><c:out value="${automation.name}"/></strong><span class="cell-note"><c:choose><c:when test="${automation.journeyType eq 'ABANDONED_CART'}">购物车挽回</c:when><c:when test="${automation.journeyType eq 'BROWSE_ABANDONMENT'}">浏览挽回</c:when><c:when test="${automation.journeyType eq 'POST_PURCHASE'}">购买后跟进</c:when><c:otherwise><c:out value="${automation.journeyType}"/></c:otherwise></c:choose></span></td>
@@ -101,7 +109,7 @@
                                         <td><c:out value="${automation.triggerEvent}"/></td>
                                         <td><c:out value="${automation.waitMinutes}"/> 分钟</td>
                                         <td><c:out value="${automation.templateName}"/></td>
-                                        <td><strong><c:out value="${automation.sentCount}"/></strong><span class="cell-note">送达 <c:out value="${automation.deliveredCount}"/></span></td>
+                                        <td><strong><c:out value="${automation.sentCount}"/></strong>/<strong><c:out value="${automation.deliveredCount}"/></strong></td>
                                         <td><c:out value="${automation.openedRecipientCount}"/></td>
                                         <td><c:out value="${automation.clickedRecipientCount}"/></td>
                                         <td><c:out value="${automation.orderCount}"/></td>
@@ -127,8 +135,10 @@
                         <input type="hidden" name="page" value="${automationPage.page}">
                         <div class="form-grid"><label><span>规则名称</span><input name="name" placeholder="加入购物车 30 分钟未购买" required></label><label><span>状态</span><select name="status" required><option value="PAUSED">禁用</option><option value="ACTIVE">生效</option></select></label></div>
                         <div class="form-grid"><label><span>旅程类型</span><select name="journeyType"><c:forEach items="${journeyTypes}" var="type"><option value="${type}"><c:choose><c:when test="${type eq 'ABANDONED_CART'}">购物车挽回</c:when><c:when test="${type eq 'BROWSE_ABANDONMENT'}">浏览挽回</c:when><c:when test="${type eq 'POST_PURCHASE'}">购买后跟进</c:when><c:otherwise><c:out value="${type}"/></c:otherwise></c:choose></option></c:forEach></select></label><label><span>触发事件</span><select name="triggerEvent"><c:forEach items="${behaviorEventTypes}" var="event"><option value="${event}"><c:choose><c:when test="${event eq 'PAGE_VIEWED'}">浏览页面</c:when><c:when test="${event eq 'CLICKED'}">点击页面</c:when><c:when test="${event eq 'PRODUCT_VIEWED'}">查看商品</c:when><c:when test="${event eq 'SEARCH_SUBMITTED'}">提交搜索</c:when><c:when test="${event eq 'PRODUCT_ADDED_TO_CART'}">加入购物车</c:when><c:when test="${event eq 'CHECKOUT_STARTED'}">开始结账</c:when><c:when test="${event eq 'CHECKOUT_COMPLETED'}">完成结账</c:when><c:otherwise><c:out value="${event}"/></c:otherwise></c:choose></option></c:forEach></select></label></div>
-                        <div class="form-grid"><label><span>等待分钟</span><input name="waitMinutes" type="number" min="1" max="43200" value="30" required></label><label><span>同一客户频控（天）</span><input name="frequencyDays" type="number" min="1" max="365" value="7" required></label></div>
+                        <div class="form-grid"><label><span>等待分钟</span><input name="waitMinutes" type="number" min="1" max="43200" value="30" required></label><label><span>同一客户频控（天）</span><input name="frequencyDays" type="number" min="0" max="365" value="7" required><small class="field-note">0 表示不限制。</small></label></div>
                         <div class="form-grid"><label><span>邮件模板</span><select name="templateId" required><c:forEach items="${templates}" var="template"><option value="<c:out value='${template.templateId}'/>"><c:out value="${template.name}"/></option></c:forEach></select></label><label><span>邮件通道</span><select name="provider"><c:forEach items="${senderSettings}" var="setting"><option value="${setting.provider}"><c:out value="${providerAliases[setting.provider]}"/></option></c:forEach></select></label></div>
+                        <div class="form-grid"><label><span>UTM 来源（utm_source）</span><input name="utmSource" value="auw" maxlength="128" required><small class="field-note">默认 auw。</small></label><label><span>UTM 媒介（utm_medium）</span><input name="utmMedium" value="email" maxlength="128" required><small class="field-note">默认 email。</small></label></div>
+                        <div class="form-grid"><label><span>UTM 活动（utm_campaign）</span><input name="utmCampaign" maxlength="255" placeholder="留空时使用自动营销名称"><small class="field-note">可选；留空时使用自动营销名称。</small></label><label><span>UTM 内容（utm_content）</span><input name="utmContent" maxlength="255" placeholder="留空时按链接自动生成"><small class="field-note">可选；留空时按链接自动生成。</small></label></div>
                         <div class="form-grid"><label><span>发件身份</span><input id="automation-sender-preview" readonly></label><label><span>优惠券动作</span><select name="couponMode"><option value="NONE">不使用优惠券</option><option value="FIXED_CODE">使用固定优惠码</option></select></label></div>
                         <div class="form-grid automation-discount-row" data-automation-discount-row hidden>
                             <label><span>搜索优惠券</span><div class="inline-search"><input type="search" data-automation-discount-search placeholder="输入优惠码或名称"><button class="action-button" type="button" data-automation-discount-search-button><i class="fa fa-search"></i><span>搜索</span></button></div></label>
@@ -150,7 +160,8 @@
                         <dl class="automation-detail-grid"><div><dt>名称</dt><dd data-automation-detail="name"></dd></div><div><dt>状态</dt><dd data-automation-detail="status"></dd></div><div><dt>旅程类型</dt><dd data-automation-detail="journeyType"></dd></div><div><dt>触发事件</dt><dd data-automation-detail="triggerEvent"></dd></div><div><dt>等待时间</dt><dd data-automation-detail="waitMinutes"></dd></div><div><dt>同一客户频控</dt><dd data-automation-detail="frequencyDays"></dd></div><div><dt>邮件模板</dt><dd data-automation-detail="templateName"></dd></div><div><dt>邮件通道</dt><dd data-automation-detail="provider"></dd></div><div><dt>发件邮箱</dt><dd data-automation-detail="sender"></dd></div><div><dt>优惠券</dt><dd data-automation-detail="discountSourceId"></dd></div><div><dt>购买后退出</dt><dd data-automation-detail="exitOnPurchase"></dd></div></dl>
                         <div class="automation-metric-grid" data-automation-metrics></div>
                         <section class="automation-ga4-panel" data-automation-ga4>
-                            <div class="section-heading"><div><h3>GA4 自动营销购买评估</h3><p>按 utm_source=auw、utm_medium=email 和当前自动营销 ID 汇总</p></div><span class="status-pill neutral" data-automation-ga4-status></span></div>
+                            <div class="section-heading"><div><h3>GA4 自动营销购买评估</h3><p>按当前自动营销配置的 UTM 参数和规则 ID 汇总</p></div><span class="status-pill neutral" data-automation-ga4-status></span></div>
+                            <div class="ga4-utm-parameters" aria-label="当前自动营销 UTM 配置"><div><span>UTM 来源</span><code data-automation-utm-source>auw</code></div><div><span>UTM 媒介</span><code data-automation-utm-medium>email</code></div><div><span>UTM 活动</span><code data-automation-utm-campaign></code></div><div><span>UTM 内容</span><code data-automation-utm-content>按链接自动生成</code></div></div>
                             <p class="form-hint" data-automation-ga4-message></p>
                             <div class="campaign-kpi-grid ga4-campaign-kpis" data-automation-ga4-metrics hidden>
                                 <article><span>GA4 购买次数</span><strong data-automation-ga4-count></strong><small>自动营销级评估</small></article>
@@ -159,6 +170,14 @@
                             </div>
                             <p class="form-hint">该指标独立于上方的 Shopify 订单转化数据。</p>
                         </section>
+                        <form class="campaign-filter-form" data-automation-filter>
+                            <input name="q" placeholder="客户姓名、邮箱或 ID">
+                            <select name="provider"><option value="ALL">全部通道</option><c:forEach items="${senderSettings}" var="setting"><option value="${setting.provider}"><c:out value="${providerAliases[setting.provider]}"/></option></c:forEach></select>
+                            <select name="lifecycle"><option value="ALL">全部状态</option><option value="PENDING">待处理</option><option value="ACCEPTED">已接受</option><option value="DELIVERED">已送达</option><option value="OPENED">已打开</option><option value="CLICKED">已点击</option><option value="CONVERTED">已下单</option><option value="FAILED">失败</option><option value="BOUNCED">退信</option></select>
+                            <button class="action-button" type="submit" data-automation-query><i class="fa fa-search"></i>查询</button>
+                            <c:if test="${canExportCustomerData}"><button class="action-button" type="button" data-automation-export disabled title="请先执行查询"><i class="fa fa-file-excel-o"></i>导出查询结果</button></c:if>
+                        </form>
+                        <c:if test="${canExportCustomerData}"><details class="campaign-export-panel" data-automation-export-panel><summary class="campaign-export-heading"><div><strong>Excel 导出任务</strong><span>导出当前查询条件匹配的全部数据，文件保留 7 天</span></div><i class="fa fa-angle-down" aria-hidden="true"></i></summary><div class="campaign-export-list" data-automation-export-list aria-live="polite"><div class="campaign-export-empty">尚未提交导出任务</div></div></details></c:if>
                         <div class="table-wrap automation-detail-table-wrap"><table class="status-table automation-detail-table"><thead><tr><th>客户</th><th>触发时间</th><th>计划发送</th><th>实际发送</th><th>通道</th><th>接受/送达</th><th>打开/点击</th><th>订单/金额</th><th>状态</th></tr></thead><tbody data-automation-detail-rows></tbody></table></div>
                         <div class="empty-state compact" data-automation-detail-empty hidden><i class="fa fa-inbox"></i><strong>暂无客户旅程</strong></div>
                         <div class="pagination-bar automation-detail-pagination"><button class="action-button" type="button" data-automation-detail-page="previous">上一页</button><span data-automation-detail-page-label></span><button class="action-button" type="button" data-automation-detail-page="next">下一页</button></div>
@@ -173,7 +192,7 @@
         </c:otherwise>
     </c:choose>
     <script src="${ctx}/shopify/js/customer-timeline.js?v=20260925-p130"></script>
-    <script src="${ctx}/shopify/js/automations.js?v=20260927-customer-timeline"></script>
+    <script src="${ctx}/shopify/js/automations.js?v=20261004-recipient-export"></script>
 </main>
 </div>
 </body>

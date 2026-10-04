@@ -31,7 +31,7 @@ yskj:
     name: Shopify营销外挂页面
     homepage: REPLACE_WITH_PUBLIC_WEB_URL
     mainpage: /dashboard
-    noFilters: /health,/runstate
+    noFilters: /health,/runstate,/campaigns/test-unsubscribe,/campaigns/test-unsubscribe/one-click
     ssoenable: 1
     gatewayservice:
     multipleAuthentication: 0

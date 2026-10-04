@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @Component
 public class CustomerImportTransferClient {
     private static final String DEFAULT_ALLOWED_HOSTS =
-            "localhost,127.0.0.1";
+            "localhost,127.0.0.1,admin.didalinkin.com,send.didalinkin.com";
     private static final ProxySelector DIRECT_CONNECTION = new ProxySelector() {
         @Override
         public List<Proxy> select(URI uri) {
@@ -120,6 +120,28 @@ public class CustomerImportTransferClient {
                 request, HttpResponse.BodyHandlers.ofInputStream());
         if (response.statusCode() != 200) {
             response.body().close(); throw new IOException("下载导入结果失败: HTTP " + response.statusCode());
+        }
+        return response;
+    }
+
+    public HttpResponse<InputStream> downloadCampaignExport(String jobId, String token)
+            throws IOException, InterruptedException {
+        return downloadCampaignExport("", "", jobId, token);
+    }
+
+    public HttpResponse<InputStream> downloadCampaignExport(
+            String serverId, String transferBaseUrl, String jobId, String token)
+            throws IOException, InterruptedException {
+        URI target = target(serverId, transferBaseUrl);
+        HttpRequest request = HttpRequest.newBuilder(target.resolve(
+                        target.getPath() + "/internal/campaign-recipient-exports/" + jobId))
+                .timeout(Duration.ofMinutes(10))
+                .header("X-Campaign-Export-Token", token).GET().build();
+        HttpResponse<InputStream> response = http(target).send(
+                request, HttpResponse.BodyHandlers.ofInputStream());
+        if (response.statusCode() != 200) {
+            response.body().close();
+            throw new IOException("下载活动收件人导出文件失败: HTTP " + response.statusCode());
         }
         return response;
     }

@@ -69,7 +69,7 @@
             var height = point.orders / orderMax * 218;
             var bar = element('rect', { x: x(index) - width / 2, y: 258 - height, width: width,
                 height: height, rx: 2, 'class': 'report-order-bar' });
-            bar.appendChild(element('title', {}, point.label + ' · 订单 ' + point.orders.toLocaleString()));
+            bar.appendChild(element('title', {}, point.label + ' · 归因订单 ' + point.orders.toLocaleString()));
             svg.appendChild(bar);
         });
         line(svg, 'revenue', moneyMax, colors.revenue);

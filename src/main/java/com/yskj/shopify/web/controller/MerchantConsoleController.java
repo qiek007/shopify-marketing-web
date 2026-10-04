@@ -126,6 +126,13 @@ public class MerchantConsoleController {
         return view("stores.load", params, session, model, redirect);
     }
 
+    @GetMapping("/stores/quota/history")
+    public String storeQuotaHistory(@RequestParam MultiValueMap<String, String> params,
+                                    HttpSession session, Model model,
+                                    RedirectAttributes redirect) {
+        return view("store-quota.history", params, session, model, redirect);
+    }
+
     @GetMapping("/settings/ga4")
     public String ga4Settings(@RequestParam MultiValueMap<String, String> params,
                               HttpSession session, Model model, RedirectAttributes redirect) {
@@ -505,6 +512,13 @@ public class MerchantConsoleController {
         return view("campaigns.save", params, session, model, redirect);
     }
 
+    @PostMapping("/campaigns/test-send")
+    public String sendCampaignTest(@RequestParam MultiValueMap<String, String> params,
+                                   HttpSession session, Model model,
+                                   RedirectAttributes redirect) {
+        return view("campaigns.test-send", params, session, model, redirect);
+    }
+
     @GetMapping("/campaigns/editor")
     public String campaignEditor(@RequestParam MultiValueMap<String, String> params,
                                  HttpSession session, Model model, RedirectAttributes redirect) {
@@ -521,6 +535,73 @@ public class MerchantConsoleController {
     public String campaignRecipients(@RequestParam MultiValueMap<String, String> params,
                                      HttpSession session, Model model, RedirectAttributes redirect) {
         return view("campaigns.recipients", params, session, model, redirect);
+    }
+
+    @PostMapping("/campaigns/detail/recipients/export")
+    public String requestCampaignRecipientExport(
+            @RequestParam MultiValueMap<String, String> params,
+            HttpSession session, Model model, RedirectAttributes redirect) {
+        return view("campaigns.recipient-export.request", params, session, model, redirect);
+    }
+
+    @GetMapping(value = "/campaigns/detail/recipients/exports",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> campaignRecipientExports(
+            @RequestParam MultiValueMap<String, String> params, HttpSession session) {
+        return body("campaigns.recipient-exports", params, session, null);
+    }
+
+    @GetMapping("/campaigns/detail/recipients/export/download")
+    public ResponseEntity<StreamingResponseBody> campaignRecipientExportDownload(
+            @RequestParam MultiValueMap<String, String> params, HttpSession session) {
+        if (customerImportTransfer == null) throw new ResponseStatusException(
+                HttpStatus.SERVICE_UNAVAILABLE, "活动收件人导出传输服务未配置");
+        try {
+            LoginedUser user = requireUser(session);
+            JSONObject ticket = campaignRecipientExportDownloadTicket(params, user);
+            java.net.http.HttpResponse<java.io.InputStream> remote;
+            try {
+                remote = customerImportTransfer.downloadCampaignExport(
+                        ticket.getString("serverId"), ticket.getString("transferBaseUrl"),
+                        ticket.getString("jobId"), ticket.getString("token"));
+            } catch (IOException firstFailure) {
+                ticket = campaignRecipientExportDownloadTicket(params, user);
+                remote = customerImportTransfer.downloadCampaignExport(
+                        ticket.getString("serverId"), ticket.getString("transferBaseUrl"),
+                        ticket.getString("jobId"), ticket.getString("token"));
+            }
+            JSONObject resolvedTicket = ticket;
+            java.net.http.HttpResponse<java.io.InputStream> resolvedRemote = remote;
+            StreamingResponseBody stream = output -> {
+                try (var input = resolvedRemote.body()) { input.transferTo(output); }
+            };
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                            .filename(resolvedTicket.getString("filename"), StandardCharsets.UTF_8)
+                            .build().toString())
+                    .contentLength(resolvedTicket.getLongValue("sizeBytes")).body(stream);
+        } catch (IOException | InterruptedException failure) {
+            if (failure instanceof InterruptedException) Thread.currentThread().interrupt();
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "无法下载活动收件人导出文件", failure);
+        }
+    }
+
+    @PostMapping("/campaigns/detail/recipients/export/delete")
+    public String deleteCampaignRecipientExport(
+            @RequestParam MultiValueMap<String, String> params,
+            HttpSession session, Model model, RedirectAttributes redirect) {
+        return view("campaigns.recipient-export.delete", params, session, model, redirect);
+    }
+
+    private JSONObject campaignRecipientExportDownloadTicket(
+            MultiValueMap<String, String> params, LoginedUser user) {
+        JSONObject response = MerchantWebProtocol.validateResponse(client.exchange(
+                "campaigns.recipient-export.download", user, params.getFirst("shop"),
+                parameters(params), null));
+        return response.getJSONObject("body");
     }
 
     @GetMapping("/campaigns/detail/customer")
@@ -614,6 +695,73 @@ public class MerchantConsoleController {
     public ResponseEntity<?> automationDetail(@RequestParam MultiValueMap<String, String> params,
                                               HttpSession session) {
         return body("automations.detail", params, session, null);
+    }
+
+    @PostMapping(value = "/automations/detail/recipients/export",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> requestAutomationRecipientExport(
+            @RequestParam MultiValueMap<String, String> params, HttpSession session) {
+        return body("automations.recipient-export.request", params, session, null);
+    }
+
+    @GetMapping(value = "/automations/detail/recipients/exports",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> automationRecipientExports(
+            @RequestParam MultiValueMap<String, String> params, HttpSession session) {
+        return body("automations.recipient-exports", params, session, null);
+    }
+
+    @GetMapping("/automations/detail/recipients/export/download")
+    public ResponseEntity<StreamingResponseBody> automationRecipientExportDownload(
+            @RequestParam MultiValueMap<String, String> params, HttpSession session) {
+        if (customerImportTransfer == null) throw new ResponseStatusException(
+                HttpStatus.SERVICE_UNAVAILABLE, "自动营销旅程导出传输服务未配置");
+        try {
+            LoginedUser user = requireUser(session);
+            JSONObject ticket = automationRecipientExportDownloadTicket(params, user);
+            java.net.http.HttpResponse<java.io.InputStream> remote;
+            try {
+                remote = customerImportTransfer.downloadCampaignExport(
+                        ticket.getString("serverId"), ticket.getString("transferBaseUrl"),
+                        ticket.getString("jobId"), ticket.getString("token"));
+            } catch (IOException firstFailure) {
+                ticket = automationRecipientExportDownloadTicket(params, user);
+                remote = customerImportTransfer.downloadCampaignExport(
+                        ticket.getString("serverId"), ticket.getString("transferBaseUrl"),
+                        ticket.getString("jobId"), ticket.getString("token"));
+            }
+            JSONObject resolvedTicket = ticket;
+            java.net.http.HttpResponse<java.io.InputStream> resolvedRemote = remote;
+            StreamingResponseBody stream = output -> {
+                try (var input = resolvedRemote.body()) { input.transferTo(output); }
+            };
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                            .filename(resolvedTicket.getString("filename"), StandardCharsets.UTF_8)
+                            .build().toString())
+                    .contentLength(resolvedTicket.getLongValue("sizeBytes")).body(stream);
+        } catch (IOException | InterruptedException failure) {
+            if (failure instanceof InterruptedException) Thread.currentThread().interrupt();
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "无法下载自动营销旅程导出文件", failure);
+        }
+    }
+
+    @PostMapping(value = "/automations/detail/recipients/export/delete",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> deleteAutomationRecipientExport(
+            @RequestParam MultiValueMap<String, String> params, HttpSession session) {
+        return body("automations.recipient-export.delete", params, session, null);
+    }
+
+    private JSONObject automationRecipientExportDownloadTicket(
+            MultiValueMap<String, String> params, LoginedUser user) {
+        JSONObject response = MerchantWebProtocol.validateResponse(client.exchange(
+                "automations.recipient-export.download", user, params.getFirst("shop"),
+                parameters(params), null));
+        return response.getJSONObject("body");
     }
 
     @PostMapping("/automations/update")

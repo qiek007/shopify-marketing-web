@@ -122,8 +122,8 @@
                         EMAIL_OPENED: ['打开日期范围', '（按邮件打开时间筛选，可能受邮件隐私代理影响）'],
                         EMAIL_CLICKED: ['点击日期范围', '（按链接点击时间筛选）'],
                         EMAIL_FAILED: ['失败日期范围', '（按发送失败、拒绝或退信时间筛选）'],
-                        EMAIL_DELIVERED_NOT_OPENED: ['送达日期范围', '（最近送达邮件超过 48 小时仍未打开）'],
-                        EMAIL_OPENED_NOT_CLICKED: ['打开日期范围', '（最近打开邮件超过 24 小时仍未点击）']
+                        EMAIL_DELIVERED_NOT_OPENED: ['送达日期范围', '（最近送达邮件仍未打开）'],
+                        EMAIL_OPENED_NOT_CLICKED: ['打开日期范围', '（最近打开邮件仍未点击）']
                     };
                     var selected = descriptions[activitySelect.value]
                         || ['最近活动日期范围', '（按最近活动时间筛选，无活动记录时按客户资料更新时间）'];

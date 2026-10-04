@@ -1358,7 +1358,11 @@
                         天内保持登录</label>
                     <a class="text-link" href="#" data-toast="请联系企业管理员重置密码">忘记密码？</a>
                 </div>
-
+                <div class="form-options">
+                    <label style="color: red;">
+                        ${errstr}
+                    </label>
+                </div>
                 <div class="agreement-row">
                     <input id="agreement" type="checkbox" required aria-describedby="agreementError"/>
                     <label for="agreement">我已阅读并同意 <a
