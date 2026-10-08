@@ -693,6 +693,153 @@
             margin-top: 0;
         }
 
+        .policy-dialog {
+            width: min(820px, calc(100vw - 32px));
+            max-height: min(88vh, 880px);
+            padding: 0;
+            overflow: hidden;
+            border: 1px solid rgba(125, 139, 131, .34);
+            border-radius: 12px;
+            background: #fffefa;
+            color: var(--ink);
+            box-shadow: 0 34px 90px rgba(6, 23, 19, .28), 0 8px 24px rgba(8, 63, 145, .12);
+        }
+
+        .policy-dialog::backdrop {
+            background: rgba(5, 17, 14, .64);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .policy-dialog-shell {
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            max-height: min(88vh, 880px);
+        }
+
+        .policy-dialog-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+            padding: 24px 28px 20px;
+            border-bottom: 1px solid var(--line);
+            background: linear-gradient(120deg, rgba(0, 200, 135, .08), rgba(11, 114, 208, .06));
+        }
+
+        .policy-dialog-header h2 {
+            margin: 4px 0 0;
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .policy-dialog-meta {
+            margin: 8px 0 0;
+            color: var(--ink-soft);
+            font-size: 12px;
+        }
+
+        .policy-dialog-close {
+            flex: 0 0 auto;
+            width: 36px;
+            height: 36px;
+            display: inline-grid;
+            place-items: center;
+            padding: 0;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .82);
+            color: var(--ink-soft);
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .policy-dialog-close:hover,
+        .policy-dialog-close:focus-visible {
+            border-color: var(--focus);
+            color: var(--signal-dark);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 126, 90, .1);
+        }
+
+        .policy-dialog-body {
+            overflow-y: auto;
+            padding: 24px 30px 30px;
+            overscroll-behavior: contain;
+        }
+
+        .policy-dialog-body .policy-summary {
+            margin: 0 0 22px;
+            padding: 16px 18px;
+            border-left: 3px solid var(--signal);
+            background: #f3f8f5;
+            color: #46504a;
+            font-size: 14px;
+            line-height: 1.75;
+        }
+
+        .policy-dialog-body section + section {
+            margin-top: 24px;
+        }
+
+        .policy-dialog-body h3 {
+            margin: 0 0 9px;
+            color: #1f2723;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .policy-dialog-body p,
+        .policy-dialog-body li {
+            color: #515a55;
+            font-size: 14px;
+            line-height: 1.82;
+        }
+
+        .policy-dialog-body p {
+            margin: 8px 0 0;
+        }
+
+        .policy-dialog-body ul {
+            margin: 8px 0 0;
+            padding-left: 1.4em;
+        }
+
+        .policy-dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding: 16px 28px;
+            border-top: 1px solid var(--line);
+            background: #fafaf6;
+        }
+
+        .policy-dialog-confirm {
+            min-width: 112px;
+            min-height: 42px;
+            padding: 0 20px;
+            border: 0;
+            border-radius: 5px;
+            background: linear-gradient(110deg, #073d30, #007b57 48%, #0b72d0);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 9px 22px rgba(0, 95, 72, .18);
+        }
+
+        @media (max-width: 640px) {
+            .policy-dialog-header {
+                padding: 20px 20px 16px;
+            }
+
+            .policy-dialog-body {
+                padding: 20px;
+            }
+
+            .policy-dialog-footer {
+                padding: 14px 20px;
+            }
+        }
+
         .button-spinner {
             width: 16px;
             height: 16px;
@@ -1313,8 +1460,9 @@
                 <div class="field">
                     <div class="field-head"><label for="pass">密码</label></div>
                     <div class="field-wrap">
-                        <input class="pass-input" id="pass" name="pass" type="password" autocomplete="current-pass"
+                        <input class="pass-input" id="pass" type="password" autocomplete="current-password"
                                placeholder="请输入登录密码" aria-describedby="passError"/>
+                        <input id="encryptedPass" name="pass" type="hidden"/>
                         <button class="input-action" id="passToggle" type="button" tabindex="-1" aria-label="显示密码">
                             <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1366,10 +1514,8 @@
                 <div class="agreement-row">
                     <input id="agreement" type="checkbox" required aria-describedby="agreementError"/>
                     <label for="agreement">我已阅读并同意 <a
-                            href="https://test.didalinkin.com/privacy/UserAgreement.html" target="_blank" tabindex="-1"
-                            rel="noopener noreferrer">《用户协议》</a> 和 <a
-                            href="https://test.didalinkin.com/privacy/PrivacyPolicy.html" target="_blank" tabindex="-1"
-                            rel="noopener noreferrer">《隐私政策》</a></label>
+                            href="#user-agreement-dialog" data-policy-open="user-agreement-dialog">《用户协议》</a> 和 <a
+                            href="#privacy-policy-dialog" data-policy-open="privacy-policy-dialog">《隐私政策》</a></label>
                 </div>
                 <p class="agreement-error" id="agreementError" role="alert"></p>
                 <button class="submit-button" type="submit">
@@ -1384,11 +1530,188 @@
             <span>© 2026 滴答互动</span>
             <nav aria-label="辅助链接">
                 <a href="#" data-toast="帮助中心即将打开">帮助中心</a>
-                <a href="#" data-toast="隐私条款即将打开">隐私条款</a>
+                <a href="#privacy-policy-dialog" data-policy-open="privacy-policy-dialog">隐私条款</a>
             </nav>
         </footer>
     </section>
 </main>
+
+<dialog class="policy-dialog" id="user-agreement-dialog" aria-labelledby="user-agreement-title">
+    <div class="policy-dialog-shell">
+        <header class="policy-dialog-header">
+            <div>
+                <h2 id="user-agreement-title">《滴答互动用户协议》</h2>
+                <p class="policy-dialog-meta">更新及生效日期：2026 年 10 月 8 日</p>
+            </div>
+            <button class="policy-dialog-close" type="button" data-policy-close aria-label="关闭用户协议">×</button>
+        </header>
+        <article class="policy-dialog-body">
+            <p class="policy-summary">欢迎使用滴答互动客户运营与邮件营销服务。请您代表所属企业阅读并理解本协议，特别是数据合规、营销发送、责任限制和服务终止条款。勾选同意并登录，即表示您有权代表所属企业接受本协议。</p>
+
+            <section>
+                <h3>一、协议范围与主体</h3>
+                <p>本协议由使用滴答互动平台的企业、组织及其获授权人员（统称“用户”）与滴答互动平台运营方（“我们”）共同订立，适用于账户登录、店铺接入、客户管理、邮件模板、营销活动、自动营销、数据分析及相关技术服务。</p>
+                <p>如双方另行签署商务合同、数据处理协议或服务订单，约定不一致的，以双方另行签署的文件为准；未约定事项适用本协议。</p>
+            </section>
+
+            <section>
+                <h3>二、账号注册与使用</h3>
+                <ul>
+                    <li>用户应提供真实、准确、完整的信息，并确保操作人员获得所属企业合法授权。</li>
+                    <li>账号仅限授权人员使用。用户应妥善保管账号、密码和验证信息，不得出借、转让或与无关人员共享。</li>
+                    <li>用户发现账号被冒用、权限异常或数据泄露风险时，应立即停止相关操作并通过既有客服或商务渠道联系我们。</li>
+                    <li>通过用户账号完成的操作，在能够合理识别为授权操作的范围内，视为用户行为；因平台安全缺陷导致的除外。</li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>三、平台服务</h3>
+                <p>平台可提供店铺或自建站接入、客户资料管理、客户分群、模板管理、营销邮件和自动化任务、发送通道配置、额度管理、投递与互动统计等功能。具体功能、可用通道、额度和服务等级以用户界面、服务订单及实际开通内容为准。</p>
+                <p>第三方平台或服务（包括电商平台、邮件服务商、统计分析服务等）的可用性、接口规则和数据范围由相应第三方决定。我们会在合理范围内维护集成，但不对第三方自行变更、暂停或故障作不受限制的保证。</p>
+            </section>
+
+            <section>
+                <h3>四、营销内容与客户数据责任</h3>
+                <ul>
+                    <li>用户应确保上传、同步或使用的客户信息具有合法来源，并已取得发送营销信息所需的同意或具备其他合法处理依据。</li>
+                    <li>用户应保证邮件主题、正文、图片、链接、商品、优惠及发件身份真实、合法，不得发送欺诈、骚扰、侵权、违法或误导性内容。</li>
+                    <li>用户应尊重退订、拒绝营销和抑制名单状态，不得规避平台的退订、频控、黑名单或发送资格控制。</li>
+                    <li>用户不得导入非法获取的数据，不得利用平台买卖个人信息、实施未经授权的画像、歧视性决策或其他侵害个人权益的行为。</li>
+                    <li>因用户的数据来源、发送对象、营销内容或业务决定引发的投诉、索赔或监管责任，由用户依法承担；因平台未按约定处理数据造成的责任由我们依法承担。</li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>五、费用、额度与结算</h3>
+                <p>收费项目、邮件额度、有效期和结算方式以服务订单及平台记录为准。测试邮件、正式营销邮件及自动营销邮件可能消耗额度。因发送失败、退信、取消或重试产生的额度处理，以平台公示的计费规则和双方约定为准。</p>
+            </section>
+
+            <section>
+                <h3>六、知识产权与使用限制</h3>
+                <p>平台软件、界面、标识、文档及相关技术的知识产权归我们或合法权利人所有。用户保留其上传内容和业务数据的合法权益，并授予我们在提供服务所必需范围内处理这些内容和数据的权利。</p>
+                <p>未经书面许可，用户不得反向工程、恶意扫描、绕过权限或安全控制、干扰服务运行、批量获取非本企业数据，或以平台能力开发直接竞争的复制性服务。</p>
+            </section>
+
+            <section>
+                <h3>七、服务变更、中断与安全处置</h3>
+                <p>我们可为维护、安全、合规或产品改进进行升级，并尽可能提前通知可能产生重大影响的计划性变更。遇到攻击、重大故障、监管要求或明显违法风险时，我们可先行限制相关账号或任务，并在合理期限内说明情况。</p>
+            </section>
+
+            <section>
+                <h3>八、保密与数据安全</h3>
+                <p>双方应对在合作中知悉的商业秘密、技术资料和未公开业务数据承担保密义务。我们将采取与风险相适应的访问控制、传输保护、审计、备份和事件响应措施，并按照《隐私政策》及双方数据处理约定处理个人信息。</p>
+            </section>
+
+            <section>
+                <h3>九、违约与责任</h3>
+                <p>一方违反本协议造成对方损失的，应依法承担相应责任。对于不可抗力、用户自身网络或设备故障、以及非由我们控制的第三方服务异常，各方按照过错和实际影响承担责任。法律禁止限制或免除的责任不受本条限制。</p>
+            </section>
+
+            <section>
+                <h3>十、期限与终止</h3>
+                <p>本协议自用户同意之日起生效。账号停用、合作终止或用户不再具备授权时，用户应停止使用服务。服务终止后，我们将按照法律规定、合同约定及数据保留规则处理或删除相关数据。</p>
+            </section>
+
+            <section>
+                <h3>十一、适用法律与争议解决</h3>
+                <p>本协议适用中华人民共和国法律。争议应先友好协商；协商不成的，任何一方可向依法有管辖权的人民法院提起诉讼。</p>
+            </section>
+
+            <section>
+                <h3>十二、联系我们</h3>
+                <p>如对账号、服务或本协议有疑问，请通过平台已公布的客服渠道、所属企业管理员或双方商务合同载明的联系方式联系我们。</p>
+            </section>
+        </article>
+        <footer class="policy-dialog-footer">
+            <button class="policy-dialog-confirm" type="button" data-policy-close>我已阅读</button>
+        </footer>
+    </div>
+</dialog>
+
+<dialog class="policy-dialog" id="privacy-policy-dialog" aria-labelledby="privacy-policy-title">
+    <div class="policy-dialog-shell">
+        <header class="policy-dialog-header">
+            <div>
+                <h2 id="privacy-policy-title">《滴答互动隐私政策》</h2>
+                <p class="policy-dialog-meta">更新及生效日期：2026 年 10 月 8 日</p>
+            </div>
+            <button class="policy-dialog-close" type="button" data-policy-close aria-label="关闭隐私政策">×</button>
+        </header>
+        <article class="policy-dialog-body">
+            <p class="policy-summary">本政策说明滴答互动平台如何处理登录用户信息及商户委托处理的客户数据。我们遵循合法、正当、必要、诚信、公开透明和最小范围原则，并采取与风险相适应的安全措施。</p>
+
+            <section>
+                <h3>一、适用范围与处理角色</h3>
+                <p>本政策适用于滴答互动网页端及相关服务。对于账号、登录、安全和服务管理信息，我们通常是个人信息处理者；对于商户上传、同步并用于客户运营的消费者信息，商户通常决定处理目的和方式，我们依据商户指令作为受托处理方提供技术服务。</p>
+            </section>
+
+            <section>
+                <h3>二、我们处理的信息</h3>
+                <ul>
+                    <li>账号与组织信息：用户名、姓名、企业或部门、角色权限、联系方式及账号状态。</li>
+                    <li>登录与安全信息：登录时间、IP 地址、浏览器和设备特征、验证码结果、操作日志及异常安全事件。登录密码在浏览器端加密后提交，我们不在登录页面保存明文密码。</li>
+                    <li>店铺与服务配置：店铺域名、接入状态、发件身份、发送通道、模板、活动、自动化规则、额度和系统配置。</li>
+                    <li>商户客户与交易数据：由商户合法提供或授权同步的客户资料、订阅状态、标签、订单、商品、互动行为、邮件投递和退订记录。</li>
+                    <li>支持与沟通信息：问题反馈、工单、沟通记录以及诊断服务所必需的信息。</li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>三、处理目的与方式</h3>
+                <p>我们为身份验证、权限控制、提供和维护服务、执行商户配置的营销任务、生成统计报告、保障安全、排查故障、履行合同和法定义务而处理上述信息。我们不会将商户客户数据用于与提供服务无关的独立营销。</p>
+            </section>
+
+            <section>
+                <h3>四、处理依据与商户责任</h3>
+                <p>我们依据订立或履行合同所必需、履行法定义务、取得同意或法律允许的其他情形处理个人信息。商户应负责向其客户履行告知义务、取得必要同意，并响应客户对其业务数据提出的权利请求；我们将在受托范围内提供协助。</p>
+            </section>
+
+            <section>
+                <h3>五、本地存储与类似技术</h3>
+                <p>登录页可在当前浏览器的本地存储中保存“已同意用户协议和隐私政策”的布尔状态，以便下次自动勾选。该记录不包含密码、客户数据或协议正文阅读轨迹。用户可通过取消勾选或清理浏览器站点数据移除该状态。</p>
+            </section>
+
+            <section>
+                <h3>六、委托处理、共享与第三方服务</h3>
+                <p>为提供服务，我们可能按照商户选择和配置使用云基础设施、邮件发送服务商、电商平台、统计分析服务及技术支持供应商。我们会限定处理目的和范围，并要求受托方采取安全措施。除取得授权、履行合同、法定义务或保护重大合法权益等法律允许情形外，我们不会向无关第三方提供个人信息。</p>
+            </section>
+
+            <section>
+                <h3>七、跨境处理</h3>
+                <p>如用户选择的邮件服务商、店铺平台或其他第三方涉及境外处理，我们将根据适用法律及双方约定采取相应合规措施。商户应结合其客户所在地、所选服务商和业务场景履行必要的告知、同意或评估义务。</p>
+            </section>
+
+            <section>
+                <h3>八、保存期限</h3>
+                <p>我们仅在实现处理目的、履行合同和法定义务所需的期限内保存信息。具体期限根据数据类型、商户配置、服务订单、审计及争议处理要求确定。期限届满后，我们将依法删除、匿名化，或停止除存储和必要安全保护之外的处理。</p>
+            </section>
+
+            <section>
+                <h3>九、安全保护</h3>
+                <p>我们采取身份鉴别、最小权限、传输与存储保护、日志审计、备份恢复、漏洞管理和事件响应等措施。发生可能影响个人权益的安全事件时，我们将依法采取补救措施并履行通知或报告义务。</p>
+            </section>
+
+            <section>
+                <h3>十、您的个人信息权利</h3>
+                <p>在适用法律规定的范围内，您有权知情、决定、限制或拒绝处理，并可请求查阅、复制、更正、补充、删除个人信息，撤回基于同意的授权，或注销账号。登录用户可通过所属企业管理员或平台客服提出请求；涉及商户客户数据时，我们会与相应商户协同处理。</p>
+            </section>
+
+            <section>
+                <h3>十一、未成年人保护</h3>
+                <p>本平台面向企业和经授权的工作人员，不以未成年人为目标用户。商户不得在缺乏合法依据或必要监护人同意的情况下，使用平台处理未成年人的个人信息。</p>
+            </section>
+
+            <section>
+                <h3>十二、政策更新与联系我们</h3>
+                <p>业务或法律规则发生重大变化时，我们会更新本政策，并通过页面提示或其他适当方式告知。若处理目的、方式或信息种类发生重大变化，我们将依法重新履行告知或取得同意。</p>
+                <p>如需行使个人信息权利、投诉或咨询，请通过平台已公布的客服渠道、所属企业管理员或双方商务合同载明的联系方式联系我们。我们将在核验身份后依法处理。</p>
+            </section>
+        </article>
+        <footer class="policy-dialog-footer">
+            <button class="policy-dialog-confirm" type="button" data-policy-close>我已阅读</button>
+        </footer>
+    </div>
+</dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
@@ -1399,6 +1722,7 @@
 <script>
     (() => {
         const pass = document.getElementById('pass');
+        const encryptedPass = document.getElementById('encryptedPass');
         const passToggle = document.getElementById('passToggle');
         const eyeIcon = document.getElementById('eyeIcon');
         const authcodeInput = document.getElementById('authcode');
@@ -1406,7 +1730,14 @@
         const authcodeCanvas = document.getElementById('authcodeCanvas');
         const authcodeContext = authcodeCanvas.getContext('2d');
         const authcodeChars = '0123456789';
+        const agreementStorageKey = 'dida.login.agreement.accepted.v1';
         let authcodeCode = '';
+
+        try {
+            agreement.checked = window.localStorage.getItem(agreementStorageKey) === 'true';
+        } catch (error) {
+            agreement.checked = false;
+        }
 
         function randomauthcodeCode() {
             return Array.from({length: 4}, () => authcodeChars[Math.floor(Math.random() * authcodeChars.length)]).join('');
@@ -1491,8 +1822,9 @@
 
         document.getElementById('userPanel').addEventListener('submit', (event) => {
             const user = document.getElementById('user');
+            const rawPassword = pass.value;
             const userValid = setError(user, user.value.trim() ? '' : '请输入账号');
-            const passValid = setError(pass, pass.value ? '' : '请输入密码');
+            const passValid = setError(pass, rawPassword ? '' : '请输入密码');
             const authcode = authcodeInput.value.trim();
             const authcodeValid = setError(authcodeInput, authcode ? '' : '请输入验证码');
             const agreementValid = setError(agreement, agreement.checked ? '' : '请先阅读并同意用户协议和隐私政策');
@@ -1505,13 +1837,16 @@
                 const pwRandom = "${PWRandom}";
                 if (!window.CryptoJS || pwRandom.length < authcode.length) throw new Error('Password encryption unavailable');
                 const randomcode = pwRandom.substring(0, pwRandom.length - authcode.length) + authcode;
-                pass.value = CryptoJS.AES.encrypt(pass.value, CryptoJS.enc.Utf8.parse(randomcode), {
+                encryptedPass.value = CryptoJS.AES.encrypt(rawPassword, CryptoJS.enc.Utf8.parse(randomcode), {
                     mode: CryptoJS.mode.ECB,
                     padding: CryptoJS.pad.Pkcs7
                 }).toString();
+                pass.value = '';
+                pass.type = 'password';
                 authcodeInput.value = authcode;
             } catch (error) {
                 event.preventDefault();
+                encryptedPass.value = '';
                 setError(pass, '密码加密失败，请刷新页面后重试');
                 return;
             }
@@ -1528,6 +1863,28 @@
 
         agreement.addEventListener('change', () => {
             setError(agreement, agreement.checked ? '' : '请先阅读并同意用户协议和隐私政策');
+            try {
+                window.localStorage.setItem(agreementStorageKey, agreement.checked ? 'true' : 'false');
+            } catch (error) {
+                // 浏览器禁止本地存储时，仍允许用户在当前页面手动选择。
+            }
+        });
+
+        document.querySelectorAll('[data-policy-open]').forEach((link) => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const dialog = document.getElementById(link.dataset.policyOpen);
+                if (dialog && typeof dialog.showModal === 'function') dialog.showModal();
+            });
+        });
+
+        document.querySelectorAll('.policy-dialog').forEach((dialog) => {
+            dialog.querySelectorAll('[data-policy-close]').forEach((button) => {
+                button.addEventListener('click', () => dialog.close());
+            });
+            dialog.addEventListener('click', (event) => {
+                if (event.target === dialog) dialog.close();
+            });
         });
 
         const toast = document.getElementById('toast');

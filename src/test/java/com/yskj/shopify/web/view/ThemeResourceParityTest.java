@@ -26,6 +26,38 @@ class ThemeResourceParityTest {
     }
 
     @Test
+    void loginKeepsAgreementChoiceWithoutRememberingThePassword() throws Exception {
+        String page = Files.readString(ROOT.resolve("WEB-INF/org/index.jsp"));
+
+        assertThat(page).contains(
+                "const agreementStorageKey = 'dida.login.agreement.accepted.v1'",
+                "window.localStorage.getItem(agreementStorageKey) === 'true'",
+                "window.localStorage.setItem(agreementStorageKey, agreement.checked ? 'true' : 'false')",
+                "id=\"encryptedPass\" name=\"pass\" type=\"hidden\"",
+                "encryptedPass.value = CryptoJS.AES.encrypt(rawPassword",
+                "pass.value = ''")
+                .doesNotContain("pass.value = CryptoJS.AES.encrypt");
+    }
+
+    @Test
+    void loginDisplaysDraftedUserAgreementAndPrivacyPolicyInAccessibleDialogs() throws Exception {
+        String page = Files.readString(ROOT.resolve("WEB-INF/org/index.jsp"));
+
+        assertThat(page).contains(
+                "data-policy-open=\"user-agreement-dialog\"",
+                "data-policy-open=\"privacy-policy-dialog\"",
+                "<dialog class=\"policy-dialog\" id=\"user-agreement-dialog\"",
+                "<dialog class=\"policy-dialog\" id=\"privacy-policy-dialog\"",
+                "《滴答互动用户协议》",
+                "账号注册与使用",
+                "营销内容与客户数据责任",
+                "《滴答互动隐私政策》",
+                "我们处理的信息",
+                "您的个人信息权利",
+                "data-policy-close");
+    }
+
+    @Test
     void customerImportKeepsAllControlsOnOneRowAndGivesTheTagMoreSpace() throws Exception {
         for (String theme : Set.of("shopify", "shopify-theme2")) {
             String css = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
