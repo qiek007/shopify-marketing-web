@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -204,8 +205,26 @@ class ThemeResourceParityTest {
 
             assertThat(page).contains("${canViewCustomers}", "${canViewCampaigns}",
                     "${canManageCustomers}", ">客户管理</span>", ">导入客户</span>",
-                    ">抑制名单</span>", "href=\"${ctx}/segments\"", ">邮件模板</span>",
+                    ">抑制名单</span>",
+                    "href=\"${ctx}/segments?shop=${selectedShop}\"", ">邮件模板</span>",
                     ">营销活动</span>", ">自动营销</span>");
+        }
+    }
+
+    @Test
+    void everyPrimaryNavigationLinkPreservesTheSelectedShop() throws Exception {
+        List<String> paths = List.of(
+                "dashboard", "stores", "customers", "customers/imports", "suppressions",
+                "segments", "templates", "campaigns", "automations", "reports", "products");
+
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            String navigation = Files.readString(ROOT.resolve("WEB-INF").resolve(theme)
+                    .resolve("fragments/navigation.jspf"));
+
+            for (String path : paths) {
+                assertThat(navigation).contains(
+                        "href=\"${ctx}/" + path + "?shop=${selectedShop}\"");
+            }
         }
     }
 
