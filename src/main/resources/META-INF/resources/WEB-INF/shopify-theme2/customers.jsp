@@ -29,6 +29,8 @@
                 </div>
                 <div class="customer-filter-range-grid">
                     <label class="customer-range-field"><span>累计有效订单金额</span><span class="customer-range-control"><input aria-label="累计有效订单金额下限" name="minSpent" type="number" min="0" step="0.01" value="<c:out value='${customerFilter.minSpent}'/>"><span class="range-separator">至</span><input aria-label="累计有效订单金额上限" name="maxSpent" type="number" min="0" step="0.01" value="<c:out value='${customerFilter.maxSpent}'/>"></span><small class="customer-filter-hint">未取消且处于有效财务状态的订单总金额</small></label>
+                    <label class="customer-range-field" data-behavior-count-filter hidden><span>行为总次数</span><span class="customer-range-control"><input aria-label="行为总次数下限" name="minBehaviorCount" type="number" min="0" step="1" value="<c:out value='${customerFilter.minBehaviorCount}'/>"><span class="range-separator">至</span><input aria-label="行为总次数上限" name="maxBehaviorCount" type="number" min="0" step="1" value="<c:out value='${customerFilter.maxBehaviorCount}'/>"></span><small class="customer-filter-hint">统计所选时间范围内发生的全部行为事件</small></label>
+                    <label class="customer-range-field" data-behavior-count-filter hidden><span data-behavior-unique-label>去重对象数</span><span class="customer-range-control"><input aria-label="去重对象数下限" name="minUniqueBehaviorCount" type="number" min="0" step="1" value="<c:out value='${customerFilter.minUniqueBehaviorCount}'/>"><span class="range-separator">至</span><input aria-label="去重对象数上限" name="maxUniqueBehaviorCount" type="number" min="0" step="1" value="<c:out value='${customerFilter.maxUniqueBehaviorCount}'/>"></span><small class="customer-filter-hint">邮件按邮件去重，商品行为按商品去重，订单按订单去重</small></label>
                 </div>
                 <div class="form-actions filter-actions"><span class="customer-bulk-actions" data-customer-bulk-actions hidden><c:if test="${canManageCustomers}"><button class="secondary-button customer-tag-add-action" type="button" data-customer-tag-add><i class="fa fa-tag"></i><span>添加标签</span></button><button class="secondary-button customer-tag-remove-action" type="button" data-customer-tag-remove><i class="fa fa-tag"></i><span>删除标签</span></button></c:if><c:if test="${canManageCampaigns}"><button class="secondary-button customer-segment-save-action" type="button" data-customer-segment-save><i class="fa fa-users"></i><span>保存为分群</span></button></c:if></span><button class="action-button" type="submit"><i class="fa fa-search"></i><span>查询</span></button><button class="secondary-button" type="button" data-customer-results-reset><i class="fa fa-eraser"></i><span>清空条件</span></button></div>
             </form>
@@ -74,6 +76,8 @@
                 var activitySelect = form ? form.querySelector('select[name="activity"]') : null;
                 var dateLabel = form ? form.querySelector('[data-customer-date-label]') : null;
                 var dateHint = form ? form.querySelector('[data-customer-date-hint]') : null;
+                var behaviorCountFields = form ? form.querySelectorAll('[data-behavior-count-filter]') : [];
+                var behaviorUniqueLabel = form ? form.querySelector('[data-behavior-unique-label]') : null;
                 var tagSummary = form ? form.querySelector('[data-customer-tag-summary]') : null;
                 var customerListDialog = document.getElementById('customer-list-dialog');
                 var customerListDialogBody = document.getElementById('customer-list-dialog-body');
@@ -129,6 +133,20 @@
                         || ['最近活动日期范围', '（按最近活动时间筛选，无活动记录时按客户资料更新时间）'];
                     dateLabel.textContent = selected[0];
                     dateHint.textContent = selected[1];
+                }
+
+                function updateBehaviorCountFilters() {
+                    if (!activitySelect) return;
+                    var countable = ['VIEWED','CARTED','ORDERED','EMAIL_DELIVERED','EMAIL_OPENED','EMAIL_CLICKED','EMAIL_FAILED'];
+                    var visible = countable.indexOf(activitySelect.value) >= 0;
+                    behaviorCountFields.forEach(function (field) {
+                        field.hidden = !visible;
+                        field.querySelectorAll('input').forEach(function (input) { input.disabled = !visible; });
+                    });
+                    if (!behaviorUniqueLabel) return;
+                    behaviorUniqueLabel.textContent = activitySelect.value === 'ORDERED' ? '去重订单数'
+                        : (activitySelect.value === 'VIEWED' || activitySelect.value === 'CARTED')
+                            ? '去重商品数' : '去重邮件数';
                 }
 
                 function loading() {
@@ -245,6 +263,12 @@
                     var from = lastSuccessfulQuery.get('fromDate');
                     var to = lastSuccessfulQuery.get('toDate');
                     if (from || to) parts.push('日期 ' + (from || '不限') + ' 至 ' + (to || '不限'));
+                    var minBehavior = lastSuccessfulQuery.get('minBehaviorCount');
+                    var maxBehavior = lastSuccessfulQuery.get('maxBehaviorCount');
+                    if (minBehavior || maxBehavior) parts.push('行为总次数 ' + (minBehavior || '不限') + ' 至 ' + (maxBehavior || '不限'));
+                    var minUnique = lastSuccessfulQuery.get('minUniqueBehaviorCount');
+                    var maxUnique = lastSuccessfulQuery.get('maxUniqueBehaviorCount');
+                    if (minUnique || maxUnique) parts.push('去重对象数 ' + (minUnique || '不限') + ' 至 ' + (maxUnique || '不限'));
                     return parts.length ? parts.join('；') : '全部客户';
                 }
 
@@ -355,7 +379,7 @@
                 form.addEventListener('change', function (event) {
                     lastSuccessfulQuery = null;
                     if (bulkActions) bulkActions.hidden = true;
-                    if (event.target.name === 'activity') updateDateDescription();
+                    if (event.target.name === 'activity') { updateDateDescription(); updateBehaviorCountFilters(); }
                     if (event.target.name !== 'tag') return;
                     if (event.target.checked && event.target.dataset.untagged === 'true') {
                         form.querySelectorAll('input[name="tag"]:not([data-untagged])').forEach(function (input) { input.checked = false; });
@@ -418,6 +442,7 @@
                 if (reset) reset.addEventListener('click', function () {
                     form.reset();
                     updateTagSummary();
+                    updateBehaviorCountFilters();
                     if (activeRequest) activeRequest.abort();
                     host.innerHTML = '<div class="empty-state compact"><i class="fa fa-search"></i><strong>等待查询</strong><span>未加载客户数据</span></div>';
                     if (bulkActions) bulkActions.hidden = true;
@@ -458,6 +483,7 @@
                 }
                 updateTagSummary();
                 updateDateDescription();
+                updateBehaviorCountFilters();
                 form.querySelectorAll('input[name="tag"]:not([data-untagged])').forEach(function (input) {
                     ensureTagChoice(input.value);
                 });

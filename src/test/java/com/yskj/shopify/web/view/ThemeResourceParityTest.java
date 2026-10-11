@@ -27,6 +27,18 @@ class ThemeResourceParityTest {
     }
 
     @Test
+    void campaignDetailSeparatesUnknownDeliveryResultsFromFailures() throws Exception {
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            String page = Files.readString(ROOT.resolve("WEB-INF").resolve(theme)
+                    .resolve("campaign-detail.jsp"));
+
+            assertThat(page).contains(
+                    "${campaignDetail.summary.unknown}",
+                    "summary.unknown + ' 结果未知'");
+        }
+    }
+
+    @Test
     void loginKeepsAgreementChoiceWithoutRememberingThePassword() throws Exception {
         String page = Files.readString(ROOT.resolve("WEB-INF/org/index.jsp"));
 
@@ -293,6 +305,81 @@ class ThemeResourceParityTest {
                 "[data-automation-utm-medium]",
                 "[data-automation-utm-campaign]",
                 "[data-automation-utm-content]");
+    }
+
+    @Test
+    void campaignViewsKeepSnapshotRefreshAndBuiltInCampaignMessage() throws Exception {
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            Path root = ROOT.resolve("WEB-INF").resolve(theme);
+            String detail = Files.readString(root.resolve("campaign-detail.jsp"));
+            String campaignEditor = Files.readString(root.resolve("campaign-editor.jsp"));
+            String templateEditor = Files.readString(root.resolve("template-editor.jsp"));
+
+            assertThat(detail).contains(
+                    "id=\"campaign-snapshot-refresh\"", "刷新冻结进度",
+                    "campaignSnapshotRefresh.addEventListener('click', refreshProgress)");
+            assertThat(campaignEditor).contains(
+                    "id=\"campaign-message\"", "活动文案",
+                    "variables.campaignMessage",
+                    "模板中插入 {{campaignMessage}} 后显示此内容");
+            assertThat(templateEditor).contains(
+                    "addVariableButton('campaignMessage')");
+        }
+    }
+
+    @Test
+    void campaignMessageAppearsImmediatelyBeforeTheContentParametersSection() throws Exception {
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            String page = Files.readString(ROOT.resolve("WEB-INF").resolve(theme)
+                    .resolve("campaign-editor.jsp"));
+
+            int audienceEnd = page.indexOf("</section>",
+                    page.indexOf("class=\"campaign-audience-tags\""));
+            int campaignMessage = page.indexOf("id=\"campaign-message\"");
+            int contentParameters = page.indexOf("class=\"campaign-personalization\"");
+
+            assertThat(audienceEnd).isGreaterThanOrEqualTo(0);
+            assertThat(campaignMessage).isGreaterThan(audienceEnd);
+            assertThat(contentParameters).isGreaterThan(campaignMessage);
+        }
+    }
+
+    @Test
+    void campaignContentParametersUseTheRequestedDesktopAndMobileLayout() throws Exception {
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            Path themeRoot = ROOT.resolve("WEB-INF").resolve(theme);
+            String page = Files.readString(themeRoot.resolve("campaign-editor.jsp"));
+            String styles = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
+
+            assertThat(page).contains(
+                    "活动名称 <span class=\"required-marker\" aria-hidden=\"true\">*</span>",
+                    "name=\"name\"", "required maxlength=\"255\"",
+                    "活动内容参数<span class=\"campaign-personalization-note\">"
+                            + "（审批通过后与客户资料一起冻结，发送时提交给邮件通道动态模板）</span>",
+                    "class=\"campaign-product-compose\"",
+                    "class=\"campaign-product-search-row\"",
+                    "class=\"campaign-discount-field\"");
+            int product = page.indexOf("class=\"campaign-product-picker\"");
+            int coupon = page.indexOf("class=\"campaign-discount-field\"");
+            int selected = page.indexOf("class=\"campaign-selected-products\"");
+            assertThat(coupon).isGreaterThan(product);
+            assertThat(selected).isGreaterThan(coupon);
+            assertThat(styles).contains(
+                    ".campaign-message-field { grid-template-columns: 1fr; }",
+                    ".campaign-audience-tags .checkbox-row > span { color:",
+                    "font-weight: 600;",
+                    "gap: 5px; font-size: 12px;",
+                    ".campaign-product-compose { display: grid;",
+                    "grid-template-areas: \"product selected\" \"coupon selected\";",
+                    ".campaign-product-picker { grid-area: product;",
+                    ".campaign-product-search-row { display: grid;",
+                    "grid-template-columns: auto minmax(0, 1fr);",
+                    "width: 100%;",
+                    ".campaign-discount-field { grid-area: coupon;",
+                    ".campaign-selected-products { grid-area: selected;",
+                    "grid-template-areas: \"product\" \"coupon\" \"selected\";",
+                    ".campaign-product-search-row { grid-template-columns: 1fr;");
+        }
     }
 
     private Set<String> views(String theme) throws Exception {

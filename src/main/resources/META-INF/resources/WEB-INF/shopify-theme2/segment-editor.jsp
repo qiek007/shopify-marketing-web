@@ -55,6 +55,7 @@
         </dialog>
         <c:remove var="rule"/><template id="segment-rule-template"><div class="segment-rule-row"><input type="hidden" name="ruleGroupIds" value="__GROUP_ID__"><select name="fields" aria-label="筛选字段"><%@ include file="fragments/segment-field-options.jspf" %></select><select name="operators" aria-label="比较条件"><%@ include file="fragments/segment-operator-options.jspf" %></select><input name="values" required aria-label="筛选值" placeholder="输入条件值"><button class="icon-button remove-rule" type="button" <c:if test="${not canManageCampaigns}">disabled hidden</c:if> title="删除条件"><i class="fa fa-trash"></i></button></div></template>
         <template id="segment-group-template"><section class="segment-rule-group" data-group-id="__GROUP_ID__"><header><div><strong>条件组</strong><span>组内关系</span></div><input type="hidden" name="groupIds" value="__GROUP_ID__"><button class="secondary-button add-group-rule" type="button" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-plus"></i>组内添加条件</button><select name="groupMatchModes" aria-label="组内关系"><option value="ALL" selected>全部满足（且）</option><option value="ANY">任一满足（或）</option></select><button class="icon-button remove-group" type="button" <c:if test="${not canManageCampaigns}">disabled hidden</c:if> title="删除条件组"><i class="fa fa-times"></i></button></header><div class="segment-group-rules"></div></section></template>
+<script src="${ctx}/shopify/js/segment-behavior-metric.js?v=20261011-p3"></script>
 <script>
 (function () {
     var groups = document.getElementById('segment-groups');
@@ -80,6 +81,8 @@
         var field = row.querySelector('select[name="fields"]');
         var operator = row.querySelector('select[name="operators"]');
         var value = row.querySelector('input[name="values"]');
+        if (window.SegmentBehaviorMetric
+                && window.SegmentBehaviorMetric.sync(row, field, operator, value)) return;
         var timeOperators = ['EXISTS','BEFORE','AFTER','ON_OR_AFTER'];
         var allowed = {
             ALL_CUSTOMERS:['EXISTS'], SEARCH_TEXT:['CONTAINS'],

@@ -80,6 +80,10 @@
                 </c:if>
                 <a id="campaign-detail-refresh" class="action-button" href="${campaignRefreshUrl}"
                    data-progress-url="${campaignProgressUrl}"><i class="fa fa-refresh"></i>刷新执行数据</a>
+                <button id="campaign-snapshot-refresh" class="action-button" type="button"
+                        data-campaign-send-gate="waiting"<c:if test="${not (campaignDetail.status eq 'APPROVED' && not campaignDetail.audienceReady)}"> hidden</c:if>>
+                    <i class="fa fa-refresh"></i>刷新冻结进度
+                </button>
                 <c:if test="${canManageCampaigns && (campaignDetail.status eq 'QUEUED' or campaignDetail.status eq 'RUNNING')}">
                     <form method="post" action="${ctx}/campaigns/action" data-campaign-active-control>
                         <input type="hidden" name="shop" value="${campaignDetail.shopDomain}">
@@ -217,7 +221,7 @@
 
         <section class="campaign-kpi-grid">
             <article><span>冻结受众</span><strong id="campaign-audience"><c:out value="${campaignDetail.summary.audience}"/></strong><small id="campaign-audience-note"><c:choose><c:when test="${campaignDetail.audienceReady}">审批后已固化</c:when><c:otherwise>已检查 <c:out value="${campaignDetail.snapshotProcessedCount}"/> 条候选记录</c:otherwise></c:choose></small></article>
-            <article><span>发送处理</span><strong id="campaign-send-progress"><c:out value="${campaignDetail.summary.progressPercent}"/>%</strong><small id="campaign-send-note"><c:out value="${campaignDetail.summary.accepted}"/> 接受 / <c:out value="${campaignDetail.summary.failed}"/> 失败</small></article>
+            <article><span>发送处理</span><strong id="campaign-send-progress"><c:out value="${campaignDetail.summary.progressPercent}"/>%</strong><small id="campaign-send-note"><c:out value="${campaignDetail.summary.accepted}"/> 接受 / <c:out value="${campaignDetail.summary.failed}"/> 失败 / <c:out value="${campaignDetail.summary.unknown}"/> 结果未知</small></article>
             <article><span>送达</span><strong id="campaign-delivered"><c:out value="${campaignDetail.summary.delivered}"/></strong><small id="campaign-delivery-note">打开 <c:out value="${campaignDetail.summary.openedRecipients}"/> 人 / <c:out value="${campaignDetail.summary.opened}"/> 次 · 点击 <c:out value="${campaignDetail.summary.clickedRecipients}"/> 人 / <c:out value="${campaignDetail.summary.clicked}"/> 次</small></article>
             <article><span>转化</span><strong id="campaign-orders"><c:out value="${campaignDetail.summary.orders}"/> 单</strong><small id="campaign-conversion-note"><c:out value="${campaignDetail.summary.convertedRecipients}"/> 位客户 · <c:out value="${campaignDetail.summary.netRevenue}"/></small></article>
             <article><span>风险反馈</span><strong id="campaign-risk"><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribed}"/></strong><small>退信 / 投诉 / 退订</small></article>
@@ -280,7 +284,7 @@
                 <input type="hidden" name="size" value="10">
                 <input name="q" value="${campaignFilter.search}" placeholder="客户姓名、邮箱或 ID">
                 <select name="provider"><option value="ALL">全部通道</option><c:forEach items="${campaignDetail.providers}" var="item"><option value="${item}" ${campaignFilter.provider eq item ? 'selected' : ''}><c:out value="${providerAliases[item]}"/></option></c:forEach></select>
-                <select name="lifecycle"><option value="ALL">全部状态</option><option value="PENDING" ${campaignFilter.lifecycle eq 'PENDING' ? 'selected' : ''}>待处理</option><option value="ACCEPTED" ${campaignFilter.lifecycle eq 'ACCEPTED' ? 'selected' : ''}>已接受</option><option value="DELIVERED" ${campaignFilter.lifecycle eq 'DELIVERED' ? 'selected' : ''}>已送达</option><option value="OPENED" ${campaignFilter.lifecycle eq 'OPENED' ? 'selected' : ''}>已打开</option><option value="CLICKED" ${campaignFilter.lifecycle eq 'CLICKED' ? 'selected' : ''}>已点击</option><option value="CONVERTED" ${campaignFilter.lifecycle eq 'CONVERTED' ? 'selected' : ''}>已下单</option><option value="FAILED" ${campaignFilter.lifecycle eq 'FAILED' ? 'selected' : ''}>失败</option><option value="BOUNCED" ${campaignFilter.lifecycle eq 'BOUNCED' ? 'selected' : ''}>退信</option></select>
+                <select name="lifecycle"><option value="ALL">全部状态</option><option value="PENDING" ${campaignFilter.lifecycle eq 'PENDING' ? 'selected' : ''}>待处理</option><option value="ACCEPTED" ${campaignFilter.lifecycle eq 'ACCEPTED' ? 'selected' : ''}>已接受</option><option value="DELIVERED" ${campaignFilter.lifecycle eq 'DELIVERED' ? 'selected' : ''}>已送达</option><option value="OPENED" ${campaignFilter.lifecycle eq 'OPENED' ? 'selected' : ''}>已打开</option><option value="CLICKED" ${campaignFilter.lifecycle eq 'CLICKED' ? 'selected' : ''}>已点击</option><option value="CONVERTED" ${campaignFilter.lifecycle eq 'CONVERTED' ? 'selected' : ''}>已下单</option><option value="FAILED" ${campaignFilter.lifecycle eq 'FAILED' ? 'selected' : ''}>失败</option><option value="BOUNCED" ${campaignFilter.lifecycle eq 'BOUNCED' ? 'selected' : ''}>退信</option><option value="UNSUBSCRIBED" ${campaignFilter.lifecycle eq 'UNSUBSCRIBED' ? 'selected' : ''}>退订</option><option value="COMPLAINT" ${campaignFilter.lifecycle eq 'COMPLAINT' ? 'selected' : ''}>投诉</option></select>
                 <button class="action-button" type="submit"><i class="fa fa-search"></i>查询</button>
                 <c:if test="${canExportCustomerData}"><button class="action-button campaign-export-button" type="submit" formaction="${ctx}/campaigns/detail/recipients/export" formmethod="post" data-campaign-recipient-export disabled title="请先执行查询"><i class="fa fa-file-excel-o"></i>导出查询结果</button></c:if>
             </form>
@@ -431,6 +435,7 @@
         }
 
         var refreshLink = document.getElementById('campaign-detail-refresh');
+        var campaignSnapshotRefresh = document.getElementById('campaign-snapshot-refresh');
         var autoRefresh = ${campaignDetail.snapshotBuilding
                 || campaignDetail.status eq 'PREPARING'
                 || campaignDetail.status eq 'SCHEDULED'
@@ -555,7 +560,8 @@
             setText('campaign-audience-note', progress.snapshotStatus === 'READY'
                     ? '审批后已固化' : '已检查 ' + progress.snapshotProcessedCount + ' 条候选记录');
             setText('campaign-send-progress', summary.progressPercent + '%');
-            setText('campaign-send-note', summary.accepted + ' 接受 / ' + summary.failed + ' 失败');
+            setText('campaign-send-note', summary.accepted + ' 接受 / ' + summary.failed
+                    + ' 失败 / ' + summary.unknown + ' 结果未知');
             setText('campaign-delivered', summary.delivered);
             setText('campaign-delivery-note', '打开 ' + summary.openedRecipients + ' 人 / ' + summary.opened + ' 次 · 点击 ' + summary.clickedRecipients + ' 人 / ' + summary.clicked + ' 次');
             setText('campaign-orders', summary.orders + ' 单');
@@ -573,6 +579,7 @@
             if (!refreshLink || refreshInFlight) return;
             refreshInFlight = true;
             refreshLink.classList.add('disabled');
+            if (campaignSnapshotRefresh) campaignSnapshotRefresh.disabled = true;
             fetch(refreshLink.dataset.progressUrl, {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' }
@@ -581,15 +588,18 @@
                 return response.json();
             }).then(applyProgress).catch(function () {
                 refreshLink.title = '刷新失败，请稍后重试';
+                if (campaignSnapshotRefresh) campaignSnapshotRefresh.title = '刷新失败，请稍后重试';
             }).finally(function () {
                 refreshInFlight = false;
                 refreshLink.classList.remove('disabled');
+                if (campaignSnapshotRefresh) campaignSnapshotRefresh.disabled = false;
                 scheduleRefresh();
             });
         }
 
         if (refreshLink) {
             refreshLink.addEventListener('click', refreshProgress);
+            if (campaignSnapshotRefresh) campaignSnapshotRefresh.addEventListener('click', refreshProgress);
             scheduleRefresh();
         }
 

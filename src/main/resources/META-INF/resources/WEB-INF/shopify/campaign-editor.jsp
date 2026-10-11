@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20260915-p92">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261010-p93">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -30,12 +30,21 @@
                         <input type="hidden" name="campaignId" value="${editorCampaign.campaignId}">
                         <input id="campaign-variables" type="hidden" name="campaignVariables" value="<c:out value='${editorCampaign.campaignVariablesJson}'/>">
                         <div class="form-grid three">
-                            <label><span>活动名称</span><input name="name" value="${editorCampaign.name}" required maxlength="255"></label>
+                            <label><span>活动名称 <span class="required-marker" aria-hidden="true">*</span></span><input name="name" value="${editorCampaign.name}" required maxlength="255"></label>
                             <label><span>邮件模板</span><select name="templateId" required><c:forEach items="${templates}" var="template"><option value="${template.templateId}" ${template.templateId eq editorCampaign.templateId ? 'selected' : ''}><c:out value="${template.name}"/></option></c:forEach></select></label>
                             <label><span>基础客户分群（可选）</span><select name="segmentId"><option value="">不使用动态分群</option><c:forEach items="${segments}" var="segment"><option value="${segment.segmentId}" ${segment.segmentId eq editorCampaign.segmentId ? 'selected' : ''}><c:out value="${segment.name}"/> · <c:out value="${segment.ruleSummary}"/></option></c:forEach></select></label>
                         </div>
                         <section class="campaign-audience-tags"><div class="form-grid three"><label><span>包含标签关系</span><select name="includeTagMode"><option value="ANY" ${editorCampaign.includeTagMode eq 'ANY' ? 'selected' : ''}>满足任意一个</option><option value="ALL" ${editorCampaign.includeTagMode eq 'ALL' ? 'selected' : ''}>必须拥有全部</option></select></label><div class="customer-tag-field"><span>包含标签（可选）</span><details class="customer-tag-select"><summary><span>包含标签（多选）</span><i class="fa fa-angle-down"></i></summary><div class="customer-tag-options"><c:forEach items="${customerTags}" var="tag"><label><input type="checkbox" name="includeTags" value="<c:out value='${tag}'/>" <c:if test="${editorCampaign.includeTags.contains(tag)}">checked</c:if>><span><c:out value="${tag}"/></span></label></c:forEach></div></details></div><div class="customer-tag-field"><span>排除标签（可选）</span><details class="customer-tag-select"><summary><span>排除标签（多选）</span><i class="fa fa-angle-down"></i></summary><div class="customer-tag-options"><c:forEach items="${customerTags}" var="tag"><label><input type="checkbox" name="excludeTags" value="<c:out value='${tag}'/>" <c:if test="${editorCampaign.excludeTags.contains(tag)}">checked</c:if>><span><c:out value="${tag}"/></span></label></c:forEach></div></details></div></div><label class="checkbox-row"><input type="checkbox" name="allCustomersConfirmed" value="true" <c:if test="${editorCampaign.allCustomersConfirmed}">checked</c:if>><span>未选择分群和标签时，明确确认向全部符合发送资格的客户发送</span></label></section>
-                        <section class="campaign-personalization"><div class="section-intro"><strong>活动内容参数</strong><span>审批通过后与客户资料一起冻结，发送时提交给邮件通道动态模板</span></div><div id="campaign-custom-variables" class="form-grid two"></div><div class="form-grid two"><div class="campaign-product-picker"><label for="campaign-product-search">关联商品（最多 12 个）</label><div class="field-with-action"><input id="campaign-product-search" placeholder="搜索当前店铺商品"><button id="campaign-product-search-button" type="button"><i class="fa fa-search"></i><span>搜索</span></button></div><select id="campaign-product" aria-label="选择关联商品"><option value="">选择商品后加入</option></select><div class="campaign-selected-products"><div class="selected-products-header"><strong>已选商品</strong><span id="selected-products-count" aria-live="polite">0 / 12</span></div><div id="campaign-selected-products" class="selected-products-list" role="list" aria-live="polite"></div></div><div id="campaign-product-inputs"><c:forEach items="${editorCampaign.productSourceIds}" var="productSourceId"><input type="hidden" name="productSourceIds" value="<c:out value='${productSourceId}'/>"></c:forEach></div></div><label><span>优惠券</span><div class="field-with-action"><input id="campaign-discount-search" placeholder="搜索有效优惠码"><button id="campaign-discount-search-button" type="button"><i class="fa fa-search"></i><span>搜索</span></button></div><select id="campaign-discount" name="discountSourceId"><option value="">不使用优惠券</option></select></label></div></section>
+                        <div class="form-grid two campaign-message-field"><label><span>活动文案</span><input id="campaign-message" maxlength="500" placeholder="填写本次活动的邮件文案"><small class="field-note">模板中插入 {{campaignMessage}} 后显示此内容。</small></label></div>
+                        <section class="campaign-personalization">
+                            <div class="section-intro"><strong>活动内容参数<span class="campaign-personalization-note">（审批通过后与客户资料一起冻结，发送时提交给邮件通道动态模板）</span></strong></div>
+                            <div id="campaign-custom-variables" class="form-grid two"></div>
+                            <div class="campaign-product-compose">
+                                <div class="campaign-product-picker"><div class="campaign-product-search-row"><label for="campaign-product-search">关联商品（最多 12 个）</label><div class="field-with-action"><input id="campaign-product-search" placeholder="搜索当前店铺商品"><button id="campaign-product-search-button" type="button"><i class="fa fa-search"></i><span>搜索</span></button></div></div><select id="campaign-product" aria-label="选择关联商品"><option value="">选择商品后加入</option></select><div id="campaign-product-inputs"><c:forEach items="${editorCampaign.productSourceIds}" var="productSourceId"><input type="hidden" name="productSourceIds" value="<c:out value='${productSourceId}'/>"></c:forEach></div></div>
+                                <label class="campaign-discount-field"><span>优惠券</span><div class="field-with-action"><input id="campaign-discount-search" placeholder="搜索有效优惠码"><button id="campaign-discount-search-button" type="button"><i class="fa fa-search"></i><span>搜索</span></button></div><select id="campaign-discount" name="discountSourceId"><option value="">不使用优惠券</option></select></label>
+                                <div class="campaign-selected-products"><div class="selected-products-header"><strong>已选商品</strong><span id="selected-products-count" aria-live="polite">0 / 12</span></div><div id="campaign-selected-products" class="selected-products-list" role="list" aria-live="polite"></div></div>
+                            </div>
+                        </section>
                         <div class="form-grid two"><label><span>UTM 来源（utm_source）</span><input name="utmSource" value="<c:out value='${editorCampaign.utmSource}'/>" maxlength="128" required><small class="field-note">用于邮件链接归因，默认 auw。</small></label><label><span>UTM 媒介（utm_medium）</span><input name="utmMedium" value="<c:out value='${editorCampaign.utmMedium}'/>" maxlength="128" required><small class="field-note">用于邮件链接归因，默认 email。</small></label></div>
                         <div class="form-grid two"><label><span>UTM 活动（utm_campaign）</span><input name="utmCampaign" value="<c:out value='${editorCampaign.utmCampaign}'/>" maxlength="255" placeholder="留空时使用活动名称"><small class="field-note">可选；留空时使用活动名称。</small></label><label><span>UTM 内容（utm_content）</span><input name="utmContent" value="<c:out value='${editorCampaign.utmContent}'/>" maxlength="255" placeholder="留空时按链接自动生成"><small class="field-note">可选；留空时按链接自动生成。</small></label></div>
                         <div class="form-grid two repeat-interval-field">
@@ -60,6 +69,14 @@
     var templateSelect = document.querySelector('[name="templateId"]');
     var variablesField = document.getElementById('campaign-variables');
     var variables = JSON.parse(variablesField.value || '{}');
+    var campaignMessageInput = document.getElementById('campaign-message');
+    campaignMessageInput.value = Object.prototype.hasOwnProperty.call(variables, 'campaignMessage')
+        ? variables.campaignMessage : '';
+    variables.campaignMessage = campaignMessageInput.value;
+    campaignMessageInput.addEventListener('input', function () {
+        variables.campaignMessage = campaignMessageInput.value;
+        variablesField.value = JSON.stringify(variables);
+    });
     var MAX_PRODUCTS = 12;
     var productInputHost = document.getElementById('campaign-product-inputs');
     var selectedProducts = Array.prototype.map.call(
@@ -79,6 +96,7 @@
         var host = document.getElementById('campaign-custom-variables');
         host.innerHTML = '';
         Object.keys(defaults || {}).forEach(function (name) {
+            if (name === 'campaignMessage') return;
             var label = document.createElement('label');
             var title = document.createElement('span'); title.textContent = variableLabels[name] || name;
             title.title = '{{' + name + '}}';
@@ -90,6 +108,7 @@
             });
             label.appendChild(title); label.appendChild(input); host.appendChild(label);
         });
+        variables.campaignMessage = campaignMessageInput.value;
         variablesField.value = JSON.stringify(variables);
         if (!host.children.length) host.innerHTML = '<p class="field-note">当前模板没有需要人工填写的自定义变量。</p>';
     }

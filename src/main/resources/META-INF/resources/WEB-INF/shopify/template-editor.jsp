@@ -188,7 +188,10 @@
         });
         document.querySelector('.custom-variable-control').before(button);
     }
-    Object.keys(customVariables).forEach(addVariableButton);
+    addVariableButton('campaignMessage');
+    Object.keys(customVariables).filter(function (name) {
+        return name !== 'campaignMessage';
+    }).forEach(addVariableButton);
     document.getElementById('add-custom-variable').addEventListener('click', function () {
         var nameInput = document.getElementById('custom-variable-name');
         var valueInput = document.getElementById('custom-variable-value');
@@ -198,7 +201,7 @@
         }
         customVariables[name] = valueInput.value;
         document.getElementById('custom-variables').value = JSON.stringify(customVariables);
-        addVariableButton(name);
+        if (name !== 'campaignMessage') addVariableButton(name);
         nameInput.value = ''; valueInput.value = '';
     });
     document.getElementById('template-form').addEventListener('submit', function (event) {
