@@ -88,7 +88,7 @@
 
   function renderTable(data) {
     body.replaceChildren();
-    data.days.forEach(function (day) {
+    data.days.slice().reverse().forEach(function (day) {
       var row = document.createElement('tr');
       appendCell(row, day.date);
       appendCell(row, integer.format(number(day.emailSentCount)));
@@ -216,7 +216,7 @@
     renderTable(data);
     exportLink.hidden = false;
     var notes = ['统计日按 ' + data.timeZone,
-      '邮件为服务商接受数；批量任务按批次完成日、旧模式按发送时间归集',
+      '邮件为服务商提交数；批量任务按请求开始日、旧模式按请求开始时间归集',
       'Shopify 金额为未取消订单总额，未扣退款；GA4 为本平台邮件活动购买收入，两者口径独立'];
     if (!data.shopifyOrdersAvailable) notes.push('当前店铺未接入 Shopify 订单，订单指标暂不可用');
     if (data.shopifyRevenueMixed) notes.push('Shopify 订单币种混合，订单金额不合计展示');

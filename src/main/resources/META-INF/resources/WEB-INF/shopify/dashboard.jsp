@@ -112,7 +112,7 @@
 
             </c:otherwise>
         </c:choose>
-        <script src="${ctx}/shopify/js/dashboard-trend.js?v=20260927-trend-details"></script>
+        <script src="${ctx}/shopify/js/dashboard-trend.js?v=20261012-submitted-count"></script>
     </main>
 </div>
 </body>
