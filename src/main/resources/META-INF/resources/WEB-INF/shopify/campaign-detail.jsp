@@ -60,9 +60,6 @@
                 <c:if test="${campaignDetail.status eq 'DRAFT' or campaignDetail.status eq 'PENDING_APPROVAL'}">
                     <a class="action-button" href="${ctx}/campaigns/editor?shop=${campaignDetail.shopDomain}&amp;campaignId=${campaignDetail.campaignId}"><i class="fa fa-pencil"></i>编辑活动</a>
                 </c:if>
-                <c:if test="${canManageCampaigns && (campaignDetail.status eq 'DRAFT' or campaignDetail.status eq 'PENDING_APPROVAL' or campaignDetail.status eq 'APPROVED')}">
-                    <a class="action-button" href="${ctx}/campaigns/editor?shop=${campaignDetail.shopDomain}&amp;campaignId=${campaignDetail.campaignId}#campaign-test-send"><i class="fa fa-flask"></i>发送测试邮件</a>
-                </c:if>
                 <c:if test="${campaignDetail.pendingApproval}">
                     <form method="post" action="${ctx}/campaigns/action">
                         <input type="hidden" name="shop" value="${campaignDetail.shopDomain}">
@@ -228,13 +225,15 @@
         </section>
 
         <section id="ga4-campaign-evaluation" class="content-section ga4-campaign-evaluation">
-            <div class="section-heading">
+            <details class="ga4-campaign-evaluation-details">
+            <summary class="section-heading ga4-campaign-evaluation-heading">
                 <div>
                     <h2>GA4 活动级购买评估</h2>
                     <p>按当前活动配置的 UTM 参数和活动 ID 汇总</p>
                 </div>
-                <span class="status-pill neutral"><c:out value="${campaignDetail.ga4Evaluation.statusDisplayName}"/></span>
-            </div>
+                <span class="ga4-campaign-evaluation-summary-status"><span class="status-pill neutral"><c:out value="${campaignDetail.ga4Evaluation.statusDisplayName}"/></span><i class="fa fa-chevron-down ga4-campaign-evaluation-toggle" aria-hidden="true"></i></span>
+            </summary>
+            <div class="ga4-campaign-evaluation-body">
             <div class="ga4-utm-parameters" aria-label="当前活动 UTM 配置">
                 <div><span>UTM 来源</span><code><c:out value="${campaignDetail.utmSource}"/></code></div>
                 <div><span>UTM 媒介</span><code><c:out value="${campaignDetail.utmMedium}"/></code></div>
@@ -261,6 +260,8 @@
                 </c:otherwise>
             </c:choose>
             <p class="form-hint">该指标独立于 Shopify 订单归因；订单、付款和退款仍以 Shopify 数据为准。</p>
+            </div>
+            </details>
         </section>
 
         <div class="campaign-detail-grid">
@@ -276,6 +277,19 @@
                 </c:otherwise></c:choose></div>
             </section>
         </div>
+
+        <section class="content-section spaced-section campaign-test-history">
+            <details class="campaign-test-history-details">
+            <summary class="section-heading"><div><h2>测试邮件明细</h2><p>仅可在编辑活动时发送测试邮件</p></div><i class="fa fa-chevron-down" aria-hidden="true"></i></summary>
+            <div class="campaign-test-history-body">
+            <c:choose><c:when test="${empty campaignTestSendHistory}">
+                <div class="empty-state compact"><i class="fa fa-envelope-o"></i><strong>暂无测试邮件记录</strong><span>保存活动后，可在编辑页面发送测试邮件。</span></div>
+            </c:when><c:otherwise>
+                <div class="campaign-test-history-scroll"><table class="status-table wide-table campaign-test-history-table"><thead><tr><th>测试时间</th><th>收件邮箱</th><th>邮件通道</th><th>发送状态</th><th>送达情况</th><th>发送/完成时间</th></tr></thead><tbody><c:forEach items="${campaignTestSendHistory}" var="testItem"><tr><td><time data-browser-time="<c:out value='${testItem.requestedAt}'/>" datetime="<c:out value='${testItem.requestedAt}'/>"><c:out value="${testItem.requestedAt}"/></time></td><td><c:out value="${testItem.recipientEmail}"/></td><td><c:out value="${providerAliases[testItem.provider]}"/></td><td><c:out value="${testItem.sendStatusDisplayName}"/><c:if test="${not empty testItem.lastErrorCode}"><small><c:out value="${testItem.lastErrorCode}"/></small></c:if></td><td><c:out value="${testItem.deliveryStatusDisplayName}"/><c:if test="${not empty testItem.deliveredAt}"><small><time data-browser-time="<c:out value='${testItem.deliveredAt}'/>" datetime="<c:out value='${testItem.deliveredAt}'/>"><c:out value="${testItem.deliveredAt}"/></time></small></c:if><c:if test="${not empty testItem.bouncedAt}"><small><time data-browser-time="<c:out value='${testItem.bouncedAt}'/>" datetime="<c:out value='${testItem.bouncedAt}'/>"><c:out value="${testItem.bouncedAt}"/></time></small></c:if></td><td><c:choose><c:when test="${not empty testItem.sentAt}"><time data-browser-time="<c:out value='${testItem.sentAt}'/>" datetime="<c:out value='${testItem.sentAt}'/>"><c:out value="${testItem.sentAt}"/></time></c:when><c:otherwise><time data-browser-time="<c:out value='${testItem.completedAt}'/>" datetime="<c:out value='${testItem.completedAt}'/>"><c:out value="${testItem.completedAt}" default="—"/></time></c:otherwise></c:choose></td></tr></c:forEach></tbody></table></div>
+            </c:otherwise></c:choose>
+            </div>
+            </details>
+        </section>
 
         <section class="content-section spaced-section">
             <div class="section-heading"><div><h2>收件人执行明细</h2><p>发送、送达、打开、点击和下单状态按用户归并显示</p></div><span class="section-count"><c:out value="${campaignDetail.summary.audience}"/> 人</span></div>
