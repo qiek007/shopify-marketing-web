@@ -542,6 +542,19 @@ body.shopify-console [hidden] { display: none !important; }
 .campaign-filter-form { display: grid; grid-template-columns: minmax(240px, 1fr) 180px 180px auto auto; gap: 9px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
 .campaign-filter-form input, .campaign-filter-form select { min-height: 36px; padding: 7px 9px; border: 1px solid #bcc7d1; border-radius: 4px; background: #fff; }
 .campaign-export-button { white-space: nowrap; }
+.campaign-test-history-details > summary { list-style: none; cursor: pointer; }
+.campaign-test-history-details > summary::-webkit-details-marker { display: none; }
+.campaign-test-history-details > summary:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+.campaign-test-history-details:not([open]) > summary { border-bottom: 0; }
+.campaign-test-history-details > summary > i { color: var(--muted); transition: transform .16s ease; }
+.campaign-test-history-details[open] > summary > i { transform: rotate(180deg); }
+.ga4-campaign-evaluation-details > summary { list-style: none; cursor: pointer; }
+.ga4-campaign-evaluation-details > summary::-webkit-details-marker { display: none; }
+.ga4-campaign-evaluation-details > summary:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+.ga4-campaign-evaluation-details:not([open]) > summary { border-bottom: 0; }
+.ga4-campaign-evaluation-summary-status { display: inline-flex; align-items: center; gap: 10px; }
+.ga4-campaign-evaluation-toggle { color: var(--muted); transition: transform .16s ease; }
+.ga4-campaign-evaluation-details[open] .ga4-campaign-evaluation-toggle { transform: rotate(180deg); }
 .campaign-export-panel { padding: 0; border-bottom: 1px solid var(--line); background: #f8fbfa; }
 .campaign-export-heading { display: flex; align-items: center; justify-content: space-between; margin: 0; padding: 14px 18px; cursor: pointer; list-style: none; }
 .campaign-export-heading::-webkit-details-marker { display: none; }

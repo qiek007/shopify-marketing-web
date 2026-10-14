@@ -39,6 +39,26 @@ class ThemeResourceParityTest {
     }
 
     @Test
+    void classicCampaignDetailShowsTestSendHistoryWithoutOfferingTestSending() throws Exception {
+        Path root = ROOT.resolve("WEB-INF/shopify");
+        String detail = Files.readString(root.resolve("campaign-detail.jsp"));
+        String editor = Files.readString(root.resolve("campaign-editor.jsp"));
+        String styles = Files.readString(ROOT.resolve("shopify/css/dashboard.css"));
+
+        assertThat(detail).contains("campaignTestSendHistory", "测试邮件明细",
+                        "仅可在编辑活动时发送测试邮件", "暂无测试邮件记录",
+                        "<details class=\"campaign-test-history-details\">",
+                        "<summary class=\"section-heading\">")
+                .doesNotContain("#campaign-test-send", "fa-flask",
+                        "action=\"${ctx}/campaigns/test-send\"", "name=\"recipients\"",
+                        "<details class=\"campaign-test-history-details\" open>");
+        assertThat(editor).contains("id=\"campaign-test-send\"",
+                "action=\"${ctx}/campaigns/test-send\"", "name=\"recipients\"");
+        assertThat(styles).contains(".campaign-test-history-details > summary",
+                ".campaign-test-history-details[open] > summary > i");
+    }
+
+    @Test
     void loginKeepsAgreementChoiceWithoutRememberingThePassword() throws Exception {
         String page = Files.readString(ROOT.resolve("WEB-INF/org/index.jsp"));
 
@@ -325,6 +345,22 @@ class ThemeResourceParityTest {
             assertThat(templateEditor).contains(
                     "addVariableButton('campaignMessage')");
         }
+    }
+
+    @Test
+    void classicCampaignDetailKeepsGa4EvaluationCollapsedByDefault() throws Exception {
+        Path root = ROOT.resolve("WEB-INF/shopify");
+        String campaign = Files.readString(root.resolve("campaign-detail.jsp"));
+        String styles = Files.readString(ROOT.resolve("shopify/css/dashboard.css"));
+
+        assertThat(campaign).contains(
+                        "<details class=\"ga4-campaign-evaluation-details\">",
+                        "<summary class=\"section-heading ga4-campaign-evaluation-heading\">",
+                        "campaignDetail.ga4Evaluation.statusDisplayName")
+                .doesNotContain(
+                        "<details class=\"ga4-campaign-evaluation-details\" open>");
+        assertThat(styles).contains(".ga4-campaign-evaluation-details > summary",
+                ".ga4-campaign-evaluation-details[open] .ga4-campaign-evaluation-toggle");
     }
 
     @Test
