@@ -34,8 +34,11 @@ class ThemeResourceParityTest {
     void classicCampaignEditorRefreshesTestSendHistoryWithoutReloadingTheForm()
             throws Exception {
         String source = Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-editor.jsp"));
+        String styles = Files.readString(ROOT.resolve("shopify/css/dashboard.css"));
 
         assertThat(source).contains(
+                "dashboard.css?v=20261016-campaign-editor-actions",
+                "class=\"campaign-test-history-heading\"",
                 "data-campaign-test-history-refresh",
                 "data-campaign-test-history-content",
                 "data-campaign-test-history-refresh-status",
@@ -45,6 +48,10 @@ class ThemeResourceParityTest {
                 "测试邮件状态已更新",
                 "刷新失败，请稍后重试")
                 .doesNotContain("window.location.reload()");
+        assertThat(styles).contains(
+                ".campaign-test-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }",
+                ".campaign-test-history-heading > strong",
+                ".campaign-test-history-heading > .form-actions");
     }
 
     @Test
@@ -69,6 +76,65 @@ class ThemeResourceParityTest {
                     "${campaignDetail.summary.unknown}",
                     "summary.unknown + ' 结果未知'");
         }
+    }
+
+    @Test
+    void classicCampaignDetailShowsDeliveryRateAndRiskCategoryCountsOnLoadAndRefresh()
+            throws Exception {
+        String page = Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-detail.jsp"));
+
+        assertThat(page).contains(
+                "id=\"campaign-delivery-rate\"",
+                "campaignDetail.summary.accepted gt 0 ? campaignDetail.summary.delivered * 100.0 / campaignDetail.summary.accepted : 0",
+                "id=\"campaign-risk-note\">退信 <c:out value=\"${campaignDetail.summary.bounced}\"/>",
+                "function deliveryRate(delivered, accepted)",
+                "setText('campaign-delivery-rate', '送达率 ' + deliveryRate(summary.delivered, summary.accepted)",
+                "setText('campaign-risk-note', '退信 ' + summary.bounced + ' / 投诉 '");
+    }
+
+    @Test
+    void classicCampaignDetailPreviewsAudienceOnlyBeforeApproval() throws Exception {
+        String page = Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-detail.jsp"));
+        String styles = Files.readString(ROOT.resolve("shopify/css/dashboard.css"));
+
+        assertThat(page).contains(
+                "canManageCampaigns && canViewCustomers",
+                "campaignDetail.status eq 'DRAFT' or campaignDetail.status eq 'PENDING_APPROVAL'",
+                "data-campaign-audience-preview-open",
+                "data-campaign-audience-preview-dialog",
+                "data-campaign-audience-preview-total",
+                "data-campaign-audience-preview-rows",
+                "data-campaign-audience-preview-previous",
+                "data-campaign-audience-preview-next",
+                "data-campaign-audience-preview-retry",
+                "/campaigns/detail/audience-preview",
+                "size: '50'",
+                "cache: 'no-store'",
+                "payload.message || '无法加载客户预览",
+                "这是当前时点预览，正式批准时会按最新客户数据重新冻结");
+        assertThat(styles).contains(
+                ".campaign-audience-preview-button",
+                ".campaign-audience-preview-dialog",
+                ".campaign-audience-preview-pagination");
+    }
+
+    @Test
+    void classicCampaignDetailOnlyShowsExecutionRefreshAfterExecutionStarts() throws Exception {
+        String page = Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-detail.jsp"));
+
+        assertThat(page).contains(
+                "var=\"showExecutionRefresh\"",
+                "campaignDetail.status eq 'QUEUED'",
+                "campaignDetail.status eq 'RUNNING'",
+                "campaignDetail.status eq 'PAUSED'",
+                "campaignDetail.status eq 'COMPLETED'",
+                "campaignDetail.status eq 'CANCELLED'",
+                "campaignDetail.status eq 'FAILED'",
+                "<c:if test=\"${showExecutionRefresh}\">",
+                "id=\"campaign-detail-refresh\"",
+                "var campaignProgressUrl = '${campaignProgressUrl}'",
+                "fetch(campaignProgressUrl",
+                "if (campaignSnapshotRefresh) campaignSnapshotRefresh.addEventListener");
     }
 
     @Test

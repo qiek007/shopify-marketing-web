@@ -625,6 +625,27 @@ public class MerchantConsoleController {
         return body("campaigns.progress", params, session, null);
     }
 
+    @GetMapping(value = "/campaigns/detail/audience-preview",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> campaignAudiencePreview(
+            @RequestParam MultiValueMap<String, String> params, HttpSession session) {
+        try {
+            ResponseEntity<?> response = body("campaigns.audience-preview", params, session, null);
+            return ResponseEntity.status(response.getStatusCode())
+                    .headers(response.getHeaders())
+                    .cacheControl(org.springframework.http.CacheControl.noStore())
+                    .body(response.getBody());
+        } catch (ResponseStatusException failure) {
+            JSONObject error = new JSONObject();
+            error.put("message", failure.getReason() == null
+                    ? "客户预览暂不可用，请稍后重试" : failure.getReason());
+            return ResponseEntity.status(failure.getStatus())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .cacheControl(org.springframework.http.CacheControl.noStore())
+                    .body(error);
+        }
+    }
+
     @GetMapping("/campaigns/preview")
     public ResponseEntity<?> campaignPreview(@RequestParam MultiValueMap<String, String> params,
                                              HttpSession session) {

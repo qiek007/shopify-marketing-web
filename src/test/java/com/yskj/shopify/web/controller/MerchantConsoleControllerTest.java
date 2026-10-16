@@ -75,6 +75,48 @@ class MerchantConsoleControllerTest {
     }
 
     @Test
+    void campaignAudiencePreviewForwardsTheReadOnlyPagingRequest() {
+        JSONObject body = new JSONObject(Map.of("total", 51, "page", 2, "pageSize", 50));
+        when(client.exchange(eq("campaigns.audience-preview"), any(),
+                eq("demo.myshopify.com"), any(), eq(null)))
+                .thenReturn(MerchantWebProtocol.json(body));
+        var params = new LinkedMultiValueMap<String, String>();
+        params.add("shop", "demo.myshopify.com");
+        params.add("campaignId", "campaign-1");
+        params.add("page", "2");
+        params.add("size", "50");
+
+        var response = controller.campaignAudiencePreview(params, session());
+
+        assertThat(response.getBody()).isEqualTo(body);
+        assertThat(response.getHeaders().getCacheControl()).contains("no-store");
+        verify(client).exchange(eq("campaigns.audience-preview"), any(),
+                eq("demo.myshopify.com"), org.mockito.ArgumentMatchers.argThat(parameters ->
+                        "campaign-1".equals(parameters.getString("campaignId"))
+                                && "2".equals(parameters.getString("page"))
+                                && "50".equals(parameters.getString("size"))), eq(null));
+    }
+
+    @Test
+    void campaignAudiencePreviewReturnsTheSafeConflictReasonWithoutCachingIt() {
+        when(client.exchange(eq("campaigns.audience-preview"), any(),
+                eq("demo.myshopify.com"), any(), eq(null)))
+                .thenReturn(MerchantWebProtocol.error(
+                        "CONFLICT", "当前可发送受众超过100000人，请先细分受众", 409));
+        var params = new LinkedMultiValueMap<String, String>();
+        params.add("shop", "demo.myshopify.com");
+        params.add("campaignId", "campaign-1");
+
+        var response = controller.campaignAudiencePreview(params, session());
+
+        assertThat(response.getStatusCodeValue()).isEqualTo(409);
+        assertThat(response.getHeaders().getCacheControl()).contains("no-store");
+        assertThat(response.getBody()).isInstanceOf(JSONObject.class);
+        assertThat(((JSONObject) response.getBody()).getString("message"))
+                .contains("100000人", "细分受众");
+    }
+
+    @Test
     void storeMemberFormsUseTheRemoteRoleCommands() {
         when(client.exchange(eq("store-members.grant"), any(),
                 eq("demo.myshopify.com"), any(), eq(null)))

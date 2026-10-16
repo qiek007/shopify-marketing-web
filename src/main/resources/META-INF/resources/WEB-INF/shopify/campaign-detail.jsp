@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ page language="java" pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -20,6 +21,12 @@
     <c:param name="shop" value="${campaignDetail.shopDomain}"/>
     <c:param name="campaignId" value="${campaignDetail.campaignId}"/>
 </c:url>
+<c:set var="showExecutionRefresh" value="${campaignDetail.status eq 'QUEUED'
+        or campaignDetail.status eq 'RUNNING'
+        or campaignDetail.status eq 'PAUSED'
+        or campaignDetail.status eq 'COMPLETED'
+        or campaignDetail.status eq 'CANCELLED'
+        or campaignDetail.status eq 'FAILED'}"/>
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
@@ -75,8 +82,10 @@
                         <button class="action-button danger-text" type="submit"><i class="fa fa-times"></i>驳回</button>
                     </form>
                 </c:if>
-                <a id="campaign-detail-refresh" class="action-button" href="${campaignRefreshUrl}"
-                   data-progress-url="${campaignProgressUrl}"><i class="fa fa-refresh"></i>刷新执行数据</a>
+                <c:if test="${showExecutionRefresh}">
+                    <a id="campaign-detail-refresh" class="action-button" href="${campaignRefreshUrl}"
+                       data-progress-url="${campaignProgressUrl}"><i class="fa fa-refresh"></i>刷新执行数据</a>
+                </c:if>
                 <button id="campaign-snapshot-refresh" class="action-button" type="button"
                         data-campaign-send-gate="waiting"<c:if test="${not (campaignDetail.status eq 'APPROVED' && not campaignDetail.audienceReady)}"> hidden</c:if>>
                     <i class="fa fa-refresh"></i>刷新冻结进度
@@ -155,6 +164,7 @@
                 <c:if test="${campaignDetail.hasSegmentAudience}"><small>分群：<c:out value="${campaignDetail.segmentName}"/></small></c:if>
                 <c:if test="${campaignDetail.hasIncludeTags}"><small>包含（<c:out value="${campaignDetail.includeTagModeDisplayName}"/>）：<c:out value="${campaignDetail.includeTagsDisplayName}"/></small></c:if>
                 <c:if test="${campaignDetail.hasExcludeTags}"><small>排除：<c:out value="${campaignDetail.excludeTagsDisplayName}"/></small></c:if>
+                <c:if test="${canManageCampaigns && canViewCustomers && (campaignDetail.status eq 'DRAFT' or campaignDetail.status eq 'PENDING_APPROVAL')}"><button class="action-button campaign-audience-preview-button" type="button" data-campaign-audience-preview-open><i class="fa fa-users"></i>预览客户</button></c:if>
             </div>
             <div><i class="fa fa-file-text-o"></i><span>邮件模板</span><strong><c:out value="${campaignDetail.templateName}"/></strong></div>
             <div><i class="fa fa-envelope-o"></i><span>发送通道</span><strong><c:forEach items="${campaignDetail.providers}" var="provider" varStatus="status"><c:if test="${not status.first}">、</c:if><c:out value="${providerAliases[provider]}"/></c:forEach></strong></div>
@@ -223,9 +233,9 @@
         <section class="campaign-kpi-grid">
             <article><span>冻结受众</span><strong id="campaign-audience"><c:out value="${campaignDetail.summary.audience}"/></strong><small id="campaign-audience-note"><c:choose><c:when test="${campaignDetail.audienceReady}">审批后已固化</c:when><c:otherwise>已检查 <c:out value="${campaignDetail.snapshotProcessedCount}"/> 条候选记录</c:otherwise></c:choose></small></article>
             <article><span>发送处理</span><strong id="campaign-send-progress"><c:out value="${campaignDetail.summary.progressPercent}"/>%</strong><small id="campaign-send-note"><c:out value="${campaignDetail.summary.accepted}"/> 接受 / <c:out value="${campaignDetail.summary.failed}"/> 失败 / <c:out value="${campaignDetail.summary.unknown}"/> 结果未知</small></article>
-            <article><span>送达</span><strong id="campaign-delivered"><c:out value="${campaignDetail.summary.delivered}"/></strong><small id="campaign-delivery-note">打开 <c:out value="${campaignDetail.summary.openedRecipients}"/> 人 / <c:out value="${campaignDetail.summary.opened}"/> 次 · 点击 <c:out value="${campaignDetail.summary.clickedRecipients}"/> 人 / <c:out value="${campaignDetail.summary.clicked}"/> 次</small></article>
+            <article><span>送达</span><strong id="campaign-delivered"><c:out value="${campaignDetail.summary.delivered}"/></strong><small id="campaign-delivery-rate">送达率 <fmt:formatNumber value="${campaignDetail.summary.accepted gt 0 ? campaignDetail.summary.delivered * 100.0 / campaignDetail.summary.accepted : 0}" minFractionDigits="1" maxFractionDigits="1"/>% · <c:out value="${campaignDetail.summary.delivered}"/> / <c:out value="${campaignDetail.summary.accepted}"/></small><small id="campaign-delivery-note">打开 <c:out value="${campaignDetail.summary.openedRecipients}"/> 人 / <c:out value="${campaignDetail.summary.opened}"/> 次 · 点击 <c:out value="${campaignDetail.summary.clickedRecipients}"/> 人 / <c:out value="${campaignDetail.summary.clicked}"/> 次</small></article>
             <article><span>转化</span><strong id="campaign-orders"><c:out value="${campaignDetail.summary.orders}"/> 单</strong><small id="campaign-conversion-note"><c:out value="${campaignDetail.summary.convertedRecipients}"/> 位客户 · <c:out value="${campaignDetail.summary.netRevenue}"/></small></article>
-            <article><span>风险反馈</span><strong id="campaign-risk"><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribed}"/></strong><small>退信 / 投诉 / 退订</small></article>
+            <article><span>风险反馈</span><strong id="campaign-risk"><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribed}"/></strong><small id="campaign-risk-note">退信 <c:out value="${campaignDetail.summary.bounced}"/> / 投诉 <c:out value="${campaignDetail.summary.complained}"/> / 退订 <c:out value="${campaignDetail.summary.unsubscribed}"/></small></article>
         </section>
 
         <section id="ga4-campaign-evaluation" class="content-section ga4-campaign-evaluation">
@@ -312,6 +322,22 @@
             </div>
         </section>
 
+        <c:if test="${canManageCampaigns && canViewCustomers && (campaignDetail.status eq 'DRAFT' or campaignDetail.status eq 'PENDING_APPROVAL')}">
+        <dialog class="campaign-customer-dialog campaign-audience-preview-dialog"
+                data-campaign-audience-preview-dialog aria-labelledby="campaign-audience-preview-title">
+            <header class="campaign-customer-dialog-heading"><div><p class="eyebrow">批准前检查</p><h2 id="campaign-audience-preview-title">即将冻结的客户</h2></div><button class="icon-button dialog-close-button" type="button" data-campaign-audience-preview-close aria-label="关闭客户预览"><i class="fa fa-times"></i></button></header>
+            <div class="campaign-customer-dialog-body campaign-audience-preview-body">
+                <p class="system-notice compact">这是当前时点预览，正式批准时会按最新客户数据重新冻结。</p>
+                <div class="empty-state compact" data-campaign-audience-preview-loading><i class="fa fa-spinner fa-spin"></i><strong>正在计算合格客户</strong><span>系统正在按正式冻结规则检查分群、标签、订阅、抑制和发送间隔。</span></div>
+                <div class="empty-state compact" data-campaign-audience-preview-error hidden><i class="fa fa-exclamation-circle"></i><strong>客户预览加载失败</strong><span data-campaign-audience-preview-error-message>请稍后重试</span><button class="action-button" type="button" data-campaign-audience-preview-retry><i class="fa fa-refresh"></i>重新加载</button></div>
+                <div data-campaign-audience-preview-content hidden>
+                    <div class="campaign-audience-preview-summary"><span>当前合格客户</span><strong data-campaign-audience-preview-total>0</strong></div>
+                    <div class="table-wrap campaign-audience-preview-table"><table class="status-table wide-table"><thead><tr><th>客户</th><th>邮箱</th><th>订阅状态</th><th>客户来源</th></tr></thead><tbody data-campaign-audience-preview-rows></tbody></table></div>
+                    <div class="pagination-bar campaign-audience-preview-pagination"><button class="action-button" type="button" data-campaign-audience-preview-previous>上一页</button><span data-campaign-audience-preview-page>第 1 / 1 页</span><button class="action-button" type="button" data-campaign-audience-preview-next>下一页</button></div>
+                </div>
+            </div>
+        </dialog>
+        </c:if>
         <dialog id="campaign-customer-dialog" class="campaign-customer-dialog"
                 aria-label="客户详情">
             <header class="campaign-customer-dialog-heading">
@@ -454,6 +480,7 @@
 
         var refreshLink = document.getElementById('campaign-detail-refresh');
         var campaignSnapshotRefresh = document.getElementById('campaign-snapshot-refresh');
+        var campaignProgressUrl = '${campaignProgressUrl}';
         var autoRefresh = ${campaignDetail.snapshotBuilding
                 || campaignDetail.status eq 'PREPARING'
                 || campaignDetail.status eq 'SCHEDULED'
@@ -465,6 +492,12 @@
         function setText(id, value) {
             var element = document.getElementById(id);
             if (element) element.textContent = value;
+        }
+
+        function deliveryRate(delivered, accepted) {
+            var deliveredCount = Number(delivered) || 0;
+            var acceptedCount = Number(accepted) || 0;
+            return acceptedCount > 0 ? (deliveredCount * 100 / acceptedCount).toFixed(1) : '0.0';
         }
 
         function displaySnapshotStatus(status) {
@@ -581,10 +614,12 @@
             setText('campaign-send-note', summary.accepted + ' 接受 / ' + summary.failed
                     + ' 失败 / ' + summary.unknown + ' 结果未知');
             setText('campaign-delivered', summary.delivered);
+            setText('campaign-delivery-rate', '送达率 ' + deliveryRate(summary.delivered, summary.accepted) + '% · ' + summary.delivered + ' / ' + summary.accepted);
             setText('campaign-delivery-note', '打开 ' + summary.openedRecipients + ' 人 / ' + summary.opened + ' 次 · 点击 ' + summary.clickedRecipients + ' 人 / ' + summary.clicked + ' 次');
             setText('campaign-orders', summary.orders + ' 单');
             setText('campaign-conversion-note', summary.convertedRecipients + ' 位客户 · ' + summary.netRevenue);
             setText('campaign-risk', summary.bounced + summary.complained + summary.unsubscribed);
+            setText('campaign-risk-note', '退信 ' + summary.bounced + ' / 投诉 ' + summary.complained + ' / 退订 ' + summary.unsubscribed);
             renderJobs(progress.jobs);
             applySendGate(progress);
             applyScheduleGate(progress);
@@ -594,22 +629,22 @@
 
         function refreshProgress(event) {
             if (event) event.preventDefault();
-            if (!refreshLink || refreshInFlight) return;
+            if (refreshInFlight) return;
             refreshInFlight = true;
-            refreshLink.classList.add('disabled');
+            if (refreshLink) refreshLink.classList.add('disabled');
             if (campaignSnapshotRefresh) campaignSnapshotRefresh.disabled = true;
-            fetch(refreshLink.dataset.progressUrl, {
+            fetch(campaignProgressUrl, {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' }
             }).then(function (response) {
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 return response.json();
             }).then(applyProgress).catch(function () {
-                refreshLink.title = '刷新失败，请稍后重试';
+                if (refreshLink) refreshLink.title = '刷新失败，请稍后重试';
                 if (campaignSnapshotRefresh) campaignSnapshotRefresh.title = '刷新失败，请稍后重试';
             }).finally(function () {
                 refreshInFlight = false;
-                refreshLink.classList.remove('disabled');
+                if (refreshLink) refreshLink.classList.remove('disabled');
                 if (campaignSnapshotRefresh) campaignSnapshotRefresh.disabled = false;
                 scheduleRefresh();
             });
@@ -617,9 +652,9 @@
 
         if (refreshLink) {
             refreshLink.addEventListener('click', refreshProgress);
-            if (campaignSnapshotRefresh) campaignSnapshotRefresh.addEventListener('click', refreshProgress);
-            scheduleRefresh();
         }
+        if (campaignSnapshotRefresh) campaignSnapshotRefresh.addEventListener('click', refreshProgress);
+        if (refreshLink || campaignSnapshotRefresh) scheduleRefresh();
 
         var recipientForm = document.querySelector('[data-campaign-recipient-form]');
         var recipientHost = document.getElementById('campaign-recipient-results');
@@ -631,6 +666,91 @@
         var customerRequest;
         var customerDialogScrollY = 0;
         var customerDialogScrollX = 0;
+        var audiencePreviewOpen = document.querySelector('[data-campaign-audience-preview-open]');
+        var audiencePreviewDialog = document.querySelector('[data-campaign-audience-preview-dialog]');
+        var audiencePreviewLoading = document.querySelector('[data-campaign-audience-preview-loading]');
+        var audiencePreviewError = document.querySelector('[data-campaign-audience-preview-error]');
+        var audiencePreviewErrorMessage = document.querySelector('[data-campaign-audience-preview-error-message]');
+        var audiencePreviewContent = document.querySelector('[data-campaign-audience-preview-content]');
+        var audiencePreviewRows = document.querySelector('[data-campaign-audience-preview-rows]');
+        var audiencePreviewTotal = document.querySelector('[data-campaign-audience-preview-total]');
+        var audiencePreviewPage = document.querySelector('[data-campaign-audience-preview-page]');
+        var audiencePreviewPrevious = document.querySelector('[data-campaign-audience-preview-previous]');
+        var audiencePreviewNext = document.querySelector('[data-campaign-audience-preview-next]');
+        var audiencePreviewRequest;
+        var audiencePreviewCurrentPage = 1;
+        var previewDialogTrigger;
+
+        function audiencePreviewCell(row, value) {
+            var cell = document.createElement('td');
+            cell.textContent = value == null || value === '' ? '-' : String(value);
+            row.appendChild(cell);
+        }
+
+        function renderAudiencePreview(data) {
+            audiencePreviewRows.replaceChildren();
+            (data.customers || []).forEach(function (customer) {
+                var row = document.createElement('tr');
+                audiencePreviewCell(row, customer.customerName);
+                audiencePreviewCell(row, customer.email);
+                audiencePreviewCell(row, customer.consentState);
+                audiencePreviewCell(row, customer.sourceTypeDisplayName);
+                audiencePreviewRows.appendChild(row);
+            });
+            if (!audiencePreviewRows.children.length) {
+                var emptyRow = document.createElement('tr');
+                var emptyCell = document.createElement('td');
+                emptyCell.colSpan = 4;
+                emptyCell.textContent = '当前没有符合冻结条件的客户';
+                emptyRow.appendChild(emptyCell);
+                audiencePreviewRows.appendChild(emptyRow);
+            }
+            var totalPages = Math.max(1, Number(data.totalPages) || 0);
+            audiencePreviewCurrentPage = Math.max(1, Number(data.page) || 1);
+            audiencePreviewTotal.textContent = (Number(data.total) || 0) + ' 位';
+            audiencePreviewPage.textContent = '第 ' + audiencePreviewCurrentPage + ' / ' + totalPages + ' 页';
+            audiencePreviewPrevious.disabled = !data.hasPrevious;
+            audiencePreviewNext.disabled = !data.hasNext;
+            audiencePreviewLoading.hidden = true;
+            audiencePreviewError.hidden = true;
+            audiencePreviewContent.hidden = false;
+        }
+
+        function loadAudiencePreview(page) {
+            if (!audiencePreviewDialog) return;
+            if (audiencePreviewRequest) audiencePreviewRequest.abort();
+            audiencePreviewRequest = new AbortController();
+            audiencePreviewLoading.hidden = false;
+            audiencePreviewError.hidden = true;
+            audiencePreviewContent.hidden = true;
+            var query = new URLSearchParams({
+                shop: '${campaignDetail.shopDomain}',
+                campaignId: '${campaignDetail.campaignId}',
+                page: String(page),
+                size: '50'
+            });
+            fetch('${ctx}/campaigns/detail/audience-preview?' + query.toString(), {
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-store',
+                signal: audiencePreviewRequest.signal
+            }).then(function (response) {
+                return response.json().catch(function () { return {}; }).then(function (payload) {
+                    if (!response.ok) {
+                        var failure = new Error(payload.message || '无法加载客户预览，请刷新页面后重试。');
+                        failure.name = 'AudiencePreviewError';
+                        throw failure;
+                    }
+                    return payload;
+                });
+            }).then(renderAudiencePreview).catch(function (error) {
+                if (error.name === 'AbortError') return;
+                audiencePreviewLoading.hidden = true;
+                audiencePreviewContent.hidden = true;
+                audiencePreviewError.hidden = false;
+                audiencePreviewErrorMessage.textContent = error.name === 'AudiencePreviewError'
+                        ? error.message : '无法加载客户预览，请刷新页面后重试。';
+            });
+        }
         var customerDialogTrigger = null;
 
         function initializeCustomerTimeline() {
@@ -755,6 +875,33 @@
                     returnFocus.focus({ preventScroll: true });
                 }
                 window.scrollTo(scrollX, scrollY);
+            });
+        }
+        if (audiencePreviewOpen && audiencePreviewDialog) {
+            audiencePreviewOpen.addEventListener('click', function () {
+                previewDialogTrigger = audiencePreviewOpen;
+                audiencePreviewDialog.showModal();
+                loadAudiencePreview(1);
+            });
+            audiencePreviewDialog.querySelector('[data-campaign-audience-preview-close]')
+                    .addEventListener('click', function () { audiencePreviewDialog.close(); });
+            audiencePreviewDialog.querySelector('[data-campaign-audience-preview-retry]')
+                    .addEventListener('click', function () { loadAudiencePreview(audiencePreviewCurrentPage); });
+            audiencePreviewPrevious.addEventListener('click', function () {
+                loadAudiencePreview(Math.max(1, audiencePreviewCurrentPage - 1));
+            });
+            audiencePreviewNext.addEventListener('click', function () {
+                loadAudiencePreview(audiencePreviewCurrentPage + 1);
+            });
+            audiencePreviewDialog.addEventListener('click', function (event) {
+                if (event.target === audiencePreviewDialog) audiencePreviewDialog.close();
+            });
+            audiencePreviewDialog.addEventListener('close', function () {
+                if (audiencePreviewRequest) audiencePreviewRequest.abort();
+                if (previewDialogTrigger && document.contains(previewDialogTrigger)) {
+                    previewDialogTrigger.focus({ preventScroll: true });
+                }
+                previewDialogTrigger = null;
             });
         }
         if (customerPreviewDialog && customerPreviewFrame) {
