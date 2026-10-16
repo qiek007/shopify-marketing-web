@@ -112,7 +112,7 @@
 
             </c:otherwise>
         </c:choose>
-        <script src="${ctx}/shopify/js/dashboard-trend.js?v=20261012-submitted-count"></script>
+        <script src="${ctx}/shopify/js/dashboard-trend.js?v=20261015-tooltip-follow"></script>
     </main>
 </div>
 </body>

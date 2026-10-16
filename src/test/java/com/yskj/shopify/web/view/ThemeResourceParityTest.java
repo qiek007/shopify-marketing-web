@@ -15,6 +15,39 @@ class ThemeResourceParityTest {
     private static final Path ROOT = Path.of("src/main/resources/META-INF/resources");
 
     @Test
+    void classicCampaignEditorSubmitsSavedDraftsForApprovalAndGuardsUnsavedChanges()
+            throws Exception {
+        String source = Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-editor.jsp"));
+
+        assertThat(source).contains(
+                "data-campaign-editor-form",
+                "${canManageCampaigns and editorCampaign.existing and editorCampaign.status eq 'DRAFT'}",
+                "id=\"campaign-approval-form\"",
+                "action=\"${ctx}/campaigns/action\"",
+                "name=\"action\" value=\"SUBMIT\"",
+                "data-campaign-approval-submit",
+                "活动内容已有修改，请先保存活动后再提交审批",
+                "campaignApprovalForm.requestSubmit()");
+    }
+
+    @Test
+    void classicCampaignEditorRefreshesTestSendHistoryWithoutReloadingTheForm()
+            throws Exception {
+        String source = Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-editor.jsp"));
+
+        assertThat(source).contains(
+                "data-campaign-test-history-refresh",
+                "data-campaign-test-history-content",
+                "data-campaign-test-history-refresh-status",
+                "fetch(window.location.href",
+                "new DOMParser()",
+                "正在刷新测试邮件状态…",
+                "测试邮件状态已更新",
+                "刷新失败，请稍后重试")
+                .doesNotContain("window.location.reload()");
+    }
+
+    @Test
     void carriesIndependentCompleteCopiesOfBothThemesAndLogin() throws Exception {
         Set<String> classic = views("shopify");
         Set<String> theme2 = views("shopify-theme2");
@@ -156,6 +189,59 @@ class ThemeResourceParityTest {
     }
 
     @Test
+    void classicCustomerImportShowsResultGenerationStateAndFailureReason() throws Exception {
+        String page = Files.readString(ROOT.resolve("WEB-INF/shopify/customer-imports.jsp"));
+
+        assertThat(page).contains(
+                "job.resultStatus eq 'PENDING'", "job.resultStatus eq 'GENERATING'",
+                "job.resultStatus eq 'FAILED'", "job.resultError",
+                "结果生成中", "结果生成失败");
+    }
+
+    @Test
+    void classicImportAndTemplateTablesConstrainWideColumnsAndKeepActionsInline() throws Exception {
+        String imports = Files.readString(ROOT.resolve("WEB-INF/shopify/customer-imports.jsp"));
+        String templates = Files.readString(ROOT.resolve("WEB-INF/shopify/templates.jsp"));
+        String styles = Files.readString(ROOT.resolve("shopify/css/dashboard.css"));
+
+        assertThat(imports).contains("dashboard.css?v=20261015-table-widths", "customer-import-history-table");
+        assertThat(templates).contains("dashboard.css?v=20261015-table-widths",
+                "template-list-table", "template-subject-cell",
+                "template-list-actions");
+        assertThat(styles).contains(
+                ".customer-import-history-table { width: 100%; table-layout: fixed;",
+                ".customer-import-history-table th:nth-child(1)",
+                ".customer-import-history-table th:nth-child(2)",
+                ".template-list-table { width: 100%; table-layout: fixed;",
+                ".template-subject-cell",
+                ".template-list-actions { flex-wrap: nowrap;");
+    }
+
+    @Test
+    void classicReportChartsShowNearestPointValuesOnPointerHover() throws Exception {
+        String reports = Files.readString(ROOT.resolve("WEB-INF/shopify/reports.jsp"));
+        String script = Files.readString(ROOT.resolve("shopify/js/reports-analytics.js"));
+        String styles = Files.readString(ROOT.resolve("shopify/css/reports-analytics.css"));
+
+        assertThat(reports).contains("reports-analytics.css?v=20261015-chart-tooltip",
+                "reports-analytics.js?v=20261015-chart-tooltip-follow", "data-report-chart-tooltip");
+        assertThat(script).contains(
+                "function bindTooltip", "pointermove", "nearestPointIndex",
+                "邮件发送", "送达", "打开", "点击");
+        assertThat(styles).contains(".report-chart-tooltip");
+    }
+    @Test
+    void classicDashboardTrendTooltipFollowsPointerVertically() throws Exception {
+        String dashboard = Files.readString(ROOT.resolve("WEB-INF/shopify/dashboard.jsp"));
+        String script = Files.readString(ROOT.resolve("shopify/js/dashboard-trend.js"));
+
+        assertThat(dashboard).contains("dashboard-trend.js?v=20261015-tooltip-follow");
+        assertThat(script).contains(
+                "event.clientY - visual.getBoundingClientRect().top + 14",
+                "visual.clientHeight - tooltip.offsetHeight - 8")
+                .doesNotContain("tooltip.style.top = '14px'");
+    }
+    @Test
     void progressiveNavigationFallbackNeverLeavesTheMainAreaDisabled() throws Exception {
         String script = Files.readString(ROOT.resolve("shopify/js/console-navigation.js"));
         int catchStart = script.indexOf("}).catch(function (error) {");
@@ -176,6 +262,32 @@ class ThemeResourceParityTest {
         }
     }
 
+    @Test
+    void classicCampaignDetailShowsFrozenAudienceConditions() throws Exception {
+        String detail = Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-detail.jsp"));
+        String styles = Files.readString(ROOT.resolve("shopify/css/dashboard.css"));
+
+        assertThat(detail).contains(
+                "目标受众", "dashboard.css?v=20261014-audience-summary",
+                "campaignDetail.audienceSourceDisplayName",
+                "campaignDetail.hasSegmentAudience",
+                "campaignDetail.includeTagModeDisplayName",
+                "campaignDetail.includeTagsDisplayName",
+                "campaignDetail.excludeTagsDisplayName")
+                .doesNotContain("<span>客户分群</span>");
+        assertThat(styles).contains(".campaign-audience-policy small");
+    }
+
+    @Test
+    void classicSenderEmailMustMatchConfiguredChannelDomainBeforeSubmit() throws Exception {
+        String stores = Files.readString(ROOT.resolve("WEB-INF/shopify/stores.jsp"));
+
+        assertThat(stores).contains(
+                "data-sender-settings-form", "data-sending-domain", "data-from-email",
+                "emailDomain !== sendingDomain",
+                "发件邮箱必须使用当前通道的发件域 @",
+                "setCustomValidity", "reportValidity", "event.preventDefault()");
+    }
     @Test
     void webPixelStatusUsesOneHourCacheAndSilentRefresh() throws Exception {
         for (String theme : Set.of("shopify", "shopify-theme2")) {
@@ -293,7 +405,6 @@ class ThemeResourceParityTest {
             String campaignEditor = Files.readString(root.resolve("campaign-editor.jsp"));
 
             assertThat(campaign).contains(
-                    "dashboard.css?v=20261004-recipient-export-v3",
                     "ga4-utm-parameters",
                     "UTM 来源",
                     "${campaignDetail.utmSource}",
@@ -315,6 +426,10 @@ class ThemeResourceParityTest {
                     "留空时使用活动名称", "留空时按链接自动生成");
         }
 
+        assertThat(Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-detail.jsp")))
+                .contains("dashboard.css?v=20261014-audience-summary");
+        assertThat(Files.readString(ROOT.resolve("WEB-INF/shopify-theme2/campaign-detail.jsp")))
+                .contains("dashboard.css?v=20261004-recipient-export-v3");
         String script = Files.readString(ROOT.resolve("shopify/js/automations.js"));
         assertThat(script).contains(
                 "definition.utmSource, 'auw'",

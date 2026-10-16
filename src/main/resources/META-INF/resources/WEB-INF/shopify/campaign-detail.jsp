@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261004-recipient-export-v3">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261014-audience-summary">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -151,7 +151,11 @@
         </section>
 
         <section class="campaign-policy-strip" aria-label="当前活动发送设置">
-            <div><i class="fa fa-filter"></i><span>客户分群</span><strong><c:out value="${campaignDetail.segmentName}"/></strong></div>
+            <div class="campaign-audience-policy"><i class="fa fa-filter"></i><span>目标受众</span><strong><c:out value="${campaignDetail.audienceSourceDisplayName}"/></strong>
+                <c:if test="${campaignDetail.hasSegmentAudience}"><small>分群：<c:out value="${campaignDetail.segmentName}"/></small></c:if>
+                <c:if test="${campaignDetail.hasIncludeTags}"><small>包含（<c:out value="${campaignDetail.includeTagModeDisplayName}"/>）：<c:out value="${campaignDetail.includeTagsDisplayName}"/></small></c:if>
+                <c:if test="${campaignDetail.hasExcludeTags}"><small>排除：<c:out value="${campaignDetail.excludeTagsDisplayName}"/></small></c:if>
+            </div>
             <div><i class="fa fa-file-text-o"></i><span>邮件模板</span><strong><c:out value="${campaignDetail.templateName}"/></strong></div>
             <div><i class="fa fa-envelope-o"></i><span>发送通道</span><strong><c:forEach items="${campaignDetail.providers}" var="provider" varStatus="status"><c:if test="${not status.first}">、</c:if><c:out value="${providerAliases[provider]}"/></c:forEach></strong></div>
             <div><i class="fa fa-clock-o"></i><span>重复发送间隔</span><strong><c:choose><c:when test="${campaignDetail.repeatIntervalHours == 0}">不限制</c:when><c:otherwise><c:out value="${campaignDetail.repeatIntervalHours}"/> 小时</c:otherwise></c:choose></strong></div>

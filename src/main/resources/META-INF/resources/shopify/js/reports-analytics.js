@@ -26,6 +26,38 @@
     }
     function x(index) { return points.length <= 1 ? 380 : 48 + index * (680 / (points.length - 1)); }
     function y(value, max) { return 258 - value / max * 218; }
+    function nearestPointIndex(svg, event) {
+        if (points.length <= 1) return 0;
+        var rect = svg.getBoundingClientRect();
+        var viewX = (event.clientX - rect.left) * 760 / Math.max(1, rect.width);
+        return Math.max(0, Math.min(points.length - 1,
+                Math.round((viewX - 48) / (680 / (points.length - 1)))));
+    }
+    function bindTooltip(svg, series) {
+        if (!svg || !points.length || svg.dataset.tooltipBound === 'true') return;
+        var wrap = svg.closest('.report-chart-wrap');
+        var tooltip = wrap && wrap.querySelector('[data-report-chart-tooltip]');
+        if (!tooltip) return;
+        svg.dataset.tooltipBound = 'true';
+        svg.addEventListener('pointermove', function (event) {
+            var point = points[nearestPointIndex(svg, event)];
+            var lines = [point.label];
+            series.forEach(function (item) {
+                lines.push(item[1] + ' ' + Number(point[item[0]] || 0).toLocaleString());
+            });
+            tooltip.textContent = lines.join('\n');
+            tooltip.hidden = false;
+            var wrapRect = wrap.getBoundingClientRect();
+            tooltip.style.left = Math.max(8, Math.min(wrapRect.width - 190,
+                    event.clientX - wrapRect.left + 12)) + 'px';
+            var preferredTop = event.clientY - wrapRect.top + 12;
+            var maxTop = Math.max(8, wrapRect.height - tooltip.offsetHeight - 8);
+            tooltip.style.top = Math.max(8, Math.min(maxTop, preferredTop)) + 'px';
+        });
+        svg.addEventListener('pointerleave', function () {
+            tooltip.hidden = true;
+        });
+    }
     function axes(svg, max) {
         for (var step = 0; step <= 4; step++) {
             var py = 258 - step * 54.5;
@@ -55,6 +87,8 @@
         var max = maxValue(['sent', 'delivered', 'opened', 'clicked']);
         axes(svg, max);
         ['sent', 'delivered', 'opened', 'clicked'].forEach(function (key) { line(svg, key, max, colors[key]); });
+        bindTooltip(svg, [['sent', '邮件发送'], ['delivered', '送达'],
+            ['opened', '打开'], ['clicked', '点击']]);
     }
     function commerce() {
         var svg = document.querySelector('[data-commerce-chart]');
@@ -74,6 +108,8 @@
         });
         line(svg, 'revenue', moneyMax, colors.revenue);
         line(svg, 'ga4', moneyMax, colors.ga4);
+        bindTooltip(svg, [['orders', '归因订单'], ['revenue', '归因净额'],
+            ['ga4', 'GA4 归因金额']]);
     }
     function render() { engagement(); commerce(); }
     var frame;

@@ -79,10 +79,10 @@
                         <article class="sender-profile" data-sender-provider="${provider}">
                             <div class="sender-profile-heading"><div><span>邮件通道</span><strong><c:out value="${providerOption.displayAlias}"/></strong></div><span class="status-pill ${empty channelSetting ? 'neutral' : ''}">${empty channelSetting ? '待配置' : '已配置'}</span></div>
                             <c:choose><c:when test="${canConfigureSender}">
-                                <form class="workspace-form" method="post" action="${ctx}/stores/sender-settings">
+                                <form class="workspace-form" method="post" action="${ctx}/stores/sender-settings" data-sender-settings-form>
                                     <input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="provider" value="${provider}">
-                                    <div class="form-grid"><label><span>发件域（由平台管理员配置）</span><input value="<c:out value='${channelSetting.sendingDomain}'/>" placeholder="尚未配置" readonly></label><label><span>发件名称</span><input name="fromName" value="<c:out value='${channelSetting.fromName}'/>" placeholder="品牌名称" required></label></div>
-                                    <div class="form-grid"><label><span>发件邮箱</span><input name="fromEmail" type="email" value="<c:out value='${channelSetting.fromEmail}'/>" placeholder="marketing@example.com" required></label><label><span>回复邮箱</span><input name="replyToEmail" type="email" value="<c:out value='${channelSetting.replyToEmail}'/>" placeholder="support@example.com" required></label></div>
+                                    <div class="form-grid"><label><span>发件域（由平台管理员配置）</span><input value="<c:out value='${channelSetting.sendingDomain}'/>" placeholder="尚未配置" data-sending-domain readonly></label><label><span>发件名称</span><input name="fromName" value="<c:out value='${channelSetting.fromName}'/>" placeholder="品牌名称" required></label></div>
+                                    <div class="form-grid"><label><span>发件邮箱</span><input name="fromEmail" type="email" data-from-email value="<c:out value='${channelSetting.fromEmail}'/>" placeholder="marketing@example.com" required></label><label><span>回复邮箱</span><input name="replyToEmail" type="email" value="<c:out value='${channelSetting.replyToEmail}'/>" placeholder="support@example.com" required></label></div>
                                     <div class="form-actions"><button class="primary-button" type="submit"><i class="fa fa-save"></i><span>保存 <c:out value="${providerOption.displayAlias}"/> 设置</span></button></div>
                                 </form>
                             </c:when><c:when test="${not empty channelSetting}">
@@ -235,6 +235,38 @@
             if (!cachedStatus) renderPixelStatusUnavailable();
         });
     }());
+</script>
+<script>
+(function () {
+    document.querySelectorAll('[data-sender-settings-form]').forEach(function (form) {
+        var domainInput = form.querySelector('[data-sending-domain]');
+        var emailInput = form.querySelector('[data-from-email]');
+        if (!domainInput || !emailInput) return;
+
+        function validateSenderDomain() {
+            var sendingDomain = String(domainInput.value || '').trim().toLowerCase();
+            var email = String(emailInput.value || '').trim().toLowerCase();
+            var at = email.lastIndexOf('@');
+            var emailDomain = at >= 0 ? email.slice(at + 1) : '';
+            var message = '';
+            if (!sendingDomain) {
+                message = '当前通道尚未配置发件域，请联系平台管理员';
+            } else if (email && emailDomain !== sendingDomain) {
+                message = '发件邮箱必须使用当前通道的发件域 @' + sendingDomain;
+            }
+            emailInput.setCustomValidity(message);
+            return !message;
+        }
+
+        emailInput.addEventListener('input', validateSenderDomain);
+        form.addEventListener('submit', function (event) {
+            if (validateSenderDomain()) return;
+            event.preventDefault();
+            emailInput.reportValidity();
+            emailInput.focus();
+        });
+    });
+}());
 </script>
     </main>
 </div>

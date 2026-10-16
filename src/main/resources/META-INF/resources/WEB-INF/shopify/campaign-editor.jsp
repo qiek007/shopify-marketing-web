@@ -25,7 +25,7 @@
                 <c:when test="${empty senderSettings}"><div class="empty-state compact"><i class="fa fa-envelope-o"></i><strong>尚未配置店铺发件身份</strong><span>请先到“我的店铺”配置至少一个邮件通道的发件身份。</span></div></c:when>
                 <c:when test="${empty templates}"><div class="empty-state compact"><i class="fa fa-file-text-o"></i><strong>尚未发布邮件模板</strong><span>请先建立并发布一个邮件模板。</span><a class="primary-button" href="${ctx}/templates?shop=${selectedShop}">管理邮件模板</a></div></c:when>
                 <c:otherwise>
-                    <form class="workspace-form" method="post" action="${ctx}/campaigns">
+                    <form class="workspace-form" data-campaign-editor-form method="post" action="${ctx}/campaigns">
                         <input type="hidden" name="shop" value="${selectedShop}">
                         <input type="hidden" name="campaignId" value="${editorCampaign.campaignId}">
                         <input id="campaign-variables" type="hidden" name="campaignVariables" value="<c:out value='${editorCampaign.campaignVariablesJson}'/>">
@@ -54,9 +54,10 @@
                         <fieldset class="channel-selector"><legend>发送邮件通道</legend><p class="field-note">可多选，邮件发送服务会在选中的可用通道中自动分配。</p><div class="channel-options-grid">
                             <c:forEach items="${senderSettings}" var="setting"><label class="channel-option"><input type="checkbox" name="providers" value="${setting.provider}" <c:if test="${not editorCampaign.existing or editorCampaign.providerSelections[setting.provider]}">checked</c:if>><span><strong><c:out value="${providerAliases[setting.provider]}"/></strong><small><c:out value="${setting.fromHeader}"/></small></span></label></c:forEach></div>
                         </fieldset>
-                        <div class="form-actions spaced-actions"><a class="action-button" href="${ctx}/campaigns?shop=${selectedShop}">取消</a><button class="primary-button" type="submit" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-save"></i>保存活动</button></div>
+                        <div class="form-actions spaced-actions"><a class="action-button" href="${ctx}/campaigns?shop=${selectedShop}">取消</a><c:if test="${canManageCampaigns and editorCampaign.existing and editorCampaign.status eq 'DRAFT'}"><button class="action-button" type="button" data-campaign-approval-submit title="将当前已保存版本提交审批"><i class="fa fa-check"></i>提交审批</button></c:if><button class="primary-button" type="submit" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-save"></i>保存活动</button></div>
                     </form>
-                    <c:if test="${editorCampaign.existing}"><section id="campaign-test-send" class="campaign-test-send spaced-section"><fieldset class="channel-selector campaign-test-send-card"><legend>发送测试邮件</legend><p class="field-note">使用当前保存的模板与活动参数，测试状态仅供提示，不影响活动审批。</p><form class="workspace-form" method="post" action="${ctx}/campaigns/test-send"><input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="campaignId" value="${editorCampaign.campaignId}"><input type="hidden" name="requestToken" value="${campaignTestRequestToken}"><div class="form-grid two campaign-test-compose"><label><span>测试邮箱（最多10个）</span><textarea name="recipients" rows="3" required placeholder="多个邮箱可用逗号、分号或换行分隔"></textarea></label><div class="campaign-test-route"><span>测试发送通道</span><div class="campaign-test-route-controls"><select name="provider" required><c:forEach items="${senderSettings}" var="setting"><c:if test="${editorCampaign.providerSelections[setting.provider]}"><option value="${setting.provider}"><c:out value="${providerAliases[setting.provider]}"/></option></c:if></c:forEach></select><button class="action-button" type="submit" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-paper-plane"></i>发送测试邮件</button></div></div></div></form><c:if test="${not empty campaignTestSendHistory}"><div class="campaign-test-history"><strong>测试邮件明细</strong><div class="campaign-test-history-scroll"><table class="status-table wide-table campaign-test-history-table"><thead><tr><th>测试时间</th><th>收件邮箱</th><th>邮件通道</th><th>发送状态</th><th>送达情况</th><th>发送/完成时间</th></tr></thead><tbody><c:forEach items="${campaignTestSendHistory}" var="testItem"><tr><td><time data-browser-time="<c:out value='${testItem.requestedAt}'/>" datetime="<c:out value='${testItem.requestedAt}'/>"><c:out value="${testItem.requestedAt}"/></time></td><td><c:out value="${testItem.recipientEmail}"/></td><td><c:out value="${providerAliases[testItem.provider]}"/></td><td><c:out value="${testItem.sendStatusDisplayName}"/><c:if test="${not empty testItem.lastErrorCode}"><small><c:out value="${testItem.lastErrorCode}"/></small></c:if></td><td><c:out value="${testItem.deliveryStatusDisplayName}"/><c:if test="${not empty testItem.deliveredAt}"><small><time data-browser-time="<c:out value='${testItem.deliveredAt}'/>" datetime="<c:out value='${testItem.deliveredAt}'/>"><c:out value="${testItem.deliveredAt}"/></time></small></c:if><c:if test="${not empty testItem.bouncedAt}"><small><time data-browser-time="<c:out value='${testItem.bouncedAt}'/>" datetime="<c:out value='${testItem.bouncedAt}'/>"><c:out value="${testItem.bouncedAt}"/></time></small></c:if></td><td><c:choose><c:when test="${not empty testItem.sentAt}"><time data-browser-time="<c:out value='${testItem.sentAt}'/>" datetime="<c:out value='${testItem.sentAt}'/>"><c:out value="${testItem.sentAt}"/></time></c:when><c:otherwise><time data-browser-time="<c:out value='${testItem.completedAt}'/>" datetime="<c:out value='${testItem.completedAt}'/>"><c:out value="${testItem.completedAt}" default="—"/></time></c:otherwise></c:choose></td></tr></c:forEach></tbody></table></div></div></c:if></fieldset></section></c:if>
+                    <c:if test="${canManageCampaigns and editorCampaign.existing and editorCampaign.status eq 'DRAFT'}"><form id="campaign-approval-form" method="post" action="${ctx}/campaigns/action" hidden><input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="campaignId" value="${editorCampaign.campaignId}"><input type="hidden" name="action" value="SUBMIT"></form></c:if>
+                    <c:if test="${editorCampaign.existing}"><section id="campaign-test-send" class="campaign-test-send spaced-section"><fieldset class="channel-selector campaign-test-send-card"><legend>发送测试邮件</legend><p class="field-note">使用当前保存的模板与活动参数，测试状态仅供提示，不影响活动审批。</p><form class="workspace-form" method="post" action="${ctx}/campaigns/test-send"><input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="campaignId" value="${editorCampaign.campaignId}"><input type="hidden" name="requestToken" value="${campaignTestRequestToken}"><div class="form-grid two campaign-test-compose"><label><span>测试邮箱（最多10个）</span><textarea name="recipients" rows="3" required placeholder="多个邮箱可用逗号、分号或换行分隔"></textarea></label><div class="campaign-test-route"><span>测试发送通道</span><div class="campaign-test-route-controls"><select name="provider" required><c:forEach items="${senderSettings}" var="setting"><c:if test="${editorCampaign.providerSelections[setting.provider]}"><option value="${setting.provider}"><c:out value="${providerAliases[setting.provider]}"/></option></c:if></c:forEach></select><button class="action-button" type="submit" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-paper-plane"></i>发送测试邮件</button></div></div></div></form><c:if test="${not empty campaignTestSendHistory}"><div class="campaign-test-history"><div class="form-actions spaced-actions"><strong>测试邮件明细</strong><div class="form-actions"><button class="action-button" type="button" data-campaign-test-history-refresh><i class="fa fa-refresh"></i>刷新状态</button><span class="field-note" data-campaign-test-history-refresh-status role="status" aria-live="polite"></span></div></div><div data-campaign-test-history-content><div class="campaign-test-history-scroll"><table class="status-table wide-table campaign-test-history-table"><thead><tr><th>测试时间</th><th>收件邮箱</th><th>邮件通道</th><th>发送状态</th><th>送达情况</th><th>发送/完成时间</th></tr></thead><tbody><c:forEach items="${campaignTestSendHistory}" var="testItem"><tr><td><time data-browser-time="<c:out value='${testItem.requestedAt}'/>" datetime="<c:out value='${testItem.requestedAt}'/>"><c:out value="${testItem.requestedAt}"/></time></td><td><c:out value="${testItem.recipientEmail}"/></td><td><c:out value="${providerAliases[testItem.provider]}"/></td><td><c:out value="${testItem.sendStatusDisplayName}"/><c:if test="${not empty testItem.lastErrorCode}"><small><c:out value="${testItem.lastErrorCode}"/></small></c:if></td><td><c:out value="${testItem.deliveryStatusDisplayName}"/><c:if test="${not empty testItem.deliveredAt}"><small><time data-browser-time="<c:out value='${testItem.deliveredAt}'/>" datetime="<c:out value='${testItem.deliveredAt}'/>"><c:out value="${testItem.deliveredAt}"/></time></small></c:if><c:if test="${not empty testItem.bouncedAt}"><small><time data-browser-time="<c:out value='${testItem.bouncedAt}'/>" datetime="<c:out value='${testItem.bouncedAt}'/>"><c:out value="${testItem.bouncedAt}"/></time></small></c:if></td><td><c:choose><c:when test="${not empty testItem.sentAt}"><time data-browser-time="<c:out value='${testItem.sentAt}'/>" datetime="<c:out value='${testItem.sentAt}'/>"><c:out value="${testItem.sentAt}"/></time></c:when><c:otherwise><time data-browser-time="<c:out value='${testItem.completedAt}'/>" datetime="<c:out value='${testItem.completedAt}'/>"><c:out value="${testItem.completedAt}" default="—"/></time></c:otherwise></c:choose></td></tr></c:forEach></tbody></table></div></div></div></c:if></fieldset></section></c:if>
                 </c:otherwise>
             </c:choose>
         </section>
@@ -65,6 +66,69 @@
 <script src="${ctx}/shopify/js/campaign-editor-audience.js?v=20261004-a1"></script>
 <script>
 (function () {
+    var campaignEditorForm = document.querySelector('[data-campaign-editor-form]');
+    var campaignApprovalForm = document.getElementById('campaign-approval-form');
+    var campaignApprovalSubmit = document.querySelector('[data-campaign-approval-submit]');
+    var campaignEditorBaseline = null;
+    function campaignEditorState() {
+        if (!campaignEditorForm) return '';
+        var values = [];
+        new FormData(campaignEditorForm).forEach(function (value, name) {
+            values.push([name, String(value)]);
+        });
+        return JSON.stringify(values);
+    }
+    function refreshCampaignApprovalState() {
+        if (!campaignApprovalSubmit || campaignEditorBaseline === null) return;
+        var dirty = campaignEditorState() !== campaignEditorBaseline;
+        campaignApprovalSubmit.setAttribute('aria-disabled', dirty ? 'true' : 'false');
+        campaignApprovalSubmit.title = dirty
+            ? '活动内容已有修改，请先保存活动后再提交审批'
+            : '将当前已保存版本提交审批';
+    }
+    if (campaignEditorForm) {
+        campaignEditorForm.addEventListener('input', refreshCampaignApprovalState);
+        campaignEditorForm.addEventListener('change', function () {
+            window.setTimeout(refreshCampaignApprovalState, 0);
+        });
+    }
+    if (campaignApprovalSubmit && campaignApprovalForm) {
+        campaignApprovalSubmit.addEventListener('click', function () {
+            if (campaignEditorBaseline === null || campaignEditorState() !== campaignEditorBaseline) {
+                alert('活动内容已有修改，请先保存活动后再提交审批');
+                return;
+            }
+            campaignApprovalSubmit.disabled = true;
+            campaignApprovalSubmit.setAttribute('aria-busy', 'true');
+            campaignApprovalForm.requestSubmit();
+        });
+    }
+    var campaignTestHistoryRefresh = document.querySelector('[data-campaign-test-history-refresh]');
+    var campaignTestHistoryContent = document.querySelector('[data-campaign-test-history-content]');
+    var campaignTestHistoryStatus = document.querySelector('[data-campaign-test-history-refresh-status]');
+    if (campaignTestHistoryRefresh && campaignTestHistoryContent && campaignTestHistoryStatus) {
+        campaignTestHistoryRefresh.addEventListener('click', function () {
+            campaignTestHistoryRefresh.disabled = true;
+            campaignTestHistoryRefresh.setAttribute('aria-busy', 'true');
+            campaignTestHistoryStatus.textContent = '正在刷新测试邮件状态…';
+            fetch(window.location.href, { headers: { 'Accept': 'text/html' }, cache: 'no-store' })
+                .then(function (response) {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.text();
+                }).then(function (html) {
+                    var documentCopy = new DOMParser().parseFromString(html, 'text/html');
+                    var updated = documentCopy.querySelector('[data-campaign-test-history-content]');
+                    if (!updated) throw new Error('测试邮件明细不存在');
+                    campaignTestHistoryContent.innerHTML = updated.innerHTML;
+                    campaignTestHistoryStatus.textContent = '测试邮件状态已更新';
+                }).catch(function () {
+                    campaignTestHistoryStatus.textContent = '刷新失败，请稍后重试';
+                }).finally(function () {
+                    campaignTestHistoryRefresh.disabled = false;
+                    campaignTestHistoryRefresh.removeAttribute('aria-busy');
+                });
+        });
+    }
     var shop = document.querySelector('[name="shop"]').value;
     var templateSelect = document.querySelector('[name="templateId"]');
     var variablesField = document.getElementById('campaign-variables');
@@ -249,8 +313,11 @@
             document.getElementById('campaign-discount').value);
     });
     renderSelectedProducts();
-    loadDiscounts('', initialDiscount).catch(function (error) { alert(error.message); });
-    loadTemplateOptions(false);
+    Promise.all([loadDiscounts('', initialDiscount), loadTemplateOptions(false)])
+        .then(function () {
+            campaignEditorBaseline = campaignEditorState();
+            refreshCampaignApprovalState();
+        }).catch(function (error) { alert(error.message); });
 })();
 </script>
 </body>

@@ -193,7 +193,9 @@
       tooltip.hidden = false;
       tooltip.style.left = Math.max(8, Math.min(visual.clientWidth - 220,
         event.clientX - visual.getBoundingClientRect().left + 14)) + 'px';
-      tooltip.style.top = '14px';
+      var tooltipTop = event.clientY - visual.getBoundingClientRect().top + 14;
+      var maximumTooltipTop = Math.max(8, visual.clientHeight - tooltip.offsetHeight - 8);
+      tooltip.style.top = Math.max(8, Math.min(maximumTooltipTop, tooltipTop)) + 'px';
     });
     svg.addEventListener('pointerleave', function () {
       markers.setAttribute('visibility', 'hidden');
