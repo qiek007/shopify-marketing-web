@@ -524,6 +524,20 @@ class ThemeResourceParityTest {
     }
 
     @Test
+    void classicTemplateEditorUsesThreeIntentionalMetadataRows() throws Exception {
+        String editor = Files.readString(ROOT.resolve("WEB-INF/shopify/template-editor.jsp"));
+
+        assertThat(editor).contains(
+                "data-template-meta-layout",
+                "class=\"editor-meta-row editor-meta-settings\"",
+                "class=\"editor-meta-row editor-meta-messaging\"",
+                "class=\"editor-meta-row editor-meta-text\"",
+                ".editor-meta-settings { grid-template-columns: minmax(320px,1fr) minmax(150px,180px) minmax(150px,180px) auto;",
+                ".editor-meta-messaging { grid-template-columns: repeat(2,minmax(0,1fr)); }",
+                ".editor-meta-text { grid-template-columns: 1fr; }");
+    }
+
+    @Test
     void everyClearFilterControlUsesTheCustomerListButtonStyle() throws Exception {
         java.util.regex.Pattern clearButton = java.util.regex.Pattern.compile(
                 "class=\\\"secondary-button clear-filter-button\\\"[^>]*><i class=\\\"fa fa-eraser\\\"></i>"
