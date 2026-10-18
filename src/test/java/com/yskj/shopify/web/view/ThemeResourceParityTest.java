@@ -483,14 +483,18 @@ class ThemeResourceParityTest {
                     "${templateNameFilter}", "${templateSubjectFilter}",
                     "<c:param name=\"updatedFrom\"", "<c:param name=\"updatedTo\"");
             assertThat(automations).contains(
-                    "class=\"filter-form list-filter-form\"", "name=\"name\"",
+                    "class=\"filter-form list-filter-form automation-filter-form\"", "name=\"name\"",
                     "name=\"status\"", "name=\"triggerEvent\"",
                     "${automationNameFilter}", "${automationStatusFilter}",
                     "${automationTriggerFilter}", "items=\"${automationStatuses}\"",
-                    "<c:param name=\"triggerEvent\"");
+                    "<c:param name=\"triggerEvent\"",
+                    "<a class=\"action-button\" href=\"${ctx}/automations?shop=${selectedShop}\">"
+                            + "<i class=\"fa fa-undo\"></i>清空条件</a>");
             assertThat(styles).contains(
                     ".list-filter-form { display: grid;",
                     "grid-template-columns: repeat(4, minmax(0, 1fr)) auto;",
+                    ".list-filter-form.automation-filter-form { grid-template-columns: 260px 130px 280px auto;",
+                    "@media (max-width: 760px) { .list-filter-form.automation-filter-form",
                     "@media (max-width: 1100px) { .list-filter-form",
                     "@media (max-width: 620px) { .list-filter-form");
         }
