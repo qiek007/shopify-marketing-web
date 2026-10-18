@@ -25,7 +25,7 @@
       data-export-status-url="${ctx}/automations/detail/recipients/exports"
       data-export-download-url="${ctx}/automations/detail/recipients/export/download"
       data-export-delete-url="${ctx}/automations/detail/recipients/export/delete">
-    <style data-automation-inline-styles>
+    <style data-automation-inline-styles data-automation-filter-layout>
         .automation-dialog { width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); box-shadow: 0 20px 60px rgba(18,42,52,.28); }
         .automation-dialog:not([open]) { display: none !important; }
         .automation-dialog[open] { display: flex; flex-direction: column; }
@@ -54,9 +54,12 @@
         .automation-detail-table { min-width: 1240px; }
         .automation-detail-table thead { position: sticky; top: 0; z-index: 1; background: var(--surface); }
         .automation-list-table { min-width: 1180px; }
+        .automation-filter-form { grid-template-columns: minmax(220px,1fr) 130px minmax(240px,1fr) auto !important; justify-content: stretch; }
+        .automation-filter-form .form-actions { align-self: end !important; }
         .automation-beta-label { color: var(--muted); }
         .inline-search { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
         @media (max-width: 900px) { .automation-metric-grid { grid-template-columns: repeat(2,minmax(130px,1fr)); } }
+        @media (max-width: 760px) { .automation-filter-form { grid-template-columns: 1fr !important; } }
         @media (max-width: 620px) { .automation-dialog-body { padding: 16px; } .automation-detail-grid { grid-template-columns: 1fr; } }
     </style>
     <section class="page-heading"><div><p class="eyebrow">自动营销 <span class="automation-beta-label">（Beta）</span></p></div></section>
@@ -76,7 +79,7 @@
                         <c:if test="${canManageCampaigns}"><button class="primary-button compact" type="button" data-automation-new <c:if test="${empty senderSettings}">disabled title="请先配置店铺发件身份"</c:if>><i class="fa fa-plus"></i><span>新建自动营销</span></button></c:if>
                     </div>
                 </div>
-                <form class="filter-form list-filter-form automation-filter-form" method="get" action="${ctx}/automations"><input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="page" value="1"><label><span>自动营销名称</span><input type="text" name="name" value="<c:out value='${automationNameFilter}'/>" placeholder="支持模糊查询"></label><label><span>状态</span><select name="status"><option value="">全部状态</option><c:forEach items="${automationStatuses}" var="statusOption"><option value="${statusOption}" ${automationStatusFilter eq statusOption ? 'selected' : ''}><c:choose><c:when test="${statusOption eq 'DRAFT'}">草稿</c:when><c:when test="${statusOption eq 'ACTIVE'}">生效</c:when><c:when test="${statusOption eq 'PAUSED'}">暂停</c:when><c:otherwise><c:out value="${statusOption}"/></c:otherwise></c:choose></option></c:forEach></select></label><label><span>触发事件</span><select name="triggerEvent"><option value="">全部触发事件</option><c:forEach items="${behaviorEventTypes}" var="eventOption"><option value="${eventOption}" ${automationTriggerFilter eq eventOption ? 'selected' : ''}><c:out value="${eventOption}"/></option></c:forEach></select></label><div class="form-actions"><button class="action-button" type="submit"><i class="fa fa-search"></i>查询</button><a class="action-button" href="${ctx}/automations?shop=${selectedShop}"><i class="fa fa-undo"></i>清空条件</a></div></form>
+                <form class="filter-form list-filter-form automation-filter-form" method="get" action="${ctx}/automations"><input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="page" value="1"><label><span>自动营销名称</span><input type="text" name="name" value="<c:out value='${automationNameFilter}'/>" placeholder="支持模糊查询"></label><label><span>状态</span><select name="status"><option value="">全部状态</option><c:forEach items="${automationStatuses}" var="statusOption"><option value="${statusOption}" ${automationStatusFilter eq statusOption ? 'selected' : ''}><c:choose><c:when test="${statusOption eq 'DRAFT'}">草稿</c:when><c:when test="${statusOption eq 'ACTIVE'}">生效</c:when><c:when test="${statusOption eq 'PAUSED'}">暂停</c:when><c:otherwise><c:out value="${statusOption}"/></c:otherwise></c:choose></option></c:forEach></select></label><label><span>触发事件</span><select name="triggerEvent"><option value="">全部触发事件</option><c:forEach items="${behaviorEventTypes}" var="eventOption"><option value="${eventOption}" ${automationTriggerFilter eq eventOption ? 'selected' : ''}><c:out value="${eventOption}"/></option></c:forEach></select></label><div class="form-actions"><button class="action-button" type="submit"><i class="fa fa-search"></i>查询</button><a class="secondary-button clear-filter-button" href="${ctx}/automations?shop=${selectedShop}"><i class="fa fa-eraser"></i><span>清空条件</span></a></div></form>
 <c:choose>
                     <c:when test="${empty automations}">
                         <div class="empty-state"><i class="fa fa-random"></i><strong>还没有自动营销</strong><span><c:choose><c:when test="${empty senderSettings}">请先到“我的店铺”完成发件设置。</c:when><c:otherwise>点击“新建自动营销”添加第一条规则。</c:otherwise></c:choose></span></div>

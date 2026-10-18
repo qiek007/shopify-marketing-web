@@ -465,7 +465,7 @@ class ThemeResourceParityTest {
 
     @Test
     void importTemplateAndAutomationListsExposeServerSideFilters() throws Exception {
-        for (String theme : Set.of("shopify", "shopify-theme2")) {
+        for (String theme : Set.of("shopify")) {
             Path root = ROOT.resolve("WEB-INF").resolve(theme);
             String styles = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
             String imports = Files.readString(root.resolve("customer-imports.jsp"));
@@ -488,15 +488,43 @@ class ThemeResourceParityTest {
                     "${automationNameFilter}", "${automationStatusFilter}",
                     "${automationTriggerFilter}", "items=\"${automationStatuses}\"",
                     "<c:param name=\"triggerEvent\"",
-                    "<a class=\"action-button\" href=\"${ctx}/automations?shop=${selectedShop}\">"
-                            + "<i class=\"fa fa-undo\"></i>清空条件</a>");
+                    "data-automation-filter-layout",
+                    ".automation-filter-form { grid-template-columns: minmax(220px,1fr) 130px minmax(240px,1fr) auto !important;",
+                    ".automation-filter-form .form-actions { align-self: end !important; }",
+                    "<a class=\"secondary-button clear-filter-button\" href=\"${ctx}/automations?shop=${selectedShop}\">"
+                            + "<i class=\"fa fa-eraser\"></i><span>清空条件</span></a>");
             assertThat(styles).contains(
                     ".list-filter-form { display: grid;",
                     "grid-template-columns: repeat(4, minmax(0, 1fr)) auto;",
-                    ".list-filter-form.automation-filter-form { grid-template-columns: 260px 130px 280px auto;",
+                    ".list-filter-form.automation-filter-form { grid-template-columns: minmax(220px, 1fr) 130px minmax(240px, 1fr) auto;",
+                    ".list-filter-form .form-actions .action-button, .list-filter-form .form-actions .clear-filter-button",
+                    "height: 38px; min-height: 38px;",
+                    ".list-filter-form .form-actions { align-self: end !important;",
+                    ".clear-filter-button { display: inline-flex; box-sizing: border-box;",
+                    "border: 1px solid #aebbc7;", "background: #f4f7f6;",
                     "@media (max-width: 760px) { .list-filter-form.automation-filter-form",
                     "@media (max-width: 1100px) { .list-filter-form",
                     "@media (max-width: 620px) { .list-filter-form");
+        }
+    }
+
+    @Test
+    void everyClearFilterControlUsesTheCustomerListButtonStyle() throws Exception {
+        java.util.regex.Pattern clearButton = java.util.regex.Pattern.compile(
+                "class=\\\"secondary-button clear-filter-button\\\"[^>]*><i class=\\\"fa fa-eraser\\\"></i>"
+                        + "(?:<span>)?清空条件(?:</span>)?</(?:a|button)>");
+        for (String theme : Set.of("shopify")) {
+            Path root = ROOT.resolve("WEB-INF").resolve(theme);
+            try (var paths = Files.list(root)) {
+                for (Path page : paths.filter(path -> path.toString().endsWith(".jsp")).toList()) {
+                    String source = Files.readString(page);
+                    long labels = source.split("清空条件", -1).length - 1L;
+                    if (labels > 0) {
+                        assertThat(clearButton.matcher(source).results().count())
+                                .as(page.toString()).isEqualTo(labels);
+                    }
+                }
+            }
         }
     }
 

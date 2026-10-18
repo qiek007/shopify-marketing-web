@@ -45,7 +45,7 @@
                     <label><span>进入开始日期</span><input name="fromDate" type="date" value="<c:out value='${suppressionFilter.fromDate}'/>"></label>
                     <label><span>进入结束日期</span><input name="toDate" type="date" value="<c:out value='${suppressionFilter.toDate}'/>"></label>
                 </div>
-                <div class="form-actions filter-actions"><button class="action-button" type="submit"><i class="fa fa-search"></i><span>查询</span></button><a class="action-button" href="${ctx}/suppressions?shop=${selectedShop}"><i class="fa fa-undo"></i><span>清空条件</span></a></div>
+                <div class="form-actions filter-actions"><button class="action-button" type="submit"><i class="fa fa-search"></i><span>查询</span></button><a class="secondary-button clear-filter-button" href="${ctx}/suppressions?shop=${selectedShop}"><i class="fa fa-eraser"></i><span>清空条件</span></a></div>
             </form>
             <c:choose>
                 <c:when test="${empty suppressions.items}"><div class="empty-state"><i class="fa fa-ban"></i><strong>没有找到抑制记录</strong><span>当前店铺没有符合条件的邮件地址。</span></div></c:when>

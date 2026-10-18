@@ -34,7 +34,7 @@
                     <label><span>活动状态</span><select name="status"><option value="">全部状态</option><c:forEach items="${campaignStatuses}" var="item"><option value="${item.name}" ${campaignStatus eq item.name ? 'selected' : ''}><c:out value="${item.displayName}"/></option></c:forEach></select></label>
                     <label><span>更新开始日期</span><input type="date" name="fromDate" value="${campaignFromDate}"></label>
                     <label><span>更新结束日期</span><input type="date" name="toDate" value="${campaignToDate}"></label>
-                    <div class="form-actions filter-actions"><button class="action-button" type="submit"><i class="fa fa-search"></i><span>查询</span></button><a class="action-button" href="${ctx}/campaigns?shop=${selectedShop}"><i class="fa fa-undo"></i><span>清空条件</span></a></div>
+                    <div class="form-actions filter-actions"><button class="action-button" type="submit"><i class="fa fa-search"></i><span>查询</span></button><a class="secondary-button clear-filter-button" href="${ctx}/campaigns?shop=${selectedShop}"><i class="fa fa-eraser"></i><span>清空条件</span></a></div>
                 </form>
             </c:if>
             <c:choose>
