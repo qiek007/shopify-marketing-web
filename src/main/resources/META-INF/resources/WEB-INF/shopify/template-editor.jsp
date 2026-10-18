@@ -8,7 +8,7 @@
 <section class="page-heading editor-heading"><div><p class="eyebrow">邮件模板</p><h1><c:choose><c:when test="${empty editorTemplate.templateId}">新建可视化模板</c:when><c:otherwise>编辑当前模板</c:otherwise></c:choose></h1><p hidden style="display: none;"><c:out value="${selectedShop}"/><c:if test="${not empty editorTemplate.templateId}"> · 保存后同步覆盖各邮件通道</c:if></p></div><a class="action-button" href="${ctx}/templates?shop=${selectedShop}"><i class="fa fa-arrow-left"></i><span>返回模板库</span></a></section>
 <form id="template-form" class="editor-meta" method="post" action="${ctx}/templates">
 <input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="templateId" value="${editorTemplate.templateId}"><input id="template-html" type="hidden" name="html"><input id="custom-variables" type="hidden" name="customVariables" value="<c:out value='${editorTemplate.customVariablesJson}'/>"><input id="content-config" type="hidden" name="contentConfig" value="<c:out value='${editorTemplate.contentConfigJson}'/>">
-<div class="editor-meta-row editor-meta-primary"><label><span>模板名称</span><input name="name" value="<c:out value='${editorTemplate.name}'/>" maxlength="255" required></label><label class="subject-field"><span>邮件主题</span><input name="subject" value="<c:out value='${editorTemplate.subject}'/>" placeholder="欢迎加入，{{firstName}}" required></label><label><span>纯文本备用内容</span><input name="text" value="<c:out value='${editorTemplate.text}'/>" placeholder="不支持 HTML 时显示"></label></div>
+<div class="editor-meta-row editor-meta-primary"><label><span>模板名称</span><input name="name" value="<c:out value='${editorTemplate.name}'/>" maxlength="255" required></label><label class="subject-field"><span>邮件主题</span><input name="subject" value="<c:out value='${editorTemplate.subject}'/>" placeholder="欢迎加入，{{firstName}}" required></label><label><span>Preheader：收件箱预览摘要</span><input name="preheader" value="<c:out value='${editorTemplate.preheader}'/>" maxlength="500" placeholder="{{firstName}}，这里有您关注的新品"></label><label><span>纯文本备用内容</span><input name="text" value="<c:out value='${editorTemplate.text}'/>" placeholder="不支持 HTML 时显示"></label></div>
 <div class="editor-meta-row editor-meta-secondary"><label><span>退订文案</span><input id="unsubscribe-label" maxlength="120" required placeholder="系统会自动生成 {{unsubscribeUrl}} 链接"></label><label><span>模板语言</span><select id="template-language" required><option value="zh-CN">简体中文（zh-CN）</option><option value="en-US">英语（en-US）</option><option value="ja-JP">日语（ja-JP）</option><option value="de-DE">德语（de-DE）</option></select></label><button class="primary-button" type="submit" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-cloud-upload"></i><span><c:choose><c:when test="${empty editorTemplate.templateId}">发布模板</c:when><c:otherwise>保存并同步</c:otherwise></c:choose></span></button></div>
 </form>
 <div id="template-save-overlay" class="template-save-overlay" hidden aria-live="polite" aria-busy="true"><div class="template-save-progress"><i class="fa fa-spinner fa-spin" aria-hidden="true"></i><strong><c:choose><c:when test="${empty editorTemplate.templateId}">正在发布模板</c:when><c:otherwise>正在保存并同步</c:otherwise></c:choose></strong><span>正在同步邮件通道，请稍候</span></div></div>
@@ -208,11 +208,13 @@
         var html = activeEditorMode === 'source' ? sourceEditor.value.trim() : visualHtml();
         var form = event.currentTarget;
         var subject = form.querySelector('[name="subject"]').value || '';
+        var preheader = form.querySelector('[name="preheader"]').value || '';
         var text = form.querySelector('[name="text"]').value || '';
         contentConfig.unsubscribeLabel = document.getElementById('unsubscribe-label').value.trim();
         contentConfig.templateLanguage = document.getElementById('template-language').value.trim();
         document.getElementById('content-config').value = JSON.stringify(contentConfig);
-        if (new Blob([subject, html, text]).size > MAX_TEMPLATE_PAYLOAD_BYTES) {
+        var templateContent = subject + '\n' + preheader + '\n' + html + '\n' + text;
+        if (new Blob([templateContent]).size > MAX_TEMPLATE_PAYLOAD_BYTES) {
             event.preventDefault();
             alert('模板主题、正文和嵌入图片合计不能超过 18 MiB');
             return;

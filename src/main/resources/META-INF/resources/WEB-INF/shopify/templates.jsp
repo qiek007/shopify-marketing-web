@@ -12,7 +12,7 @@
 <section class="content-section" data-platform-template-catalog data-catalog-url="${platformCatalogUrl}"><details class="platform-template-details"><summary class="section-heading"><div><h2>平台通用模板</h2><p>复制后成为当前店铺的独立模板，可继续编辑并覆盖同步</p></div><div class="section-heading-actions"><span class="section-count" data-platform-template-count hidden></span><span class="platform-template-toggle" aria-hidden="true"><i class="fa fa-chevron-down"></i></span></div></summary><div data-platform-template-results><div class="async-loading"><i class="fa fa-spinner fa-spin"></i><strong>正在加载平台模板</strong></div></div></details></section>
 <dialog id="platform-template-preview-dialog" class="template-preview-dialog" aria-labelledby="platform-template-preview-title">
     <div class="template-preview-heading"><div><p class="eyebrow">平台通用模板</p><h2 id="platform-template-preview-title">模板预览</h2><p id="platform-template-preview-meta" class="cell-note"></p></div><button class="icon-button dialog-close-button" type="button" title="关闭" aria-label="关闭" data-platform-preview-close><i class="fa fa-times"></i></button></div>
-    <div class="template-preview-body"><div class="template-preview-summary"><strong id="platform-template-preview-subject"></strong><div id="platform-template-preview-variables" class="template-preview-variables"></div></div><div id="platform-template-preview-error" class="template-preview-error" role="alert" hidden><span id="platform-template-preview-error-text"></span><button class="action-button" type="button" data-platform-preview-retry hidden><i class="fa fa-refresh"></i><span>重试</span></button></div><iframe id="platform-template-preview-frame" title="邮件 HTML 预览" sandbox="" referrerpolicy="no-referrer"></iframe><details class="template-preview-text"><summary>查看纯文本内容</summary><pre id="platform-template-preview-text"></pre></details></div>
+    <div class="template-preview-body"><div class="template-preview-summary"><strong id="platform-template-preview-subject"></strong><p id="platform-template-preview-preheader" class="cell-note"></p><div id="platform-template-preview-variables" class="template-preview-variables"></div></div><div id="platform-template-preview-error" class="template-preview-error" role="alert" hidden><span id="platform-template-preview-error-text"></span><button class="action-button" type="button" data-platform-preview-retry hidden><i class="fa fa-refresh"></i><span>重试</span></button></div><iframe id="platform-template-preview-frame" title="邮件 HTML 预览" sandbox="" referrerpolicy="no-referrer"></iframe><details class="template-preview-text"><summary>查看纯文本内容</summary><pre id="platform-template-preview-text"></pre></details></div>
 </dialog>
 <section class="content-section spaced-section">
     <div class="section-heading"><div><h2>店铺模板</h2><p>使用可视化编辑器创建并管理当前店铺的邮件模板</p></div><div class="section-heading-actions"><span class="section-count"><c:out value="${templatePage.total}"/> 个</span><c:if test="${not empty selectedShop and canManageCampaigns}"><a class="primary-button" href="${ctx}/templates/editor?shop=${selectedShop}"><i class="fa fa-plus"></i><span>新建模板</span></a></c:if></div></div>
@@ -118,6 +118,7 @@
     var previewDialog = document.getElementById('platform-template-preview-dialog');
     var previewFrame = document.getElementById('platform-template-preview-frame');
     var previewSubject = document.getElementById('platform-template-preview-subject');
+    var previewPreheader = document.getElementById('platform-template-preview-preheader');
     var previewText = document.getElementById('platform-template-preview-text');
     var previewMeta = document.getElementById('platform-template-preview-meta');
     var previewVariables = document.getElementById('platform-template-preview-variables');
@@ -138,6 +139,7 @@
             query.set('version', button.dataset.platformTemplateVersion);
         }
         previewSubject.textContent = '正在加载模板...';
+        previewPreheader.textContent = '';
         previewMeta.textContent = '';
         previewVariables.textContent = '';
         previewText.textContent = '';
@@ -178,6 +180,7 @@
                 previewError.hidden = true;
                 previewRetry.hidden = true;
                 previewSubject.textContent = template.subjectTemplate || template.subject || '无主题';
+                previewPreheader.textContent = template.preheaderTemplate || template.preheader || '';
                 previewMeta.textContent = isShopTemplate
                         ? '店铺模板 · ' + (template.name || '')
                         : (template.category || '通用') + ' · v' + template.version + ' · ' + template.name;

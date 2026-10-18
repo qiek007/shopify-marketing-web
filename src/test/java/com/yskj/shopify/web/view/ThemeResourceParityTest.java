@@ -509,6 +509,21 @@ class ThemeResourceParityTest {
     }
 
     @Test
+    void classicTemplateEditorAndPreviewExposePreheader() throws Exception {
+        Path root = ROOT.resolve("WEB-INF/shopify");
+        String editor = Files.readString(root.resolve("template-editor.jsp"));
+        String templates = Files.readString(root.resolve("templates.jsp"));
+
+        assertThat(editor).contains(
+                "name=\"preheader\"", "${editorTemplate.preheader}", "收件箱预览摘要",
+                "form.querySelector('[name=\"preheader\"]')",
+                "subject + '\\n' + preheader + '\\n' + html + '\\n' + text");
+        assertThat(templates).contains(
+                "id=\"platform-template-preview-preheader\"",
+                "template.preheaderTemplate || template.preheader || ''");
+    }
+
+    @Test
     void everyClearFilterControlUsesTheCustomerListButtonStyle() throws Exception {
         java.util.regex.Pattern clearButton = java.util.regex.Pattern.compile(
                 "class=\\\"secondary-button clear-filter-button\\\"[^>]*><i class=\\\"fa fa-eraser\\\"></i>"
