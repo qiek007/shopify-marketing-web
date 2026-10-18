@@ -442,6 +442,7 @@ class ThemeResourceParityTest {
     void analystPagesHideCustomerAndMarketingWriteActions() throws Exception {
         for (String theme : Set.of("shopify", "shopify-theme2")) {
             Path root = ROOT.resolve("WEB-INF").resolve(theme);
+            String styles = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
             String imports = Files.readString(root.resolve("customer-imports.jsp"));
             String templates = Files.readString(root.resolve("templates.jsp"));
             String segments = Files.readString(root.resolve("segments.jsp"));
@@ -459,6 +460,39 @@ class ThemeResourceParityTest {
             assertThat(segmentEditor).contains("${not canManageCampaigns}");
             assertThat(templateEditor).contains("${not canManageCampaigns}");
             assertThat(campaignEditor).contains("${not canManageCampaigns}");
+        }
+    }
+
+    @Test
+    void importTemplateAndAutomationListsExposeServerSideFilters() throws Exception {
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            Path root = ROOT.resolve("WEB-INF").resolve(theme);
+            String styles = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
+            String imports = Files.readString(root.resolve("customer-imports.jsp"));
+            String templates = Files.readString(root.resolve("templates.jsp"));
+            String automations = Files.readString(root.resolve("automations.jsp"));
+
+            assertThat(imports).contains(
+                    "class=\"filter-form list-filter-form\"", "name=\"filename\"",
+                    "name=\"customerTag\"", "name=\"createdFrom\"", "name=\"createdTo\"",
+                    "${importFilenameFilter}", "${importTagFilter}",
+                    "<c:param name=\"filename\"", "<c:param name=\"customerTag\"");
+            assertThat(templates).contains(
+                    "class=\"filter-form list-filter-form\"", "name=\"name\"",
+                    "name=\"subject\"", "name=\"updatedFrom\"", "name=\"updatedTo\"",
+                    "${templateNameFilter}", "${templateSubjectFilter}",
+                    "<c:param name=\"updatedFrom\"", "<c:param name=\"updatedTo\"");
+            assertThat(automations).contains(
+                    "class=\"filter-form list-filter-form\"", "name=\"name\"",
+                    "name=\"status\"", "name=\"triggerEvent\"",
+                    "${automationNameFilter}", "${automationStatusFilter}",
+                    "${automationTriggerFilter}", "items=\"${automationStatuses}\"",
+                    "<c:param name=\"triggerEvent\"");
+            assertThat(styles).contains(
+                    ".list-filter-form { display: grid;",
+                    "grid-template-columns: repeat(4, minmax(0, 1fr)) auto;",
+                    "@media (max-width: 1100px) { .list-filter-form",
+                    "@media (max-width: 620px) { .list-filter-form");
         }
     }
 

@@ -75,7 +75,8 @@
                         <c:if test="${canManageCampaigns}"><button class="primary-button compact" type="button" data-automation-new <c:if test="${empty senderSettings}">disabled title="请先配置店铺发件身份"</c:if>><i class="fa fa-plus"></i><span>新建自动营销</span></button></c:if>
                     </div>
                 </div>
-                <c:choose>
+                <form class="filter-form list-filter-form" method="get" action="${ctx}/automations"><input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="page" value="1"><label><span>自动营销名称</span><input type="text" name="name" value="<c:out value='${automationNameFilter}'/>" placeholder="支持模糊查询"></label><label><span>状态</span><select name="status"><option value="">全部状态</option><c:forEach items="${automationStatuses}" var="statusOption"><option value="${statusOption}" ${automationStatusFilter eq statusOption ? 'selected' : ''}><c:choose><c:when test="${statusOption eq 'DRAFT'}">草稿</c:when><c:when test="${statusOption eq 'ACTIVE'}">生效</c:when><c:when test="${statusOption eq 'PAUSED'}">暂停</c:when><c:otherwise><c:out value="${statusOption}"/></c:otherwise></c:choose></option></c:forEach></select></label><label><span>触发事件</span><select name="triggerEvent"><option value="">全部触发事件</option><c:forEach items="${behaviorEventTypes}" var="eventOption"><option value="${eventOption}" ${automationTriggerFilter eq eventOption ? 'selected' : ''}><c:out value="${eventOption}"/></option></c:forEach></select></label><div class="form-actions"><button class="action-button" type="submit"><i class="fa fa-search"></i>查询</button><a class="secondary-button" href="${ctx}/automations?shop=${selectedShop}">清空条件</a></div></form>
+<c:choose>
                     <c:when test="${empty automations}">
                         <div class="empty-state"><i class="fa fa-random"></i><strong>还没有自动营销</strong><span><c:choose><c:when test="${empty senderSettings}">请先到“我的店铺”完成发件设置。</c:when><c:otherwise>点击“新建自动营销”添加第一条规则。</c:otherwise></c:choose></span></div>
                     </c:when>
@@ -118,8 +119,8 @@
                                 </tbody>
                             </table>
                         </div>
-                        <c:url var="automationPreviousUrl" value="/automations"><c:param name="shop" value="${selectedShop}"/><c:param name="page" value="${automationPage.page - 1}"/></c:url>
-                        <c:url var="automationNextUrl" value="/automations"><c:param name="shop" value="${selectedShop}"/><c:param name="page" value="${automationPage.page + 1}"/></c:url>
+                        <c:url var="automationPreviousUrl" value="/automations"><c:param name="shop" value="${selectedShop}"/><c:param name="page" value="${automationPage.page - 1}"/><c:param name="name" value="${automationNameFilter}"/><c:param name="status" value="${automationStatusFilter}"/><c:param name="triggerEvent" value="${automationTriggerFilter}"/></c:url>
+                        <c:url var="automationNextUrl" value="/automations"><c:param name="shop" value="${selectedShop}"/><c:param name="page" value="${automationPage.page + 1}"/><c:param name="name" value="${automationNameFilter}"/><c:param name="status" value="${automationStatusFilter}"/><c:param name="triggerEvent" value="${automationTriggerFilter}"/></c:url>
                         <div class="pagination-bar"><c:if test="${automationPage.hasPrevious}"><a class="action-button" href="${automationPreviousUrl}">上一页</a></c:if><span>第 <c:out value="${automationPage.page}"/> / <c:out value="${automationPage.totalPages}"/> 页</span><c:if test="${automationPage.hasNext}"><a class="action-button" href="${automationNextUrl}">下一页</a></c:if></div>
                     </c:otherwise>
                 </c:choose>
