@@ -190,14 +190,15 @@ class ThemeResourceParityTest {
     }
 
     @Test
-    void customerImportKeepsAllControlsOnOneRowAndGivesTheTagMoreSpace() throws Exception {
-        for (String theme : Set.of("shopify", "shopify-theme2")) {
-            String css = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
+    void classicCustomerImportAddsValidationWithoutChangingTheme2Layout() throws Exception {
+        String classic = Files.readString(ROOT.resolve("shopify/css/dashboard.css"));
+        String theme2 = Files.readString(ROOT.resolve("shopify-theme2/css/dashboard.css"));
 
-            assertThat(css).contains(
-                    ".customer-import-fields { grid-template-columns: minmax(240px, 1.15fr) minmax(280px, 1.2fr) minmax(260px, 1.45fr) auto;",
-                    "@media (max-width: 1320px) { .customer-import-fields { grid-template-columns: repeat(2, minmax(0, 1fr));");
-        }
+        assertThat(classic).contains(
+                ".customer-import-fields { grid-template-columns: minmax(220px, 1.1fr) minmax(235px, 1.1fr) minmax(210px, 1fr) minmax(280px, 1.35fr) auto;",
+                "@media (max-width: 1320px) { .customer-import-fields { grid-template-columns: repeat(2, minmax(0, 1fr));");
+        assertThat(theme2).contains(
+                ".customer-import-fields { grid-template-columns: minmax(240px, 1.15fr) minmax(280px, 1.2fr) minmax(260px, 1.45fr) auto;");
     }
 
     @Test
@@ -265,12 +266,24 @@ class ThemeResourceParityTest {
     }
 
     @Test
+    void classicCustomerImportCanRequestMailgunEmailValidation() throws Exception {
+        String page = Files.readString(ROOT.resolve("WEB-INF/shopify/customer-imports.jsp"));
+
+        assertThat(page).contains(
+                "name=\"validateEmails\"",
+                "客户邮件验证",
+                "不可投递或高风险邮件不会导入",
+                "Mailgun");
+    }
+
+    @Test
     void classicImportAndTemplateTablesConstrainWideColumnsAndKeepActionsInline() throws Exception {
         String imports = Files.readString(ROOT.resolve("WEB-INF/shopify/customer-imports.jsp"));
         String templates = Files.readString(ROOT.resolve("WEB-INF/shopify/templates.jsp"));
         String styles = Files.readString(ROOT.resolve("shopify/css/dashboard.css"));
 
-        assertThat(imports).contains("dashboard.css?v=20261015-table-widths", "customer-import-history-table");
+        assertThat(imports).contains("dashboard.css?v=20261018-import-email-validation",
+                "customer-import-history-table");
         assertThat(templates).contains("dashboard.css?v=20261015-table-widths",
                 "template-list-table", "template-subject-cell",
                 "template-list-actions");
