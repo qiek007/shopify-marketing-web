@@ -300,6 +300,7 @@ body.shopify-console [hidden] { display: none !important; }
 .issue-message-dialog { width: min(820px, calc(100vw - 32px)); }
 .issue-message-detail { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; font-size: 13px; line-height: 1.75; }
 .cell-note { display: block; max-width: 320px; margin-top: 4px; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+.cell-note.campaign-scheduled-time { color: #a65a00; font-size: 12px; font-weight: 600; }
 .danger-text { color: var(--red); }
 .muted-text { color: var(--muted); }
 .sync-state { color: #4a5865; font-size: 12px; }

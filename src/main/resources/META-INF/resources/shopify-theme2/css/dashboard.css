@@ -263,6 +263,7 @@ body.shopify-console {
 .flash-message.danger { border-color: #e5b8b8; border-left-color: var(--red); background: #fff5f5; color: #983838; }
 .wide-table td { vertical-align: middle; }
 .cell-note { display: block; max-width: 320px; margin-top: 4px; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+.cell-note.campaign-scheduled-time { color: #a65a00; font-size: 12px; font-weight: 600; }
 .danger-text { color: var(--red); }
 .muted-text { color: var(--muted); }
 .sync-state { color: #4a5865; font-size: 12px; }

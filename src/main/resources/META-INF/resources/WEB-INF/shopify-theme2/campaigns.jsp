@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261020-scheduled-time">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -45,7 +45,12 @@
                     <div class="table-wrap"><table class="status-table"><thead><tr><th>活动</th><th>状态</th><th>模板</th><th>冻结受众</th><th>发送通道</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
                     <c:forEach items="${campaigns}" var="campaign"><tr>
                         <td><a class="table-primary-link" href="${ctx}/campaigns/detail?shop=${campaign.shopDomain}&amp;campaignId=${campaign.campaignId}"><strong><c:out value="${campaign.name}"/></strong></a></td>
-                        <td><span class="status-pill neutral"><c:out value="${campaign.statusDisplayName}"/></span></td>
+                        <td>
+                            <span class="status-pill neutral"><c:out value="${campaign.statusDisplayName}"/></span>
+                            <c:if test="${campaign.status eq 'SCHEDULED' and not empty campaign.scheduledAt}">
+                                <span class="cell-note campaign-scheduled-time">定时发送：<time data-browser-time="<c:out value='${campaign.scheduledAt}'/>" data-browser-time-format="date-time" datetime="<c:out value='${campaign.scheduledAt}'/>"><c:out value="${campaign.scheduledAt}"/></time></span>
+                            </c:if>
+                        </td>
                         <td><c:out value="${campaign.templateName}"/></td>
                         <td><c:choose>
                             <c:when test="${campaign.snapshotStatus eq 'BUILDING' or campaign.snapshotStatus eq 'PROCESSING'}"><c:set var="snapshotBuilding" value="true"/><span class="status-pill warning"><i class="fa fa-spinner fa-spin"></i>计算中</span></c:when>

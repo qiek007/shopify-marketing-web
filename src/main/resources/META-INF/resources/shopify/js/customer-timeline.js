@@ -241,8 +241,8 @@
                 showError('请选择有效的开始和结束日期。');
                 return;
             }
-            if (daySpan(from, to) > 366) {
-                showError('单次最多查看 366 天；可先查询一年，再继续加载更早记录。');
+            if (daySpan(from, to) > 400) {
+                showError('单次最多查看 400 天；可缩小日期范围后重试。');
                 return;
             }
             root.querySelectorAll('[data-timeline-preset]').forEach(function (item) {
