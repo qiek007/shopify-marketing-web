@@ -284,7 +284,7 @@ class ThemeResourceParityTest {
 
         assertThat(imports).contains("dashboard.css?v=20261018-import-email-validation",
                 "customer-import-history-table");
-        assertThat(templates).contains("dashboard.css?v=20261015-table-widths",
+        assertThat(templates).contains("dashboard.css?v=20261020-template-list-actions",
                 "template-list-table", "template-subject-cell",
                 "template-list-actions");
         assertThat(styles).contains(
@@ -293,7 +293,7 @@ class ThemeResourceParityTest {
                 ".customer-import-history-table th:nth-child(2)",
                 ".template-list-table { width: 100%; table-layout: fixed;",
                 ".template-subject-cell",
-                ".template-list-actions { flex-wrap: nowrap;");
+                ".table-actions.template-list-actions { width: max-content; flex-wrap: nowrap; gap: 6px; }");
     }
 
     @Test
@@ -346,11 +346,32 @@ class ThemeResourceParityTest {
                     .resolve("fragments/header.jspf"));
             assertThat(header).contains(
                     "console-navigation.js?v=20261020-shop-search",
-                    "${uiAssetBase}/css/shop-switcher.css?v=20261020-shop-search",
+                    "${uiAssetBase}/css/shop-switcher.css?v=20261020-shop-search-icon",
                     "data-shop-switcher-search",
                     "placeholder=\"搜索店铺名称或域名\"",
                     "data-shop-storage-key=\"shopify:last-shop:",
                     "data-shop-name=\"<c:out value='${shopItem.displayName}'/>");
+        }
+    }
+
+    @Test
+    void shopSearchUsesAMagnifyingGlassIcon() throws Exception {
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            String header = Files.readString(ROOT.resolve("WEB-INF").resolve(theme)
+                    .resolve("fragments/header.jspf"));
+            String styles = Files.readString(ROOT.resolve(theme).resolve("css/shop-switcher.css"));
+
+            assertThat(header).contains(
+                    "class=\"shop-switcher-search-wrap\"",
+                    "class=\"fa fa-search shop-switcher-search-icon\" aria-hidden=\"true\"",
+                    "shop-switcher.css?v=20261020-shop-search-icon");
+            assertThat(styles).contains(
+                    ".shop-switcher-search-wrap {",
+                    ".shop-switcher-search-icon {",
+                    "pointer-events: none",
+                    "padding: 0 10px 0 32px",
+                    "background: #fff")
+                    .doesNotContain("linear-gradient(45deg");
         }
     }
 
@@ -561,6 +582,69 @@ class ThemeResourceParityTest {
                 ".editor-meta-settings { grid-template-columns: minmax(320px,1fr) minmax(150px,180px) minmax(150px,180px) auto;",
                 ".editor-meta-messaging { grid-template-columns: repeat(2,minmax(0,1fr)); }",
                 ".editor-meta-text { grid-template-columns: 1fr; }");
+    }
+
+    @Test
+    void templateLifecycleActionsLiveInEditorAndDisabledStatusIsExplicit() throws Exception {
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            Path root = ROOT.resolve("WEB-INF").resolve(theme);
+            String templates = Files.readString(root.resolve("templates.jsp"));
+            String editor = Files.readString(root.resolve("template-editor.jsp"));
+            String styles = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
+
+            assertThat(templates)
+                    .contains("template.status eq 'DISABLED' ? 'blocked'", "已禁用",
+                            "copyFrom=${template.templateId}", "<span>复制</span>",
+                            "dashboard.css?v=20261020-template-list-actions")
+                    .doesNotContain("name=\"action\" value=\"disable\"",
+                            "name=\"action\" value=\"delete\"");
+            assertThat(styles).contains(
+                    ".table-actions.template-list-actions { width: max-content; flex-wrap: nowrap; gap: 6px; }",
+                    ".template-list-actions > * { flex: 0 0 auto; }",
+                    ".template-list-actions .action-button { white-space: nowrap; }");
+            assertThat(editor).contains(
+                    "class=\"template-management\"",
+                    "${editorTemplate.status eq 'PUBLISHED'}",
+                    "name=\"action\" value=\"disable\"",
+                    "name=\"action\" value=\"delete\"",
+                    "禁用后将从全部邮件通道删除该动态模板",
+                    "删除后将从全部邮件通道清理，且不可恢复");
+        }
+    }
+
+    @Test
+    void templateLifecycleActionsConfirmInDialogAndShowPendingAnimation() throws Exception {
+        Path scriptPath = ROOT.resolve("shopify/js/template-lifecycle-actions.js");
+        String script = Files.exists(scriptPath) ? Files.readString(scriptPath) : "";
+
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            String editor = Files.readString(ROOT.resolve("WEB-INF").resolve(theme)
+                    .resolve("template-editor.jsp"));
+            String styles = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
+
+            assertThat(editor).contains(
+                    "data-template-action-form",
+                    "data-action-title=\"确认禁用模板\"",
+                    "data-action-title=\"确认删除模板\"",
+                    "id=\"template-action-dialog\"",
+                    "data-template-action-confirm",
+                    "data-template-action-cancel",
+                    "template-lifecycle-actions.js?v=20261020-action-dialog")
+                    .doesNotContain("onsubmit=\"return confirm(");
+            assertThat(styles).contains(
+                    ".template-action-dialog",
+                    ".template-action-dialog::backdrop",
+                    ".template-action-dialog.is-pending",
+                    ".template-action-progress");
+        }
+        assertThat(script).contains(
+                "[data-template-action-form]",
+                "event.preventDefault()",
+                "dialog.showModal()",
+                "confirmButton.setAttribute('aria-busy', 'true')",
+                "fa fa-spinner fa-spin",
+                "window.setTimeout(function ()",
+                "pendingForm.submit()");
     }
 
     @Test

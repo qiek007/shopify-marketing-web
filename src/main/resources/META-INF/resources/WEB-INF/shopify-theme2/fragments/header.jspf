@@ -5,7 +5,7 @@
 <script src="${ctx}/shopify/js/account-password.js?v=20260924-native-password" defer></script>
 <script id="session-keepalive" src="${ctx}/shopify/js/session-keepalive.js"
         data-context-path="${ctx}" defer></script>
-<link rel="stylesheet" href="${ctx}${uiAssetBase}/css/shop-switcher.css?v=20261020-shop-search">
+<link rel="stylesheet" href="${ctx}${uiAssetBase}/css/shop-switcher.css?v=20261020-shop-search-icon">
 <script id="console-navigation" src="${ctx}/shopify/js/console-navigation.js?v=20261020-shop-search"
         data-context-path="${ctx}" defer></script>
 <script src="${ctx}/shopify/js/browser-time.js" defer></script>
@@ -21,9 +21,12 @@
                 <form class="shop-switcher" method="get" action="${ctx}/${currentPath}" data-shop-switcher
                       data-shop-storage-key="shopify:last-shop:<c:out value='${logineduser.domainid}'/>:<c:out value='${logineduser.id}'/>">
                     <label for="current-shop">当前店铺</label>
-                    <input class="shop-switcher-search" type="search"
-                           placeholder="搜索店铺名称或域名" aria-label="搜索店铺名称或域名"
-                           autocomplete="off" data-shop-switcher-search>
+                    <span class="shop-switcher-search-wrap">
+                        <i class="fa fa-search shop-switcher-search-icon" aria-hidden="true"></i>
+                        <input class="shop-switcher-search" type="search"
+                               placeholder="搜索店铺名称或域名" aria-label="搜索店铺名称或域名"
+                               autocomplete="off" data-shop-switcher-search>
+                    </span>
                     <select id="current-shop" name="shop" data-shop-switcher-select>
                         <c:forEach items="${accessibleShops}" var="shopItem">
                             <option value="<c:out value='${shopItem.shopDomain}'/>"
