@@ -5,7 +5,8 @@
 <script src="${ctx}/shopify/js/account-password.js?v=20260924-native-password" defer></script>
 <script id="session-keepalive" src="${ctx}/shopify/js/session-keepalive.js"
         data-context-path="${ctx}" defer></script>
-<script id="console-navigation" src="${ctx}/shopify/js/console-navigation.js?v=20261001-navigation-recovery"
+<link rel="stylesheet" href="${ctx}${uiAssetBase}/css/shop-switcher.css?v=20261020-shop-search">
+<script id="console-navigation" src="${ctx}/shopify/js/console-navigation.js?v=20261020-shop-search"
         data-context-path="${ctx}" defer></script>
 <script src="${ctx}/shopify/js/browser-time.js" defer></script>
 <header class="console-header">
@@ -17,16 +18,22 @@
     <div class="header-actions">
         <c:choose>
             <c:when test="${not empty accessibleShops}">
-                <form class="shop-switcher" method="get" action="${ctx}/${currentPath}" data-shop-switcher>
+                <form class="shop-switcher" method="get" action="${ctx}/${currentPath}" data-shop-switcher
+                      data-shop-storage-key="shopify:last-shop:<c:out value='${logineduser.domainid}'/>:<c:out value='${logineduser.id}'/>">
                     <label for="current-shop">当前店铺</label>
+                    <input class="shop-switcher-search" type="search"
+                           placeholder="搜索店铺名称或域名" aria-label="搜索店铺名称或域名"
+                           autocomplete="off" data-shop-switcher-search>
                     <select id="current-shop" name="shop" data-shop-switcher-select>
                         <c:forEach items="${accessibleShops}" var="shopItem">
-                            <option value="${shopItem.shopDomain}"
+                            <option value="<c:out value='${shopItem.shopDomain}'/>"
+                                    data-shop-name="<c:out value='${shopItem.displayName}'/>"
                                     ${shopItem.shopDomain eq selectedShop ? 'selected' : ''}>
                                 <c:out value="${shopItem.displayName}" default="${shopItem.shopDomain}"/>
                             </option>
                         </c:forEach>
                     </select>
+                    <span class="shop-switcher-empty" data-shop-search-empty hidden>无匹配店铺</span>
                 </form>
             </c:when>
             <c:otherwise><span class="no-shop-label">尚未获得店铺授权</span></c:otherwise>

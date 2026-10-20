@@ -93,19 +93,54 @@
         });
     }
 
-    document.addEventListener('click', function (event) {
-        var link = event.target.closest('[data-console-navigation] a[href]');
-        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey
-                || event.ctrlKey || event.shiftKey || event.altKey || link.target) return;
-        var url = new URL(link.href, window.location.href);
-        if (url.origin !== window.location.origin || url.pathname.indexOf(contextPath + '/') !== 0) return;
-        event.preventDefault();
-        navigate(url.href, true, link);
-    });
+    function storageValue(method, key, value) {
+        if (!key) return null;
+        try {
+            if (method === 'set') {
+                window.localStorage.setItem(key, value);
+                return value;
+            }
+            if (method === 'remove') {
+                window.localStorage.removeItem(key);
+                return null;
+            }
+            return window.localStorage.getItem(key);
+        } catch (ignored) {
+            return null;
+        }
+    }
 
-    document.addEventListener('change', function (event) {
-        var select = event.target.closest('[data-shop-switcher-select]');
-        if (!select) return;
+    function switcherForm(element) {
+        return element && element.closest('[data-shop-switcher]');
+    }
+
+    function rememberShop(select) {
+        var form = switcherForm(select);
+        if (!form || !select.value) return;
+        storageValue('set', form.getAttribute('data-shop-storage-key'), select.value);
+    }
+
+    function matchingShopOptions(input) {
+        var form = switcherForm(input);
+        var select = form && form.querySelector('[data-shop-switcher-select]');
+        if (!select) return [];
+        var query = (input.value || '').trim().toLocaleLowerCase();
+        var matches = [];
+        Array.prototype.forEach.call(select.options, function (option) {
+            var name = option.getAttribute('data-shop-name') || '';
+            var text = name + ' ' + option.value + ' ' + option.textContent;
+            var matchesQuery = !query || text.toLocaleLowerCase().indexOf(query) !== -1;
+            option.hidden = !matchesQuery && !option.selected;
+            option.disabled = !matchesQuery && !option.selected;
+            if (matchesQuery) matches.push(option);
+        });
+        var empty = form.querySelector('[data-shop-search-empty]');
+        if (empty) empty.hidden = !query || matches.length !== 0;
+        return matches;
+    }
+
+    function navigateToShop(select) {
+        rememberShop(select);
         var currentPath = window.location.pathname;
         var relativePath = currentPath.indexOf(contextPath) === 0
                 ? currentPath.substring(contextPath.length) : currentPath;
@@ -121,9 +156,74 @@
         var target = new URL(contextPath + targetPath, window.location.origin);
         target.searchParams.set('shop', select.value);
         window.location.assign(target.href);
+    }
+
+    function restoreRememberedShop() {
+        var form = document.querySelector('[data-shop-switcher]');
+        var select = form && form.querySelector('[data-shop-switcher-select]');
+        if (!select) return;
+        var searchParams = new URL(window.location.href).searchParams;
+        if (searchParams.has('shop')) {
+            rememberShop(select);
+            return;
+        }
+        var key = form.getAttribute('data-shop-storage-key');
+        var remembered = storageValue('get', key);
+        if (!remembered) return;
+        var option = Array.prototype.find.call(select.options, function (candidate) {
+            return candidate.value.toLocaleLowerCase() === remembered.toLocaleLowerCase();
+        });
+        if (!option) {
+            storageValue('remove', key);
+            return;
+        }
+        if (select.value === option.value) return;
+        select.value = option.value;
+        navigateToShop(select);
+    }
+
+    document.addEventListener('click', function (event) {
+        var link = event.target.closest('[data-console-navigation] a[href]');
+        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey
+                || event.ctrlKey || event.shiftKey || event.altKey || link.target) return;
+        var url = new URL(link.href, window.location.href);
+        if (url.origin !== window.location.origin || url.pathname.indexOf(contextPath + '/') !== 0) return;
+        event.preventDefault();
+        navigate(url.href, true, link);
+    });
+
+    document.addEventListener('change', function (event) {
+        var select = event.target.closest('[data-shop-switcher-select]');
+        if (!select) return;
+        navigateToShop(select);
+    });
+
+    document.addEventListener('input', function (event) {
+        var input = event.target.closest('[data-shop-switcher-search]');
+        if (input) matchingShopOptions(input);
+    });
+
+    document.addEventListener('keydown', function (event) {
+        var input = event.target.closest('[data-shop-switcher-search]');
+        if (!input) return;
+        if (event.key === 'Escape') {
+            input.value = '';
+            matchingShopOptions(input);
+            return;
+        }
+        if (event.key !== 'Enter') return;
+        var visibleOptions = matchingShopOptions(input);
+        if (visibleOptions.length === 1) {
+            event.preventDefault();
+            var select = switcherForm(input).querySelector('[data-shop-switcher-select]');
+            select.value = visibleOptions[0].value;
+            navigateToShop(select);
+        }
     });
 
     window.addEventListener('popstate', function () {
         navigate(window.location.href, false, null);
     });
+
+    restoreRememberedShop();
 }());

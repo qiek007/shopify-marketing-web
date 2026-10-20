@@ -323,6 +323,7 @@ class ThemeResourceParityTest {
     @Test
     void progressiveNavigationFallbackNeverLeavesTheMainAreaDisabled() throws Exception {
         String script = Files.readString(ROOT.resolve("shopify/js/console-navigation.js"));
+        String searchStyles = Files.readString(ROOT.resolve("shopify/css/shop-switcher.css"));
         int catchStart = script.indexOf("}).catch(function (error) {");
         int finallyStart = script.indexOf("}).finally(function () {", catchStart);
 
@@ -332,12 +333,24 @@ class ThemeResourceParityTest {
                 .contains("setBusy(false);", "window.location.assign(url);");
         assertThat(script).contains(
                 "navigationFallbackTimer = window.setTimeout",
-                "window.clearTimeout(navigationFallbackTimer)");
+                "window.clearTimeout(navigationFallbackTimer)",
+                "data-shop-switcher-search", "option.hidden", "option.value",
+                "window.localStorage.setItem", "window.localStorage.getItem",
+                "searchParams.has('shop')", "visibleOptions.length === 1");
+        assertThat(searchStyles).contains(
+                ".shop-switcher-search",
+                ".shop-switcher-search:focus",
+                "width: min(210px, 22vw)");
         for (String theme : Set.of("shopify", "shopify-theme2")) {
             String header = Files.readString(ROOT.resolve("WEB-INF").resolve(theme)
                     .resolve("fragments/header.jspf"));
             assertThat(header).contains(
-                    "console-navigation.js?v=20261001-navigation-recovery");
+                    "console-navigation.js?v=20261020-shop-search",
+                    "${uiAssetBase}/css/shop-switcher.css?v=20261020-shop-search",
+                    "data-shop-switcher-search",
+                    "placeholder=\"搜索店铺名称或域名\"",
+                    "data-shop-storage-key=\"shopify:last-shop:",
+                    "data-shop-name=\"<c:out value='${shopItem.displayName}'/>");
         }
     }
 
