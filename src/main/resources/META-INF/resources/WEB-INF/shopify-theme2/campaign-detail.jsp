@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261004-recipient-export-v3">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261023-readable-recipients">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -668,7 +668,11 @@
                 return response.text();
             }).then(function (html) {
                 recipientHost.innerHTML = html;
-                markRecipientExportQueried();
+                if (recipientHost.querySelector('[data-campaign-recipient-syncing], [data-campaign-recipient-incomplete]')) {
+                    markRecipientExportUnqueried();
+                } else {
+                    markRecipientExportQueried();
+                }
             }).catch(function (error) {
                 if (error.name === 'AbortError') return;
                 markRecipientExportUnqueried();

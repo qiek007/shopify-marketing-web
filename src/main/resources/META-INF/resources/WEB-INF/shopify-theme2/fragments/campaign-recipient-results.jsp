@@ -1,6 +1,31 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page language="java" pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
+<c:if test="${recipientReadState eq 'UPDATING' or recipientReadState eq 'PARTIAL'}">
+    <div class="campaign-recipient-read-notice" role="status" data-campaign-recipient-incomplete>
+        <i class="fa fa-info-circle" aria-hidden="true"></i>
+        <div><c:choose>
+            <c:when test="${recipientReadState eq 'UPDATING'}">
+                <strong>回执同步中，已展示现有明细</strong>
+                <span>新增回执正在同步，状态与次数可能稍有延迟。同步完成后可重新查询；完整导出待核验通过后开放。</span>
+            </c:when>
+            <c:otherwise>
+                <strong>历史明细部分可用</strong>
+                <span>以下仅为当前可读取的数据，次数与筛选结果可能不完整；空白或零次不代表未发送、未送达或未发生。完整导出暂不可用。</span>
+            </c:otherwise>
+        </c:choose></div>
+    </div>
+</c:if>
 <c:choose>
+    <c:when test="${recipientReadState eq 'SYNCHRONIZING'}">
+        <div class="empty-state compact" role="status" data-campaign-recipient-syncing>
+            <i class="fa fa-clock-o"></i><strong>收件人历史明细暂未就绪</strong>
+            <span>数据正在同步或等待完整性核验，请稍后点击“查询”重试。若持续出现，请联系管理员检查投影或历史数据恢复。</span>
+        </div>
+    </c:when>
+    <c:when test="${empty recipientPage.items and (recipientReadState eq 'UPDATING' or recipientReadState eq 'PARTIAL')}">
+        <div class="empty-state compact"><i class="fa fa-info-circle"></i><strong>当前可用数据中没有匹配记录</strong><span>数据尚未完整核验；可尝试清除筛选或稍后重新查询，不能据此认定活动没有收件人。</span></div>
+        <c:if test="${recipientPage.hasPrevious}"><nav class="pagination"><a href="#" data-campaign-recipient-page="${recipientPage.page - 1}">上一页</a><a href="#" data-campaign-recipient-page="1">返回第一页</a></nav></c:if>
+    </c:when>
     <c:when test="${empty recipientPage.items}">
         <div class="empty-state"><i class="fa fa-inbox"></i><strong>没有收件人记录</strong><span>当前筛选条件没有匹配数据。</span></div>
     </c:when>
