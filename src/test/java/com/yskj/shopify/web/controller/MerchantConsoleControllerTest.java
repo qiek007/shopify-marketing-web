@@ -117,6 +117,32 @@ class MerchantConsoleControllerTest {
     }
 
     @Test
+    void customerAndSuppressionBulkActionsForwardToTheirWriteCommands() {
+        JSONObject customerBody = new JSONObject(Map.of("affected", 4));
+        JSONObject suppressionBody = new JSONObject(Map.of("released", 7, "tagged", 5));
+        when(client.exchange(eq("customers.delete"), any(), eq("demo.myshopify.com"),
+                any(), eq(null))).thenReturn(MerchantWebProtocol.json(customerBody));
+        when(client.exchange(eq("suppressions.release"), any(), eq("demo.myshopify.com"),
+                any(), eq(null))).thenReturn(MerchantWebProtocol.json(suppressionBody));
+        var customerParams = new LinkedMultiValueMap<String, String>();
+        customerParams.add("shop", "demo.myshopify.com");
+        customerParams.add("q", "alice");
+        var suppressionParams = new LinkedMultiValueMap<String, String>();
+        suppressionParams.add("shop", "demo.myshopify.com");
+        suppressionParams.add("reason", "HARD_BOUNCE");
+        suppressionParams.add("targetTag", "恢复发送");
+
+        assertThat(controller.deleteCustomers(customerParams, session()).getBody())
+                .isEqualTo(customerBody);
+        assertThat(controller.releaseSuppressions(suppressionParams, session()).getBody())
+                .isEqualTo(suppressionBody);
+        verify(client).exchange(eq("customers.delete"), any(), eq("demo.myshopify.com"),
+                any(), eq(null));
+        verify(client).exchange(eq("suppressions.release"), any(), eq("demo.myshopify.com"),
+                any(), eq(null));
+    }
+
+    @Test
     void storeMemberFormsUseTheRemoteRoleCommands() {
         when(client.exchange(eq("store-members.grant"), any(),
                 eq("demo.myshopify.com"), any(), eq(null)))
@@ -176,6 +202,7 @@ class MerchantConsoleControllerTest {
         params.add("shop", "demo.myshopify.com");
         params.add("customerTag", "VIP");
         params.add("consentState", "SUBSCRIBED");
+        params.add("validateEmails", "true");
 
         String view = controller.uploadCustomers(
                 params, file, session(), new ExtendedModelMap(), new RedirectAttributesModelMap());
@@ -195,7 +222,8 @@ class MerchantConsoleControllerTest {
                 "impupl_1", "token-1", 4, 4);
         verify(client).exchange(eq("customer-imports.upload-complete"), any(),
                 eq("demo.myshopify.com"), org.mockito.ArgumentMatchers.argThat(value ->
-                        "SUBSCRIBED".equals(value.getString("consentState"))), eq(null));
+                        "SUBSCRIBED".equals(value.getString("consentState"))
+                                && value.getBooleanValue("validateEmails")), eq(null));
         verify(store).delete("2026/09/staged.csv");
     }
 

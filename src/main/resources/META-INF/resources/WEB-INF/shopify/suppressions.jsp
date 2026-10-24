@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css">
+    <style>
+        .filter-actions .secondary-button[data-suppression-release] { min-width: 150px; padding: 0 16px; gap: 8px; flex-shrink: 0; white-space: nowrap; }
+        .filter-actions .secondary-button[data-suppression-release] > i { flex-shrink: 0; }
+    </style>
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -21,7 +25,7 @@
         </section>
         <section class="content-section">
             <div class="section-heading"><div><h2>名单列表</h2><p>名单按店铺隔离，默认显示当前仍然有效的抑制记录</p></div><span class="section-count">共 <c:out value="${suppressions.total}"/> 条</span></div>
-            <form class="workspace-form" method="get" action="${ctx}/suppressions">
+            <form class="workspace-form" method="get" action="${ctx}/suppressions" data-suppression-filter-form>
                 <input type="hidden" name="shop" value="${selectedShop}">
                 <input type="hidden" name="page" value="1">
                 <input type="hidden" name="size" value="${suppressions.pageSize}">
@@ -45,8 +49,10 @@
                     <label><span>进入开始日期</span><input name="fromDate" type="date" value="<c:out value='${suppressionFilter.fromDate}'/>"></label>
                     <label><span>进入结束日期</span><input name="toDate" type="date" value="<c:out value='${suppressionFilter.toDate}'/>"></label>
                 </div>
-                <div class="form-actions filter-actions"><button class="action-button" type="submit"><i class="fa fa-search"></i><span>查询</span></button><a class="secondary-button clear-filter-button" href="${ctx}/suppressions?shop=${selectedShop}"><i class="fa fa-eraser"></i><span>清空条件</span></a></div>
+                <div class="form-actions filter-actions"><c:if test="${canManageCustomers and suppressions.total gt 0}"><button class="secondary-button danger-text" type="button" data-suppression-release><i class="fa fa-unlock-alt"></i><span>移出抑制名单</span></button></c:if><button class="action-button" type="submit"><i class="fa fa-search"></i><span>查询</span></button><a class="secondary-button clear-filter-button" href="${ctx}/suppressions?shop=${selectedShop}"><i class="fa fa-eraser"></i><span>清空条件</span></a></div>
             </form>
+            <div class="customer-tag-feedback" data-suppression-release-feedback aria-live="polite" hidden></div>
+            <c:if test="${canManageCustomers}"><dialog id="suppression-release-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="suppression-release-title"><div class="campaign-send-dialog-icon danger"><i class="fa fa-unlock-alt"></i></div><div><h2 id="suppression-release-title">移出抑制名单</h2><p>将解除当前查询条件匹配的全部有效记录，包括未显示在当前页的记录。原进入原因和时间会保留。</p></div><form action="${ctx}/suppressions/release" method="post" data-suppression-release-form><div class="customer-segment-summary"><strong>处理范围</strong><span data-suppression-release-summary>当前查询条件匹配的全部有效记录</span></div><label><span>可选标签</span><input name="targetTag" maxlength="100" autocomplete="off" placeholder="例如：已人工解除"></label><small class="customer-filter-hint">填写后，会为本批次中能匹配到客户的记录添加此标签。</small><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-suppression-release-close>取消</button><button class="primary-button danger-button" type="submit"><i class="fa fa-unlock-alt"></i>确认移出</button></div></form></dialog></c:if>
             <c:choose>
                 <c:when test="${empty suppressions.items}"><div class="empty-state"><i class="fa fa-ban"></i><strong>没有找到抑制记录</strong><span>当前店铺没有符合条件的邮件地址。</span></div></c:when>
                 <c:otherwise>
@@ -81,12 +87,50 @@
         <script src="${ctx}/shopify/js/customer-timeline.js?v=20260925-p130"></script>
         <script>
         (function () {
+            var filterForm = document.querySelector('[data-suppression-filter-form]');
+            var releaseButton = document.querySelector('[data-suppression-release]');
+            var releaseDialog = document.getElementById('suppression-release-dialog');
+            var releaseForm = document.querySelector('[data-suppression-release-form]');
+            var releaseSummary = document.querySelector('[data-suppression-release-summary]');
+            var releaseFeedback = document.querySelector('[data-suppression-release-feedback]');
             var dialog = document.getElementById('suppression-customer-dialog');
             var body = document.getElementById('suppression-customer-dialog-body');
             var title = document.getElementById('suppression-customer-dialog-title');
             var emailDialog = document.getElementById('suppression-customer-email-dialog');
             var emailFrame = document.getElementById('suppression-customer-email-frame');
             var request;
+
+            function describeSuppressionFilter() {
+                if (!filterForm) return '当前查询条件匹配的全部有效记录';
+                var data = new FormData(filterForm), parts = [];
+                if (data.get('q')) parts.push('包含“' + data.get('q') + '”');
+                if (data.get('reason')) parts.push('原因 ' + data.get('reason'));
+                if (data.get('status')) parts.push('状态 ' + data.get('status'));
+                if (data.get('fromDate') || data.get('toDate')) parts.push('进入日期 ' + (data.get('fromDate') || '不限') + ' 至 ' + (data.get('toDate') || '不限'));
+                return parts.length ? parts.join('；') : '当前查询条件匹配的全部有效记录';
+            }
+            function runSuppressionRelease() {
+                if (!filterForm || !releaseForm || !releaseDialog) return;
+                var submit = releaseForm.querySelector('button[type="submit"]');
+                var payload = new URLSearchParams(new FormData(filterForm));
+                payload.set('confirm', 'RELEASE_SUPPRESSIONS');
+                payload.delete('page'); payload.delete('size');
+                var tag = String(new FormData(releaseForm).get('targetTag') || '').trim();
+                if (tag) payload.set('targetTag', tag);
+                submit.disabled = true;
+                fetch(releaseForm.action, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }, body: payload.toString() })
+                    .then(function (response) { if (!response.ok) throw new Error('HTTP ' + response.status); return response.json(); })
+                    .then(function (result) { sessionStorage.setItem('suppressionReleaseMessage', result.message || '已移出抑制名单'); var query = new URLSearchParams(new FormData(filterForm)); query.set('page', '1'); window.location.assign(filterForm.action + '?' + query.toString()); })
+                    .catch(function () { releaseDialog.close(); releaseFeedback.hidden = false; releaseFeedback.className = 'customer-tag-feedback error'; releaseFeedback.textContent = '批量移出失败，请稍后重试'; })
+                    .finally(function () { submit.disabled = false; });
+            }
+            var releaseMessage = sessionStorage.getItem('suppressionReleaseMessage');
+            if (releaseMessage && releaseFeedback) { sessionStorage.removeItem('suppressionReleaseMessage'); releaseFeedback.hidden = false; releaseFeedback.className = 'customer-tag-feedback success'; releaseFeedback.textContent = releaseMessage; }
+            if (releaseButton && releaseDialog && releaseForm) {
+                releaseButton.addEventListener('click', function () { releaseSummary.textContent = describeSuppressionFilter(); releaseDialog.showModal(); releaseForm.querySelector('input[name="targetTag"]').focus(); });
+                releaseForm.addEventListener('submit', function (event) { event.preventDefault(); runSuppressionRelease(); });
+                releaseDialog.querySelector('[data-suppression-release-close]').addEventListener('click', function () { releaseDialog.close(); });
+            }
 
             document.querySelector('.content-section').addEventListener('click', function (event) {
                 var link = event.target.closest('[data-suppression-customer-detail]');

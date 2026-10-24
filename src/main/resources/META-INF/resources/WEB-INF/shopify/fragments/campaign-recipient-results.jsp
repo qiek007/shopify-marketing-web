@@ -1,5 +1,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page language="java" pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
+<c:if test="${recipientReadState eq 'CURRENT'}"><div class="campaign-recipient-read-notice" role="status"><i class="fa fa-info-circle" aria-hidden="true"></i><div><strong>活动有效期内，已展示当前数据</strong><span>数据持续更新，可导出当前查询快照；尚未处理的事件不包含在快照内。</span></div></div></c:if>
 <c:if test="${recipientReadState eq 'UPDATING' or recipientReadState eq 'PARTIAL'}">
     <div class="campaign-recipient-read-notice" role="status" data-campaign-recipient-incomplete>
         <i class="fa fa-info-circle" aria-hidden="true"></i>
@@ -7,6 +8,26 @@
             <c:when test="${recipientReadState eq 'UPDATING'}">
                 <strong>回执同步中，已展示现有明细</strong>
                 <span>新增回执正在同步，状态与次数可能稍有延迟。同步完成后可重新查询；完整导出待核验通过后开放。</span>
+            </c:when>
+            <c:when test="${recipientReadReason eq 'HOT_DATA_INCOMPLETE'}">
+                <strong>热数据完整性尚未确认，已展示可读明细</strong>
+                <span>当前热明细与完整性依据未完全对齐；这不等于活动已过有效期或尚未写入 Doris。部分回执次数与筛选结果可能不完整，完整导出待核验通过后开放。</span>
+            </c:when>
+            <c:when test="${recipientReadReason eq 'CONSISTENCY_MISMATCH'}">
+                <strong>统计核验尚未对齐，已展示可读明细</strong>
+                <span>最近一次核验存在统计差异，结果已记录，不能据此判定明细丢失。差异不阻止到期热数据清理；当前展示可读取的明细，完整性未确认时不提供完整导出。</span>
+            </c:when>
+            <c:when test="${recipientReadReason eq 'EXPIRY_AUDIT_FAILED'}">
+                <strong>到期核验异常，已展示可读明细</strong>
+                <span>到期核验未完成，异常已记录，不阻止到期热数据清理。当前展示现有可读数据；无法确认完整性时不提供完整导出。</span>
+            </c:when>
+            <c:when test="${recipientReadReason eq 'VERIFICATION_PENDING'}">
+                <strong>明细等待核验，已展示现有数据</strong>
+                <span>当前来源的完整性尚未确认；有效期内使用热数据查询和当前快照导出，到期清理时核验并记录结果。当前展示可读取的数据，完整导出暂不可用。</span>
+            </c:when>
+            <c:when test="${recipientReadReason eq 'VERIFICATION_UNAVAILABLE'}">
+                <strong>当前核验状态暂不可获取，已展示可读明细</strong>
+                <span>暂时无法确认数据完整性，不代表活动没有数据或历史记录已丢失。请稍后重新查询；完整导出待核验恢复并通过后开放。</span>
             </c:when>
             <c:otherwise>
                 <strong>历史明细部分可用</strong>

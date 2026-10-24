@@ -6,7 +6,7 @@
 <script id="session-keepalive" src="${ctx}/shopify/js/session-keepalive.js"
         data-context-path="${ctx}" defer></script>
 <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/shop-switcher.css?v=20261020-shop-search-icon">
-<script id="console-navigation" src="${ctx}/shopify/js/console-navigation.js?v=20261020-shop-search"
+<script id="console-navigation" src="${ctx}/shopify/js/console-navigation.js?v=20261020-shop-search-name-sort-20261024"
         data-context-path="${ctx}" defer></script>
 <script src="${ctx}/shopify/js/browser-time.js" defer></script>
 <header class="console-header">

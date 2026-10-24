@@ -229,6 +229,12 @@ public class MerchantConsoleController {
         return body("customer-tags.remove", params, session, null);
     }
 
+    @PostMapping(value = "/customers/delete", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> deleteCustomers(@RequestParam MultiValueMap<String, String> params,
+                                             HttpSession session) {
+        return body("customers.delete", params, session, null);
+    }
+
     @PostMapping(value = "/segments/from-customer-filter",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> segmentFromFilter(@RequestParam MultiValueMap<String, String> params,
@@ -360,6 +366,12 @@ public class MerchantConsoleController {
     public String suppressions(@RequestParam MultiValueMap<String, String> params,
                                HttpSession session, Model model, RedirectAttributes redirect) {
         return view("suppressions.page", params, session, model, redirect);
+    }
+
+    @PostMapping(value = "/suppressions/release", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> releaseSuppressions(
+            @RequestParam MultiValueMap<String, String> params, HttpSession session) {
+        return body("suppressions.release", params, session, null);
     }
 
     @GetMapping("/products")

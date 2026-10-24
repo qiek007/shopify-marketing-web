@@ -804,6 +804,25 @@ class ThemeResourceParityTest {
         }
     }
 
+    @Test
+    void customerDeletionAndSuppressionReleaseExistInBothThemes() throws Exception {
+        for (String theme : List.of("shopify", "shopify-theme2")) {
+            Path root = ROOT.resolve("WEB-INF").resolve(theme);
+            String customers = Files.readString(root.resolve("customers.jsp"));
+            String suppressions = Files.readString(root.resolve("suppressions.jsp"));
+
+            assertThat(customers).contains(
+                    "data-customer-delete", "customer-delete-dialog",
+                    "/customers/delete", "runCustomerDeletion",
+                    "fa fa-spinner fa-spin", "正在删除…",
+                    "deleteForm.setAttribute('aria-busy', 'true')");
+            assertThat(suppressions).contains(
+                    "data-suppression-release", "suppression-release-dialog",
+                    "/suppressions/release", "name=\"targetTag\"",
+                    "runSuppressionRelease");
+        }
+    }
+
     private Set<String> views(String theme) throws Exception {
         Path root = ROOT.resolve("WEB-INF").resolve(theme);
         try (var files = Files.walk(root)) {

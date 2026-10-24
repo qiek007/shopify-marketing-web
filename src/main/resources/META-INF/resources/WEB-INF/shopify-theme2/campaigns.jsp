@@ -11,6 +11,20 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261020-scheduled-time">
+    <style>
+        .status-table .campaign-status { color: #475569; background: #f1f5f9; font-weight: 600; white-space: nowrap; }
+        .status-table .campaign-status[data-campaign-status="DRAFT"] { color: #475569; background: #f1f5f9; }
+        .status-table .campaign-status[data-campaign-status="PENDING_APPROVAL"] { color: #854d0e; background: #fef9c3; }
+        .status-table .campaign-status[data-campaign-status="APPROVED"] { color: #6b21a8; background: #f3e8ff; }
+        .status-table .campaign-status[data-campaign-status="PREPARING"] { color: #3730a3; background: #e0e7ff; }
+        .status-table .campaign-status[data-campaign-status="SCHEDULED"] { color: #1e40af; background: #dbeafe; }
+        .status-table .campaign-status[data-campaign-status="RUNNING"] { color: #115e59; background: #ccfbf1; }
+        .status-table .campaign-status[data-campaign-status="QUEUED"] { color: #075985; background: #e0f2fe; }
+        .status-table .campaign-status[data-campaign-status="PAUSED"] { color: #9a3412; background: #ffedd5; }
+        .status-table .campaign-status[data-campaign-status="COMPLETED"] { color: #166534; background: #dcfce7; }
+        .status-table .campaign-status[data-campaign-status="CANCELLED"] { color: #57534e; background: #e7e5e4; }
+        .status-table .campaign-status[data-campaign-status="FAILED"] { color: #991b1b; background: #fee2e2; }
+    </style>
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -46,7 +60,7 @@
                     <c:forEach items="${campaigns}" var="campaign"><tr>
                         <td><a class="table-primary-link" href="${ctx}/campaigns/detail?shop=${campaign.shopDomain}&amp;campaignId=${campaign.campaignId}"><strong><c:out value="${campaign.name}"/></strong></a></td>
                         <td>
-                            <span class="status-pill neutral"><c:out value="${campaign.statusDisplayName}"/></span>
+                            <span class="status-pill campaign-status" data-campaign-status="<c:out value='${campaign.status}'/>"><c:out value="${campaign.statusDisplayName}"/></span>
                             <c:if test="${campaign.status eq 'SCHEDULED' and not empty campaign.scheduledAt}">
                                 <span class="cell-note campaign-scheduled-time">定时发送：<time data-browser-time="<c:out value='${campaign.scheduledAt}'/>" data-browser-time-format="date-time" datetime="<c:out value='${campaign.scheduledAt}'/>"><c:out value="${campaign.scheduledAt}"/></time></span>
                             </c:if>
