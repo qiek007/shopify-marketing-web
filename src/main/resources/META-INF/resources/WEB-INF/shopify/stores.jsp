@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261004-store-quota">
+    <link rel="stylesheet" href="${ctx}/shopify/css/store-domain-verification.css?v=20261024-store-query-verify-v2">
+    <style>.cell-note.store-sync-note { max-width:none; white-space:nowrap; margin:10px 18px 14px; overflow-x:auto; text-overflow:clip; }</style>
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -34,8 +36,9 @@
                         <td><span class="sync-state"><c:out value="${currentStore.customersStatus}" default="未同步"/></span></td>
                         <td><span class="sync-state"><c:out value="${currentStore.ordersStatus}" default="未同步"/></span></td>
                         <td><time data-browser-time="<c:out value='${currentStore.installedAt}'/>" datetime="<c:out value='${currentStore.installedAt}'/>"><c:out value="${currentStore.installedAt}" default="-"/></time></td>
-                        <td><div class="store-sync-cell"><time data-browser-time="<c:out value='${currentStore.lastSyncedAt}'/>" datetime="<c:out value='${currentStore.lastSyncedAt}'/>"><c:out value="${currentStore.lastSyncedAt}" default="尚未同步"/></time><c:if test="${canConfigureSender && shopifyStore}"><form method="post" action="${ctx}/stores/sync" onsubmit="var b=this.querySelector('button');b.disabled=true;b.innerHTML='<i class=&quot;fa fa-spinner fa-spin&quot;></i><span>同步中</span>';"><input type="hidden" name="shop" value="${selectedShop}"><button class="action-button" type="submit"><i class="fa fa-refresh"></i><span>手动同步</span></button></form></c:if></div></td>
+                        <td><div class="store-sync-cell"><time data-browser-time="<c:out value='${currentStore.lastSyncedAt}'/>" datetime="<c:out value='${currentStore.lastSyncedAt}'/>"><c:out value="${currentStore.lastSyncedAt}" default="尚未同步"/></time><c:if test="${canConfigureSender && shopifyStore}"><form method="post" action="${ctx}/stores/sync" onsubmit="var b=this.querySelector('button');b.disabled=true;b.innerHTML='<i class=&quot;fa fa-spinner fa-spin&quot;></i><span>同步中</span>';"><input type="hidden" name="shop" value="${selectedShop}"><button class="action-button" type="submit"><i class="fa fa-refresh"></i><span>立即同步</span></button></form></c:if></div></td>
                     </tr></tbody></table></div>
+                    <c:if test="${shopifyStore && currentStore.status eq 'ACTIVE'}"><p class="cell-note store-sync-note">每日自动同步（距上次成功同步满 24 小时），无需保持页面打开；也可点击“立即同步”提前执行。</p></c:if>
                     <c:if test="${not empty currentStore.lastError}"><div class="system-notice danger" role="alert"><i class="fa fa-exclamation-circle"></i><div><strong>最近同步异常</strong><span><c:out value="${currentStore.lastError}"/></span></div></div></c:if>
                 </c:otherwise>
             </c:choose>
@@ -83,7 +86,8 @@
                                     <input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="provider" value="${provider}">
                                     <div class="form-grid"><label><span>发件域（由平台管理员配置）</span><input value="<c:out value='${channelSetting.sendingDomain}'/>" placeholder="尚未配置" data-sending-domain readonly></label><label><span>发件名称</span><input name="fromName" value="<c:out value='${channelSetting.fromName}'/>" placeholder="品牌名称" required></label></div>
                                     <div class="form-grid"><label><span>发件邮箱</span><input name="fromEmail" type="email" data-from-email value="<c:out value='${channelSetting.fromEmail}'/>" placeholder="marketing@example.com" required></label><label><span>回复邮箱</span><input name="replyToEmail" type="email" value="<c:out value='${channelSetting.replyToEmail}'/>" placeholder="support@example.com" required></label></div>
-                                    <div class="form-actions"><button class="primary-button" type="submit"><i class="fa fa-save"></i><span>保存 <c:out value="${providerOption.displayAlias}"/> 设置</span></button></div>
+                                    <div class="form-actions"><button class="action-button" type="button" data-store-domain-open ${empty channelSetting.sendingDomain ? 'disabled' : ''}><i class="fa fa-check-circle-o" aria-hidden="true"></i><span>发件域验证</span></button><button class="primary-button" type="submit"><i class="fa fa-save"></i><span>保存 <c:out value="${providerOption.displayAlias}"/> 设置</span></button></div>
+                                    <%@ include file="fragments/sender-domain-verification.jspf" %>
                                 </form>
                             </c:when><c:when test="${not empty channelSetting}">
                                 <div class="detail-grid"><div><span>发件域</span><strong><c:out value="${channelSetting.sendingDomain}"/></strong></div><div><span>发件身份</span><strong><c:out value="${channelSetting.fromHeader}"/></strong></div><div><span>回复邮箱</span><strong><c:out value="${channelSetting.replyToEmail}"/></strong></div></div>
@@ -134,6 +138,7 @@
 <script src="${ctx}/baseui/lib/jquery/3.6.1/jquery.min.js"></script>
 <script src="${ctx}/baseui/lib/layer/2.4/layer.js"></script>
 <script src="${ctx}/shopify/js/store-members.js?v=20261001-role-dialog"></script>
+<script src="${ctx}/shopify/js/store-domain-verification.js?v=20261024-store-query&amp;r=20261025-abbreviated-verify-v2" defer></script>
 <script>
     (function () {
         var panel = document.querySelector('[data-store-pixel-status]');

@@ -12,7 +12,7 @@
   var body = root.querySelector('[data-trend-rows]');
   var exportLink = root.querySelector('[data-trend-export]');
   var ns = 'http://www.w3.org/2000/svg';
-  var colors = { sent: '#13805b', orders: '#697a91', shopify: '#bb7528', ga4: '#2a79b4' };
+  var colors = { sent: '#13805b', delivered: '#126f9b', opened: '#8d5ab0', clicked: '#b37b13', unsubscribed: '#bd4650', orders: '#697a91', shopify: '#bb7528', ga4: '#2a79b4' };
   var integer = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
   var compact = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
   var money = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -29,6 +29,8 @@
     return node;
   }
   function number(value) { return Number.isFinite(Number(value)) ? Number(value) : 0; }
+  function optionalCount(value) { return value === null || value === undefined ? null : number(value); }
+  function countLabel(value) { return value === null || value === undefined ? '待汇总' : integer.format(number(value)); }
   function amount(value, currency) {
     return value === null || value === undefined ? '—'
       : money.format(number(value)) + (currency ? ' ' + currency : '');
@@ -95,6 +97,10 @@
       appendCell(row, data.shopifyOrdersAvailable ? integer.format(number(day.shopifyOrderCount)) : '—');
       appendCell(row, data.shopifyRevenueMixed ? '币种混合' : amount(day.shopifyOrderAmount, data.shopifyCurrency));
       appendCell(row, data.ga4RevenueMixed ? '币种混合' : amount(day.ga4PurchaseRevenue, data.ga4Currency));
+      appendCell(row, countLabel(day.emailDeliveredCount));
+      appendCell(row, countLabel(day.emailOpenedCount));
+      appendCell(row, countLabel(day.emailClickedCount));
+      appendCell(row, countLabel(day.emailUnsubscribedCount));
       body.appendChild(row);
     });
     details.hidden = false;
@@ -106,12 +112,16 @@
     var firstX = 125, lastX = 1475;
     var x = function (index) { return firstX + (lastX - firstX) * index / (days.length - 1); };
     var sent = days.map(function (day) { return number(day.emailSentCount); });
+    var delivered = days.map(function (day) { return optionalCount(day.emailDeliveredCount); });
+    var opened = days.map(function (day) { return optionalCount(day.emailOpenedCount); });
+    var clicked = days.map(function (day) { return optionalCount(day.emailClickedCount); });
+    var unsubscribed = days.map(function (day) { return optionalCount(day.emailUnsubscribedCount); });
     var orders = days.map(function (day) { return data.shopifyOrdersAvailable ? number(day.shopifyOrderCount) : null; });
     var shopify = days.map(function (day) { return data.shopifyRevenueMixed ? null
       : day.shopifyOrderAmount === null ? null : number(day.shopifyOrderAmount); });
     var ga4 = days.map(function (day) { return day.ga4PurchaseRevenue === null ? null : number(day.ga4PurchaseRevenue); });
     var peak = function (values) { return Math.max(1, ...values.filter(function (item) { return item !== null; })); };
-    var sentMax = peak(sent), orderMax = peak(orders);
+    var sentMax = peak(sent.concat(delivered, opened, clicked, unsubscribed)), orderMax = peak(orders);
     var sameCurrency = !!data.shopifyCurrency && data.shopifyCurrency === data.ga4Currency;
     var sharedMoneyMax = peak(shopify.concat(ga4));
     var shopifyMax = sameCurrency ? sharedMoneyMax : peak(shopify);
@@ -150,6 +160,10 @@
 
     var series = [
       { key: 'sent', values: sent, max: sentMax, top: 43, bottom: 134 },
+      { key: 'delivered', values: delivered, max: sentMax, top: 43, bottom: 134 },
+      { key: 'opened', values: opened, max: sentMax, top: 43, bottom: 134 },
+      { key: 'clicked', values: clicked, max: sentMax, top: 43, bottom: 134 },
+      { key: 'unsubscribed', values: unsubscribed, max: sentMax, top: 43, bottom: 134 },
       { key: 'orders', values: orders, max: orderMax, top: 43, bottom: 134 },
       { key: 'shopify', values: shopify, max: shopifyMax, top: 200, bottom: 291 },
       { key: 'ga4', values: ga4, max: ga4Max, top: 200, bottom: 291 }
@@ -186,6 +200,10 @@
       });
       var day = days[i];
       tooltip.textContent = day.date + '\n邮件发送 ' + integer.format(sent[i])
+        + '\n邮件送达 ' + countLabel(delivered[i])
+        + '\n邮件打开人数 ' + countLabel(opened[i])
+        + '\n邮件点击人数 ' + countLabel(clicked[i])
+        + '\n邮件退订 ' + countLabel(unsubscribed[i])
         + '\nShopify 订单 ' + (orders[i] === null ? '—' : integer.format(orders[i]))
         + '\nShopify 金额 ' + (data.shopifyRevenueMixed ? '币种混合' : amount(day.shopifyOrderAmount, data.shopifyCurrency))
         + '\nGA4 邮件收入 ' + (data.ga4RevenueMixed ? '币种混合'
@@ -219,7 +237,9 @@
     exportLink.hidden = false;
     var notes = ['统计日按 ' + data.timeZone,
       '邮件为服务商提交数；批量任务按请求开始日、旧模式按请求开始时间归集',
+      '送达、退订为回执次数，按活动汇总创建日归集；打开、点击为活动内去重收件人数，按首次记录日归集',
       'Shopify 金额为未取消订单总额，未扣退款；GA4 为本平台邮件活动购买收入，两者口径独立'];
+    if (daysAwaitingEngagement(data.days)) notes.push('部分邮件回执指标待汇总，曲线留空、每日明细显示“待汇总”、Excel留空，不代表零次');
     if (!data.shopifyOrdersAvailable) notes.push('当前店铺未接入 Shopify 订单，订单指标暂不可用');
     if (data.shopifyRevenueMixed) notes.push('Shopify 订单币种混合，订单金额不合计展示');
     if (data.ga4RevenueMixed) notes.push('GA4 报告币种混合，邮件购买收入不合计展示');
@@ -231,6 +251,10 @@
       notes.push('两种金额币种不同，分别使用独立刻度，不可直接比较');
     }
     note.textContent = notes.join(' · ');
+  }
+
+  function daysAwaitingEngagement(days) {
+    return days.some(function(day) { return day.emailDeliveredCount == null || day.emailOpenedCount == null || day.emailClickedCount == null || day.emailUnsubscribedCount == null; });
   }
 
   if (!root.dataset.shop) {

@@ -28,7 +28,7 @@ public class RemoteTrendExcelExporter {
             zone.createCell(1).setCellValue(text(trend, "timeZone"));
 
             String[] headers = {"日期", "邮件发送数", "Shopify 订单数",
-                    "Shopify 订单金额", "GA4 邮件购买收入"};
+                    "Shopify 订单金额", "GA4 邮件购买收入", "邮件送达数", "邮件打开人数", "邮件点击人数", "邮件退订数"};
             var header = sheet.createRow(6);
             var headerStyle = workbook.createCellStyle();
             headerStyle.setFillForegroundColor(IndexedColors.DARK_GREEN.getIndex());
@@ -53,6 +53,10 @@ public class RemoteTrendExcelExporter {
                     row.createCell(2).setCellValue(day.getLongValue("shopifyOrderCount"));
                     numeric(row.createCell(3), day.getString("shopifyOrderAmount"));
                     numeric(row.createCell(4), day.getString("ga4PurchaseRevenue"));
+                    numeric(row.createCell(5), day.getString("emailDeliveredCount"));
+                    numeric(row.createCell(6), day.getString("emailOpenedCount"));
+                    numeric(row.createCell(7), day.getString("emailClickedCount"));
+                    numeric(row.createCell(8), day.getString("emailUnsubscribedCount"));
                 }
             }
             for (int index = 0; index < headers.length; index++) {

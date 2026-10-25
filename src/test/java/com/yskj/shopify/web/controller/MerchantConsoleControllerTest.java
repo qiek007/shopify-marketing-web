@@ -29,6 +29,39 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 
 class MerchantConsoleControllerTest {
+    @Test void senderDomainCsrfIsStableAndRequiredBeforeVerificationRpc() {
+        var expected=new JSONObject(Map.of("provider","INFOBIP","domain","mail.example.com","status","VERIFIED"));
+        when(client.exchange(eq("sender-domain.status"),any(),eq("demo.myshopify.com"),any(),eq(null)))
+                .thenReturn(MerchantWebProtocol.json(expected));
+        when(client.exchange(eq("sender-domain.verify"),any(),eq("demo.myshopify.com"),any(),eq(null)))
+                .thenReturn(MerchantWebProtocol.json(expected));
+        var params=new LinkedMultiValueMap<String,String>();params.add("shop","demo.myshopify.com");params.add("provider","INFOBIP");
+        var currentSession=session();
+        String token=controller.senderDomainVerification(params,currentSession).getHeaders().getFirst("X-Store-Domain-Csrf");
+        assertThat(token).isNotBlank();
+        assertThat(controller.senderDomainVerification(params,currentSession).getHeaders().getFirst("X-Store-Domain-Csrf")).isEqualTo(token);
+        var body=new JSONObject(Map.of("provider","INFOBIP","domain","attacker.example","actorId","attacker","configVersion",999));
+        org.assertj.core.api.Assertions.assertThatThrownBy(()->controller.verifySenderDomain(params,body,null,currentSession))
+                .isInstanceOfSatisfying(org.springframework.web.server.ResponseStatusException.class,e->assertThat(e.getStatus()).isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN));
+        org.assertj.core.api.Assertions.assertThatThrownBy(()->controller.verifySenderDomain(params,body,"incorrect",currentSession))
+                .isInstanceOfSatisfying(org.springframework.web.server.ResponseStatusException.class,e->assertThat(e.getStatus()).isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN));
+        org.mockito.Mockito.verify(client,org.mockito.Mockito.never()).exchange(eq("sender-domain.verify"),any(),any(),any(),any());
+        assertThat(controller.verifySenderDomain(params,body,token,currentSession).getBody()).isEqualTo(expected);
+        var sent=org.mockito.ArgumentCaptor.forClass(JSONObject.class);
+        verify(client).exchange(eq("sender-domain.verify"),any(),eq("demo.myshopify.com"),sent.capture(),eq(null));
+        assertThat(sent.getValue()).doesNotContainKeys("domain","actorId","configVersion");
+        assertThat(sent.getValue().getString("provider")).isEqualTo("INFOBIP");
+    }
+    @Test void senderDomainStatusUsesReadOnlyFacadeOperationAndNeverCachesResult() {
+        var expected=new JSONObject(Map.of("provider","INFOBIP","domain","mail.example.com","status","VERIFIED"));
+        when(client.exchange(eq("sender-domain.status"),any(),eq("demo.myshopify.com"),any(),eq(null)))
+                .thenReturn(MerchantWebProtocol.json(expected));
+        var params=new LinkedMultiValueMap<String,String>();params.add("shop","demo.myshopify.com");params.add("provider","INFOBIP");
+        var response=controller.senderDomainVerification(params,session());
+        assertThat(response.getBody()).isEqualTo(expected);
+        assertThat(response.getHeaders().getCacheControl()).contains("no-store");
+        verify(client).exchange(eq("sender-domain.status"),any(),eq("demo.myshopify.com"),any(),eq(null));
+    }
 
     private final MerchantWebFacadeClient client = mock(MerchantWebFacadeClient.class);
     private final MerchantConsoleController controller =
@@ -394,6 +427,33 @@ class MerchantConsoleControllerTest {
             assertThat(captured.get().get(key)).as(key).isInstanceOf(JSONArray.class);
             assertThat(captured.get().getJSONArray(key)).hasSize(1);
         }
+    }
+
+    @Test
+    void segmentSaveForwardsTheChosenInnerAnyAndAllGroupMembershipArrays() {
+        AtomicReference<JSONObject> captured = new AtomicReference<>();
+        when(client.exchange(eq("segments.save"), any(), eq("demo.myshopify.com"), any(), eq(null)))
+                .thenAnswer(invocation -> {
+                    captured.set(invocation.getArgument(3));
+                    return MerchantWebProtocol.redirect("/segments", "Saved", null,
+                            new JSONObject(Map.of("shop", "demo.myshopify.com")));
+                });
+        var params = new LinkedMultiValueMap<String, String>();
+        params.add("shop", "demo.myshopify.com"); params.add("segmentId", "seg-1");
+        params.add("name", "Any contact"); params.add("matchMode", "ALL");
+        params.add("fields", "EMAIL"); params.add("fields", "CUSTOMER_NAME");
+        params.add("operators", "EQ"); params.add("operators", "CONTAINS");
+        params.add("values", "person@example.test"); params.add("values", "Name");
+        params.add("groupIds", "contact"); params.add("groupMatchModes", "ANY");
+        params.add("ruleGroupIds", "contact"); params.add("ruleGroupIds", "contact");
+
+        controller.saveSegment(params, session(), new ExtendedModelMap(), new RedirectAttributesModelMap());
+
+        assertThat(captured.get().getJSONArray("groupMatchModes")).containsExactly("ANY");
+        assertThat(captured.get().getJSONArray("groupIds")).containsExactly("contact");
+        assertThat(captured.get().getJSONArray("ruleGroupIds")).containsExactly("contact", "contact");
+        assertThat(captured.get().getJSONArray("fields")).containsExactly("EMAIL", "CUSTOMER_NAME");
+        assertThat(captured.get().getString("matchMode")).isEqualTo("ALL");
     }
 
     private MockHttpSession session() {

@@ -1,0 +1,19 @@
+<%@ page pageEncoding="UTF-8" %>
+<dialog class="store-domain-dialog" aria-label="发件域验证" data-store-domain-panel
+        data-check-url="${ctx}/stores/sender-domain-verification" data-shop="<c:out value='${selectedShop}'/>"
+        data-provider="<c:out value='${provider}'/>" data-configured-domain="<c:out value='${channelSetting.sendingDomain}'/>">
+    <div class="store-domain-heading"><div><p>发件域验证</p><h2><c:out value="${providerOption.displayAlias}"/></h2><small><c:out value="${channelSetting.sendingDomain}"/></small></div><button class="store-domain-close" type="button" data-store-domain-close aria-label="关闭发件域验证">×</button></div>
+    <div class="store-domain-content">
+        <div class="store-domain-loading" data-store-domain-loading hidden role="status"><i class="fa fa-spinner fa-spin" aria-hidden="true"></i> 正在查询发件域状态…</div>
+        <span class="store-domain-status" data-store-domain-status>尚未查询</span><small class="store-domain-checked" data-store-domain-checked></small>
+        <p class="store-domain-message" data-store-domain-message></p>
+        <div class="store-domain-table-wrap" data-store-domain-table hidden><table class="store-domain-table"><thead><tr><th>类型</th><th>主机记录</th><th>记录值</th><th>状态</th><th>操作</th></tr></thead><tbody data-store-domain-records></tbody></table></div>
+        <section class="store-domain-confirm" data-store-domain-confirm hidden role="alert">
+            <strong>确认请求供应商重新验证？</strong><p>将检查当前已配置的 <c:out value="${channelSetting.sendingDomain}"/>。只请求供应商检查已有域，不修改 DNS、不创建新域。请求超时后请先查询状态，不要直接重复提交。</p>
+            <div class="store-domain-confirm-actions"><button class="action-button" type="button" data-store-domain-verify-cancel>取消</button><button class="primary-button" type="button" data-store-domain-verify-confirm>确认重新验证</button></div>
+        </section>
+        <p class="store-domain-help">发件域由平台管理员配置。“刷新验证状态”仅重新查询状态；“重新验证”需要确认，只请求供应商检查已有域，不修改 DNS 或创建新域。</p>
+        <span class="store-domain-help" data-store-domain-copy-feedback aria-live="polite"></span>
+    </div>
+    <div class="store-domain-actions"><button class="action-button" type="button" data-store-domain-close>关闭</button><div class="store-domain-action-group"><button class="action-button" type="button" data-store-domain-check>刷新验证状态</button><button class="primary-button" type="button" data-store-domain-verify disabled>重新验证</button></div></div>
+</dialog>

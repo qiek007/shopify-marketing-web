@@ -18,6 +18,10 @@
 .trend-legend span { display: inline-flex; align-items: center; gap: 7px; }
 .trend-key { display: inline-block; width: 11px; height: 11px; border-radius: 3px; }
 .trend-key.sent { background: #13805b; }
+.trend-key.delivered { background: #126f9b; }
+.trend-key.opened { background: #8d5ab0; }
+.trend-key.clicked { background: #b37b13; }
+.trend-key.unsubscribed { background: #bd4650; }
 .trend-key.orders { background: #697a91; }
 .trend-key.shopify-money { background: #bb7528; }
 .trend-key.ga4-money { background: #2a79b4; }
@@ -36,7 +40,7 @@
 .trend-details summary i { transition: transform 160ms ease; }
 .trend-details[open] summary i { transform: rotate(180deg); }
 .trend-details .table-wrap { margin-top: 8px; max-height: 400px; overflow: auto; }
-.trend-details .status-table { min-width: 680px; }
+.trend-details .status-table { min-width: 1160px; }
 .trend-details .status-table thead { position: sticky; top: 0; z-index: 1; background: var(--surface); }
 .trend-details .status-table th, .trend-details .status-table td { text-align: center; }
 .trend-export-button { position: absolute; top: 7px; right: 2px; min-height: 32px; border-color: #a8c4b4; color: #176b4b; font-size: 12px; font-weight: 700; }

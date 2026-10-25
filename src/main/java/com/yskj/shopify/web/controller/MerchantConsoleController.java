@@ -22,6 +22,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -172,6 +174,26 @@ public class MerchantConsoleController {
     public String senderSettings(@RequestParam MultiValueMap<String, String> params,
                                  HttpSession session, Model model, RedirectAttributes redirect) {
         return view("sender-settings.save", params, session, model, redirect);
+    }
+
+    @GetMapping(value = "/stores/sender-domain-verification", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> senderDomainVerification(@RequestParam MultiValueMap<String,String> params,HttpSession session) {
+        LoginedUser user=requireUser(session);
+        var response=body("sender-domain.status",params,session,null);
+        var result=ResponseEntity.status(response.getStatusCode()).headers(response.getHeaders()).header("Cache-Control","no-store");
+        if(response.getStatusCode().is2xxSuccessful())result.header("X-Store-Domain-Csrf",com.yskj.shopify.web.security.SenderDomainCsrf.issue(session,user.getDomainid()+":"+user.getId()));
+        return result.body(response.getBody());
+    }
+
+    @PostMapping(value="/stores/sender-domain-verification", consumes=MediaType.APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> verifySenderDomain(@RequestParam MultiValueMap<String,String> params,
+            @RequestBody JSONObject command,@RequestHeader(value="X-Store-Domain-Csrf",required=false) String csrf,HttpSession session) {
+        LoginedUser user=requireUser(session);
+        com.yskj.shopify.web.security.SenderDomainCsrf.require(session,user.getDomainid()+":"+user.getId(),csrf);
+        var safeParams=new org.springframework.util.LinkedMultiValueMap<String,String>();
+        safeParams.add("shop",params.getFirst("shop"));safeParams.add("provider",command==null?null:command.getString("provider"));
+        var response=body("sender-domain.verify",safeParams,session,null);
+        return ResponseEntity.status(response.getStatusCode()).headers(response.getHeaders()).header("Cache-Control","no-store").body(response.getBody());
     }
 
     @PostMapping("/stores/members/grant")

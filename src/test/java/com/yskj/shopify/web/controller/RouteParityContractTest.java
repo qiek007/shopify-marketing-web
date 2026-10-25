@@ -25,7 +25,7 @@ class RouteParityContractTest {
                 "/issues", "/issues/replay", "/issues/ignore",
                 "/stores", "/stores/quota/history", "/settings/ga4", "/settings/ga4/service-account",
                 "/stores/web-pixel/status", "/stores/web-pixel/enable",
-                "/stores/sender-settings", "/stores/sync",
+                "/stores/sender-settings", "/stores/sender-domain-verification", "/stores/sync",
                 "/stores/members/grant", "/stores/members/revoke",
                 "/customers", "/customers/results", "/customers/tags/options",
                 "/customers/tags/add", "/customers/tags/remove",
