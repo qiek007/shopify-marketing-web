@@ -11,7 +11,13 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261020-scheduled-time">
-    <style>
+</head>
+<body class="shopify-console">
+<%@ include file="fragments/header.jspf" %>
+<div class="console-layout">
+    <%@ include file="fragments/navigation.jspf" %>
+    <main class="console-main">
+    <style data-campaign-list-styles>
         .status-table .campaign-status { color: #475569; background: #f1f5f9; font-weight: 600; white-space: nowrap; }
         .status-table .campaign-status[data-campaign-status="DRAFT"] { color: #475569; background: #f1f5f9; }
         .status-table .campaign-status[data-campaign-status="PENDING_APPROVAL"] { color: #854d0e; background: #fef9c3; }
@@ -21,16 +27,14 @@
         .status-table .campaign-status[data-campaign-status="RUNNING"] { color: #115e59; background: #ccfbf1; }
         .status-table .campaign-status[data-campaign-status="QUEUED"] { color: #075985; background: #e0f2fe; }
         .status-table .campaign-status[data-campaign-status="PAUSED"] { color: #9a3412; background: #ffedd5; }
+        .status-table .campaign-status[data-campaign-status="ARCHIVED"] { color: #5b21b6; background: #ede9fe; }
         .status-table .campaign-status[data-campaign-status="COMPLETED"] { color: #166534; background: #dcfce7; }
         .status-table .campaign-status[data-campaign-status="CANCELLED"] { color: #57534e; background: #e7e5e4; }
         .status-table .campaign-status[data-campaign-status="FAILED"] { color: #991b1b; background: #fee2e2; }
+        .campaign-list-table-wrap { overflow-x: auto; }
+        .campaign-list-table-wrap .status-table { min-width: 1160px; }
+        .status-table .campaign-time-column { min-width: 154px; white-space: nowrap; }
     </style>
-</head>
-<body class="shopify-console">
-<%@ include file="fragments/header.jspf" %>
-<div class="console-layout">
-    <%@ include file="fragments/navigation.jspf" %>
-    <main class="console-main">
         <section class="page-heading">
             <div><p class="eyebrow">营销活动</p></div>
         </section>
@@ -56,11 +60,11 @@
                 <c:when test="${empty campaigns}"><div class="empty-state"><i class="fa fa-paper-plane-o"></i><strong>还没有营销活动</strong><span>先创建邮件模板和客户分群，再建立活动。</span></div></c:when>
                 <c:otherwise>
                     <c:set var="snapshotBuilding" value="false"/>
-                    <div class="table-wrap"><table class="status-table"><thead><tr><th>活动</th><th>状态</th><th>模板</th><th>冻结受众</th><th>发送通道</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
+                    <div class="table-wrap campaign-list-table-wrap"><table class="status-table"><thead><tr><th>活动</th><th>状态</th><th>模板</th><th>冻结受众</th><th>发送通道</th><th class="campaign-time-column">执行时间</th><th class="campaign-time-column">有效截止时间</th><th class="campaign-time-column">更新时间</th><th>操作</th></tr></thead><tbody>
                     <c:forEach items="${campaigns}" var="campaign"><tr>
                         <td><a class="table-primary-link" href="${ctx}/campaigns/detail?shop=${campaign.shopDomain}&amp;campaignId=${campaign.campaignId}"><strong><c:out value="${campaign.name}"/></strong></a></td>
                         <td>
-                            <span class="status-pill campaign-status" data-campaign-status="<c:out value='${campaign.status}'/>"><c:out value="${campaign.statusDisplayName}"/></span>
+                            <span class="status-pill campaign-status" data-campaign-status="<c:out value='${empty campaign.displayStatus ? campaign.status : campaign.displayStatus}'/>"><c:out value="${campaign.statusDisplayName}"/></span>
                             <c:if test="${campaign.status eq 'SCHEDULED' and not empty campaign.scheduledAt}">
                                 <span class="cell-note campaign-scheduled-time">定时发送：<time data-browser-time="<c:out value='${campaign.scheduledAt}'/>" data-browser-time-format="date-time" datetime="<c:out value='${campaign.scheduledAt}'/>"><c:out value="${campaign.scheduledAt}"/></time></span>
                             </c:if>
@@ -72,11 +76,15 @@
                             <c:otherwise><strong><c:out value="${campaign.audienceCount}"/></strong></c:otherwise>
                         </c:choose></td>
                         <td><c:out value="${providerAliases[campaign.provider]}"/></td>
-                        <td><time data-browser-time="<c:out value='${campaign.updatedAt}'/>" datetime="<c:out value='${campaign.updatedAt}'/>"><c:out value="${campaign.updatedAt}"/></time></td>
+                        <td class="campaign-time-column"><c:choose><c:when test="${not empty campaign.startedAt}"><time data-browser-time="<c:out value='${campaign.startedAt}'/>" data-browser-time-format="date-time" datetime="<c:out value='${campaign.startedAt}'/>"><c:out value="${campaign.startedAt}"/></time></c:when><c:otherwise><span class="cell-note">未执行</span></c:otherwise></c:choose></td>
+                        <td class="campaign-time-column"><c:choose><c:when test="${not empty campaign.validUntil}"><time data-browser-time="<c:out value='${campaign.validUntil}'/>" data-browser-time-format="date-time" datetime="<c:out value='${campaign.validUntil}'/>"><c:out value="${campaign.validUntil}"/></time></c:when><c:otherwise><span class="cell-note">执行后确定</span></c:otherwise></c:choose></td>
+                        <td class="campaign-time-column"><time data-browser-time="<c:out value='${campaign.updatedAt}'/>" datetime="<c:out value='${campaign.updatedAt}'/>"><c:out value="${campaign.updatedAt}"/></time></td>
                         <td><div class="table-actions">
                             <a class="action-button" href="${ctx}/campaigns/detail?shop=${campaign.shopDomain}&amp;campaignId=${campaign.campaignId}"><i class="fa fa-eye"></i>${campaign.status eq 'PENDING_APPROVAL' ? '查看并审批' : '查看明细'}</a>
                             <c:if test="${canManageCampaigns and (campaign.status eq 'DRAFT' or campaign.status eq 'PENDING_APPROVAL')}"><a class="action-button" href="${ctx}/campaigns/editor?shop=${campaign.shopDomain}&amp;campaignId=${campaign.campaignId}"><i class="fa fa-pencil"></i>编辑</a></c:if>
                             <c:if test="${canManageCampaigns and campaign.status eq 'DRAFT'}"><form method="post" action="${ctx}/campaigns/action"><input type="hidden" name="shop" value="${campaign.shopDomain}"><input type="hidden" name="campaignId" value="${campaign.campaignId}"><input type="hidden" name="action" value="SUBMIT"><button class="action-button" type="submit"><i class="fa fa-check"></i>提交审批</button></form></c:if>
+                            <c:if test="${canManageCampaigns and campaign.status eq 'PENDING_APPROVAL' and not empty campaign.createdBy and campaign.createdBy eq logineduser.id}"><form method="post" action="${ctx}/campaigns/action" data-merchant-action-form data-confirm-message="撤回后返回草稿，可修改后重新提交审批" data-pending-label="撤回中…"><input type="hidden" name="shop" value="${campaign.shopDomain}"><input type="hidden" name="campaignId" value="${campaign.campaignId}"><input type="hidden" name="action" value="WITHDRAW"><button class="action-button" type="submit"><i class="fa fa-undo"></i>撤回审批</button></form></c:if>
+                            <c:if test="${canManageCampaigns}"><form method="post" action="${ctx}/campaigns/action" data-merchant-action-form data-pending-label="复制中…"><input type="hidden" name="shop" value="${campaign.shopDomain}"><input type="hidden" name="campaignId" value="${campaign.campaignId}"><input type="hidden" name="action" value="COPY"><button class="action-button" type="submit"><i class="fa fa-copy"></i>复制活动</button></form></c:if>
                         </div></td>
                     </tr></c:forEach>
                     </tbody></table></div>
@@ -89,5 +97,29 @@
         </section>
     </main>
 </div>
+<script data-merchant-action-handler>
+(function () {
+    document.querySelectorAll('form[data-merchant-action-form]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (event.defaultPrevented) return;
+            if (form.dataset.submitting === 'true') {
+                event.preventDefault();
+                return;
+            }
+            var message = form.getAttribute('data-confirm-message');
+            if (message && !window.confirm(message)) {
+                event.preventDefault();
+                return;
+            }
+            form.dataset.submitting = 'true';
+            var button = form.querySelector('button[type="submit"]');
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="fa fa-spinner fa-spin"></i>' + form.getAttribute('data-pending-label');
+            }
+        });
+    });
+}());
+</script>
 </body>
 </html>

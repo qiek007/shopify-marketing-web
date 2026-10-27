@@ -471,7 +471,14 @@ public class MerchantConsoleController {
     @PostMapping("/templates")
     public String saveTemplate(@RequestParam MultiValueMap<String, String> params,
                                HttpSession session, Model model, RedirectAttributes redirect) {
-        return view("templates.save", params, session, model, redirect);
+        String mode=params.getFirst("saveMode");
+        return view(mode!=null&&"DRAFT".equalsIgnoreCase(mode.trim())?"templates.save-draft":"templates.save", params, session, model, redirect);
+    }
+
+    @PostMapping("/templates/draft")
+    public String saveTemplateDraft(@RequestParam MultiValueMap<String,String> params,HttpSession session,Model model,RedirectAttributes redirect) {
+        var draftParams=new org.springframework.util.LinkedMultiValueMap<String,String>(params);draftParams.set("saveMode","DRAFT");
+        return view("templates.save-draft",draftParams,session,model,redirect);
     }
 
     @GetMapping("/templates/platform/catalog")
@@ -708,6 +715,11 @@ public class MerchantConsoleController {
     public String saveSegment(@RequestParam MultiValueMap<String, String> params,
                               HttpSession session, Model model, RedirectAttributes redirect) {
         return view("segments.save", params, session, model, redirect);
+    }
+
+    @PostMapping("/segments/delete")
+    public String deleteSegment(@RequestParam MultiValueMap<String,String> params,HttpSession session,Model model,RedirectAttributes redirect){
+        return view("segments.delete",params,session,model,redirect);
     }
 
     @GetMapping("/segments/editor")

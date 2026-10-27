@@ -9,6 +9,10 @@
                 <strong>回执同步中，已展示现有明细</strong>
                 <span>新增回执正在同步，状态与次数可能稍有延迟。同步完成后可重新查询；完整导出待核验通过后开放。</span>
             </c:when>
+            <c:when test="${recipientReadReason eq 'ARCHIVE_BUILDING'}">
+                <strong>历史快照准备中，已展示现有数据</strong>
+                <span>活动已到期，系统将在缓冲期结束后生成并发布最终历史快照。当前展示保留的热数据；发布后请重新查询，完整历史导出暂不可用。</span>
+            </c:when>
             <c:when test="${recipientReadReason eq 'HOT_DATA_INCOMPLETE'}">
                 <strong>热数据完整性尚未确认，已展示可读明细</strong>
                 <span>当前热明细与完整性依据未完全对齐；这不等于活动已过有效期或尚未写入 Doris。部分回执次数与筛选结果可能不完整，完整导出待核验通过后开放。</span>

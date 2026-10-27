@@ -29,6 +29,20 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 
 class MerchantConsoleControllerTest {
+    @Test void dedicatedDraftRouteUsesANewOperationInsteadOfLegacyPublication() {
+        when(client.exchange(eq("templates.save-draft"),any(),eq("demo.myshopify.com"),any(),eq(null))).thenReturn(MerchantWebProtocol.redirect("/templates/editor","Draft saved",null,new JSONObject(Map.of("shop","demo.myshopify.com","templateId","tpl-draft"))));
+        var params=new LinkedMultiValueMap<String,String>();params.add("shop","demo.myshopify.com");params.add("saveMode","SYNC");
+        var redirect=new RedirectAttributesModelMap();
+        assertThat(controller.saveTemplateDraft(params,session(),new ExtendedModelMap(),redirect)).isEqualTo("redirect:/templates/editor");
+        verify(client).exchange(eq("templates.save-draft"),any(),eq("demo.myshopify.com"),any(),eq(null));
+        org.mockito.Mockito.verify(client,org.mockito.Mockito.never()).exchange(eq("templates.save"),any(),any(),any(),any());
+    }
+    @Test void cachedFormDraftModeAlsoUsesTheFailClosedOperation() {
+        when(client.exchange(eq("templates.save-draft"),any(),eq("demo.myshopify.com"),any(),eq(null))).thenReturn(MerchantWebProtocol.redirect("/templates/editor","Draft saved",null,new JSONObject(Map.of("shop","demo.myshopify.com","templateId","tpl-draft"))));
+        var params=new LinkedMultiValueMap<String,String>();params.add("shop","demo.myshopify.com");params.add("saveMode","DRAFT");
+        assertThat(controller.saveTemplate(params,session(),new ExtendedModelMap(),new RedirectAttributesModelMap())).isEqualTo("redirect:/templates/editor");
+        org.mockito.Mockito.verify(client,org.mockito.Mockito.never()).exchange(eq("templates.save"),any(),any(),any(),any());
+    }
     @Test void senderDomainCsrfIsStableAndRequiredBeforeVerificationRpc() {
         var expected=new JSONObject(Map.of("provider","INFOBIP","domain","mail.example.com","status","VERIFIED"));
         when(client.exchange(eq("sender-domain.status"),any(),eq("demo.myshopify.com"),any(),eq(null)))

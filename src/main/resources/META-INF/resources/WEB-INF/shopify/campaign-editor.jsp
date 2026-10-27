@@ -54,13 +54,38 @@
                         <fieldset class="channel-selector"><legend>发送邮件通道</legend><p class="field-note">可多选，邮件发送服务会在选中的可用通道中自动分配。</p><div class="channel-options-grid">
                             <c:forEach items="${senderSettings}" var="setting"><label class="channel-option"><input type="checkbox" name="providers" value="${setting.provider}" <c:if test="${not editorCampaign.existing or editorCampaign.providerSelections[setting.provider]}">checked</c:if>><span><strong><c:out value="${providerAliases[setting.provider]}"/></strong><small><c:out value="${setting.fromHeader}"/></small></span></label></c:forEach></div>
                         </fieldset>
-                        <div class="form-actions spaced-actions"><a class="action-button" href="${ctx}/campaigns?shop=${selectedShop}">取消</a><c:if test="${canManageCampaigns and editorCampaign.existing and editorCampaign.status eq 'DRAFT'}"><button class="action-button" type="button" data-campaign-approval-submit title="将当前已保存版本提交审批"><i class="fa fa-check"></i>提交审批</button></c:if><button class="primary-button" type="submit" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-save"></i>保存活动</button></div>
+                        <div class="form-actions spaced-actions"><c:if test="${canManageCampaigns and editorCampaign.existing and editorCampaign.status eq 'DRAFT'}"><button class="action-button danger-action" type="submit" form="campaign-draft-delete-form" formnovalidate style="margin-right:auto"><i class="fa fa-trash" aria-hidden="true"></i><span>删除草稿</span></button></c:if><a class="action-button" href="${ctx}/campaigns?shop=${selectedShop}">取消</a><c:if test="${canManageCampaigns and editorCampaign.existing and editorCampaign.status eq 'DRAFT'}"><button class="action-button" type="button" data-campaign-approval-submit title="将当前已保存版本提交审批"><i class="fa fa-check"></i>提交审批</button></c:if><button class="primary-button" type="submit" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-save"></i>保存活动</button></div>
                     </form>
+                    <c:if test="${canManageCampaigns and editorCampaign.existing and editorCampaign.status eq 'DRAFT'}"><form id="campaign-draft-delete-form" method="post" action="${ctx}/campaigns/action" hidden><input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="campaignId" value="${editorCampaign.campaignId}"><input type="hidden" name="action" value="DELETE"></form></c:if>
+
                     <c:if test="${canManageCampaigns and editorCampaign.existing and editorCampaign.status eq 'DRAFT'}"><form id="campaign-approval-form" method="post" action="${ctx}/campaigns/action" hidden><input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="campaignId" value="${editorCampaign.campaignId}"><input type="hidden" name="action" value="SUBMIT"></form></c:if>
                     <c:if test="${editorCampaign.existing}"><section id="campaign-test-send" class="campaign-test-send spaced-section"><fieldset class="channel-selector campaign-test-send-card"><legend>发送测试邮件</legend><p class="field-note">使用当前保存的模板与活动参数，测试状态仅供提示，不影响活动审批。</p><form class="workspace-form" method="post" action="${ctx}/campaigns/test-send"><input type="hidden" name="shop" value="${selectedShop}"><input type="hidden" name="campaignId" value="${editorCampaign.campaignId}"><input type="hidden" name="requestToken" value="${campaignTestRequestToken}"><div class="form-grid two campaign-test-compose"><label><span>测试邮箱（最多10个）</span><textarea name="recipients" rows="3" required placeholder="多个邮箱可用逗号、分号或换行分隔"></textarea></label><div class="campaign-test-route"><span>测试发送通道</span><div class="campaign-test-route-controls"><select name="provider" required><c:forEach items="${senderSettings}" var="setting"><c:if test="${editorCampaign.providerSelections[setting.provider]}"><option value="${setting.provider}"><c:out value="${providerAliases[setting.provider]}"/></option></c:if></c:forEach></select><button class="action-button" type="submit" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-paper-plane"></i>发送测试邮件</button></div></div></div></form><c:if test="${not empty campaignTestSendHistory}"><div class="campaign-test-history"><div class="campaign-test-history-heading"><strong>测试邮件明细</strong><div class="form-actions"><button class="action-button" type="button" data-campaign-test-history-refresh><i class="fa fa-refresh"></i>刷新状态</button><span class="field-note" data-campaign-test-history-refresh-status role="status" aria-live="polite"></span></div></div><div data-campaign-test-history-content><div class="campaign-test-history-scroll"><table class="status-table wide-table campaign-test-history-table"><thead><tr><th>测试时间</th><th>收件邮箱</th><th>邮件通道</th><th>发送状态</th><th>送达情况</th><th>发送/完成时间</th></tr></thead><tbody><c:forEach items="${campaignTestSendHistory}" var="testItem"><tr><td><time data-browser-time="<c:out value='${testItem.requestedAt}'/>" datetime="<c:out value='${testItem.requestedAt}'/>"><c:out value="${testItem.requestedAt}"/></time></td><td><c:out value="${testItem.recipientEmail}"/></td><td><c:out value="${providerAliases[testItem.provider]}"/></td><td><c:out value="${testItem.sendStatusDisplayName}"/><c:if test="${not empty testItem.lastErrorCode}"><small><c:out value="${testItem.lastErrorCode}"/></small></c:if></td><td><c:out value="${testItem.deliveryStatusDisplayName}"/><c:if test="${not empty testItem.deliveredAt}"><small><time data-browser-time="<c:out value='${testItem.deliveredAt}'/>" datetime="<c:out value='${testItem.deliveredAt}'/>"><c:out value="${testItem.deliveredAt}"/></time></small></c:if><c:if test="${not empty testItem.bouncedAt}"><small><time data-browser-time="<c:out value='${testItem.bouncedAt}'/>" datetime="<c:out value='${testItem.bouncedAt}'/>"><c:out value="${testItem.bouncedAt}"/></time></small></c:if></td><td><c:choose><c:when test="${not empty testItem.sentAt}"><time data-browser-time="<c:out value='${testItem.sentAt}'/>" datetime="<c:out value='${testItem.sentAt}'/>"><c:out value="${testItem.sentAt}"/></time></c:when><c:otherwise><time data-browser-time="<c:out value='${testItem.completedAt}'/>" datetime="<c:out value='${testItem.completedAt}'/>"><c:out value="${testItem.completedAt}" default="—"/></time></c:otherwise></c:choose></td></tr></c:forEach></tbody></table></div></div></div></c:if></fieldset></section></c:if>
                 </c:otherwise>
             </c:choose>
         </section>
+            <script data-campaign-draft-delete-script>
+        (function () {
+            var form = document.getElementById('campaign-draft-delete-form');
+            if (!form) return;
+            var button = document.querySelector('[form="campaign-draft-delete-form"]');
+            form.addEventListener('submit', function (event) {
+                if (form.dataset.submitting === 'true') {
+                    event.preventDefault();
+                    return;
+                }
+                if (!window.confirm('确认删除这个尚未执行的活动草稿？删除后无法恢复，客户和模板会保留。')) {
+                    event.preventDefault();
+                    return;
+                }
+                form.dataset.submitting = 'true';
+                form.setAttribute('aria-busy', 'true');
+                if (button) {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i><span>删除中…</span>';
+                }
+            });
+        }());
+        </script>
     </main>
 </div>
 <script src="${ctx}/shopify/js/campaign-editor-audience.js?v=20261004-a1"></script>

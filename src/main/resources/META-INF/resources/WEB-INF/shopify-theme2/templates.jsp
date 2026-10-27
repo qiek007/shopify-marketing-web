@@ -18,13 +18,13 @@
     <div class="section-heading"><div><h2>店铺模板</h2><p>使用可视化编辑器创建并管理当前店铺的邮件模板</p></div><div class="section-heading-actions"><span class="section-count"><c:out value="${templatePage.total}"/> 个</span><c:if test="${not empty selectedShop and canManageCampaigns}"><a class="primary-button" href="${ctx}/templates/editor?shop=${selectedShop}"><i class="fa fa-plus"></i><span>新建模板</span></a></c:if></div></div>
     <c:choose>
         <c:when test="${empty selectedShop}"><div class="empty-state"><i class="fa fa-lock"></i><strong>没有可用店铺</strong><span>连接店铺或由店铺 Owner 授权后即可创建模板。</span></div></c:when>
-        <c:when test="${empty templates}"><div class="empty-state"><i class="fa fa-file-text-o"></i><strong>还没有模板</strong><span>发布第一个模板后即可创建营销活动。</span></div></c:when>
+        <c:when test="${empty templates}"><div class="empty-state"><i class="fa fa-file-text-o"></i><strong>还没有模板</strong><span>可先保存模板草稿，同步到通道后即可创建营销活动。</span></div></c:when>
         <c:otherwise><div class="table-wrap"><table class="status-table"><thead><tr><th>名称</th><th>主题</th><th>通道同步</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
         <c:forEach items="${templates}" var="template"><tr>
-            <td><strong><c:out value="${template.name}"/></strong></td>
+            <td><strong><c:out value="${template.name}"/></strong><c:if test="${template.hasDraft}"><div class="cell-note"><span class="status-pill neutral">草稿未同步</span></div></c:if></td>
             <td><c:out value="${template.subject}"/></td>
             <c:url var="syncBindingsUrl" value="/templates/bindings"><c:param name="shop" value="${selectedShop}"/><c:param name="templateId" value="${template.templateId}"/></c:url>
-            <td><button class="sync-summary-button" type="button" data-sync-dialog-open="template-sync-${template.templateId}" data-sync-bindings-url="${syncBindingsUrl}"><span class="status-pill neutral" data-sync-summary>同步详情</span><span class="cell-note" data-sync-count>点击查看</span></button>
+            <td><span class="cell-note">线上版本</span><button class="sync-summary-button" type="button" data-sync-dialog-open="template-sync-${template.templateId}" data-sync-bindings-url="${syncBindingsUrl}"><span class="status-pill neutral" data-sync-summary>同步详情</span><span class="cell-note" data-sync-count>点击查看</span></button>
                 <dialog class="sync-detail-dialog" id="template-sync-${template.templateId}">
                     <div class="sync-dialog-heading"><div><h2>同步详情</h2><p><c:out value="${template.name}"/></p></div><button class="icon-button dialog-close-button" type="button" title="关闭" aria-label="关闭" data-sync-dialog-close><i class="fa fa-times"></i></button></div>
                     <div data-sync-dialog-body><div class="async-loading"><i class="fa fa-spinner fa-spin"></i><strong>打开后加载同步状态</strong></div></div>

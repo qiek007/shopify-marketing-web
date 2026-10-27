@@ -67,6 +67,14 @@
                 <c:if test="${campaignDetail.status eq 'DRAFT' or campaignDetail.status eq 'PENDING_APPROVAL'}">
                     <a class="action-button" href="${ctx}/campaigns/editor?shop=${campaignDetail.shopDomain}&amp;campaignId=${campaignDetail.campaignId}"><i class="fa fa-pencil"></i>编辑活动</a>
                 </c:if>
+                <c:if test="${canWithdrawCampaign}">
+                    <form method="post" action="${ctx}/campaigns/action" data-merchant-action-form data-confirm-message="撤回后返回草稿，可修改后重新提交审批" data-pending-label="撤回中…">
+                        <input type="hidden" name="shop" value="${campaignDetail.shopDomain}">
+                        <input type="hidden" name="campaignId" value="${campaignDetail.campaignId}">
+                        <input type="hidden" name="action" value="WITHDRAW">
+                        <button class="action-button" type="submit"><i class="fa fa-undo"></i>撤回审批</button>
+                    </form>
+                </c:if>
                 <c:if test="${campaignDetail.pendingApproval}">
                     <form method="post" action="${ctx}/campaigns/action">
                         <input type="hidden" name="shop" value="${campaignDetail.shopDomain}">
@@ -920,6 +928,30 @@
             });
         }
     }());
+</script>
+<script data-merchant-action-handler>
+(function () {
+    document.querySelectorAll('form[data-merchant-action-form]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (event.defaultPrevented) return;
+            if (form.dataset.submitting === 'true') {
+                event.preventDefault();
+                return;
+            }
+            var message = form.getAttribute('data-confirm-message');
+            if (message && !window.confirm(message)) {
+                event.preventDefault();
+                return;
+            }
+            form.dataset.submitting = 'true';
+            var button = form.querySelector('button[type="submit"]');
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="fa fa-spinner fa-spin"></i>' + form.getAttribute('data-pending-label');
+            }
+        });
+    });
+}());
 </script>
 </body>
 </html>

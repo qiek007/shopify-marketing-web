@@ -27,7 +27,7 @@
                 <c:when test="${empty selectedShop}"><div class="empty-state"><i class="fa fa-lock"></i><strong>没有可用店铺</strong><span>获得店铺授权后即可管理客户分组。</span></div></c:when>
                 <c:when test="${empty segments}"><div class="empty-state"><i class="fa fa-filter"></i><strong>还没有客户分组</strong><span>建立规则并预览命中客户后，可用于营销活动。</span></div></c:when>
                 <c:otherwise><div class="table-wrap"><table class="status-table"><thead><tr><th>名称</th><th>规则</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
-                    <c:forEach items="${segments}" var="segment"><tr><td><strong><c:out value="${segment.name}"/></strong><span class="cell-note"><c:out value="${segment.segmentId}"/></span></td><td class="segment-rule-summary"><c:out value="${segment.ruleSummary}"/></td><td><span class="status-pill"><c:out value="${segment.status}"/></span></td><td><time data-browser-time="<c:out value='${segment.updatedAt}'/>" data-browser-time-format="date-time" datetime="<c:out value='${segment.updatedAt}'/>"><c:out value="${segment.updatedAt}"/></time></td><td><a class="action-button" href="${ctx}/segments/editor?shop=${segment.shopDomain}&amp;segmentId=${segment.segmentId}"><i class="fa ${canManageCampaigns ? 'fa-pencil' : 'fa-eye'}"></i>${canManageCampaigns ? '查看 / 编辑' : '查看'}</a></td></tr></c:forEach>
+                    <c:forEach items="${segments}" var="segment"><tr><td><strong><c:out value="${segment.name}"/></strong><span class="cell-note"><c:out value="${segment.segmentId}"/></span></td><td class="segment-rule-summary"><c:out value="${segment.ruleSummary}"/></td><td><span class="status-pill"><c:out value="${segment.status}"/></span></td><td><time data-browser-time="<c:out value='${segment.updatedAt}'/>" data-browser-time-format="date-time" datetime="<c:out value='${segment.updatedAt}'/>"><c:out value="${segment.updatedAt}"/></time></td><td><div class="table-actions"><a class="action-button" href="${ctx}/segments/editor?shop=${segment.shopDomain}&amp;segmentId=${segment.segmentId}"><i class="fa ${canManageCampaigns ? 'fa-pencil' : 'fa-eye'}"></i>${canManageCampaigns ? '查看 / 编辑' : '查看'}</a><c:if test="${canManageCampaigns}"><form method="post" action="${ctx}/segments/delete" data-merchant-action-form data-confirm-message="仅删除分组，不删除客户，已有活动快照保留" data-pending-label="删除中…"><input type="hidden" name="shop" value="${segment.shopDomain}"><input type="hidden" name="segmentId" value="${segment.segmentId}"><button class="action-button danger-text" type="submit"><i class="fa fa-trash-o"></i>删除分组</button></form></c:if></div></td></tr></c:forEach>
                 </tbody></table></div>
                     <c:url var="segmentPreviousUrl" value="/segments"><c:param name="shop" value="${selectedShop}"/><c:param name="q" value="${segmentSearch}"/><c:param name="page" value="${segmentPage.page - 1}"/><c:param name="size" value="${segmentPage.pageSize}"/></c:url>
                     <c:url var="segmentNextUrl" value="/segments"><c:param name="shop" value="${selectedShop}"/><c:param name="q" value="${segmentSearch}"/><c:param name="page" value="${segmentPage.page + 1}"/><c:param name="size" value="${segmentPage.pageSize}"/></c:url>
@@ -37,5 +37,29 @@
         </section>
     </main>
 </div>
+<script data-merchant-action-handler>
+(function () {
+    document.querySelectorAll('form[data-merchant-action-form]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (event.defaultPrevented) return;
+            if (form.dataset.submitting === 'true') {
+                event.preventDefault();
+                return;
+            }
+            var message = form.getAttribute('data-confirm-message');
+            if (message && !window.confirm(message)) {
+                event.preventDefault();
+                return;
+            }
+            form.dataset.submitting = 'true';
+            var button = form.querySelector('button[type="submit"]');
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="fa fa-spinner fa-spin"></i>' + form.getAttribute('data-pending-label');
+            }
+        });
+    });
+}());
+</script>
 </body>
 </html>
