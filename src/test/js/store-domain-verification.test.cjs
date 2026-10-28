@@ -17,7 +17,7 @@ function harness(module){
  const panel=new E();panel.dataset={checkUrl:'/app/stores/sender-domain-verification',shop:'shop.example',provider:'INFOBIP',configuredDomain:'mail.example.com'};
  panel.querySelector=get;panel.querySelectorAll=s=>s==='[data-store-domain-close]'?[get('close')]:[];
  const card={querySelector:get};panel.closest=()=>card;
- const calls=[],resolvers=[];let held=false,response={schemaVersion:1,provider:'INFOBIP',domain:'mail.example.com',status:'VERIFIED',checkedAt:'2026-10-24T00:00:00Z',message:'已验证',dnsRecords:[{type:'TXT',host:'mail.example.com',value:'<img src=x onerror=attack()>',verified:true}]};
+ const calls=[],resolvers=[];let held=false,response={schemaVersion:1,provider:'INFOBIP',domain:'mail.example.com',status:'VERIFIED',checkedAt:'2026-10-24T00:00:00Z',message:'发信验证通过',dnsRecords:[{type:'TXT',host:'mail.example.com',value:'<img src=x onerror=attack()>',verified:true}]};
  const copied=[];
  const context={document:{querySelectorAll:()=>[panel],createElement:()=>new E()},window:{location:{href:'http://localhost/app/stores'},setTimeout},navigator:{clipboard:{writeText:async value=>copied.push(value)}},URL,AbortController,Date,Number,String,Array,
   fetch:async(url,options)=>{calls.push({url,options});if(held)await new Promise(r=>resolvers.push(r));return {ok:!response.httpStatus,status:response.httpStatus||200,headers:{get:()=> 'csrf-test'},json:async()=>response};}};
@@ -35,7 +35,7 @@ for(const module of ['public']){
   assert.ok(row.children[1].textContent.length<host.length);assert.ok(row.children[1].textContent.includes('…'));
   assert.ok(row.children[2].textContent.length<=48);assert.ok(row.children[2].textContent.includes('…'));
   assert.ok(!h.allText().includes(value));
-  row.children[4].children[0].fire('click');row.children[4].children[1].fire('click');await tick();
+  row.children[5].children[0].fire('click');row.children[5].children[1].fire('click');await tick();
   assert.deepEqual(h.copied,[host,value]);
  });
  test(`${module}: visible supplier confirmation can be canceled without any POST`,async()=>{
@@ -51,7 +51,7 @@ for(const module of ['public']){
   const writes=h.calls.filter(c=>c.options.method==='POST');assert.equal(writes.length,1);
   assert.equal(writes[0].options.headers['X-Store-Domain-Csrf'],'csrf-test');assert.deepEqual(JSON.parse(writes[0].options.body),{provider:'INFOBIP'});
   assert.equal(new URL(writes[0].url,'http://localhost').searchParams.get('shop'),'shop.example');
-  h.panel.close();h.release();await tick();assert.equal(h.panel.open,false);assert.notEqual(h.get('[data-store-domain-status]').textContent,'已验证');
+  h.panel.close();h.release();await tick();assert.equal(h.panel.open,false);assert.notEqual(h.get('[data-store-domain-status]').textContent,'发信验证通过');
  });
  test(`${module}: ambiguous POST failure requires a fresh GET before a manual retry`,async()=>{
   const h=harness(module);h.get('[data-store-domain-open]').fire('click');await tick();h.respond({httpStatus:503});
@@ -66,13 +66,13 @@ for(const module of ['public']){
   const h=harness(module);h.get('[data-store-domain-open]').fire('click');await tick();
   assert.equal(h.calls.length,1);const query=new URL(h.calls[0].url,'http://localhost').searchParams;
   assert.equal(query.get('shop'),'shop.example');assert.equal(query.get('provider'),'INFOBIP');assert.equal(query.has('domain'),false);assert.equal(query.has('configVersion'),false);
-  assert.equal(h.calls[0].options.method,'GET');assert.equal(h.get('[data-store-domain-status]').textContent,'已验证');
+  assert.equal(h.calls[0].options.method,'GET');assert.equal(h.get('[data-store-domain-status]').textContent,'发信验证通过');
   assert.ok(h.allText().includes('<img src=x onerror=attack()>'));
  });
  test(`${module}: closing a dialog discards a late query response`,async()=>{
   const h=harness(module);h.hold();h.get('[data-store-domain-open]').fire('click');await tick();
   h.panel.close();h.release();await tick();
-  assert.notEqual(h.get('[data-store-domain-status]').textContent,'已验证');
+  assert.notEqual(h.get('[data-store-domain-status]').textContent,'发信验证通过');
   assert.equal(h.panel.open,false);assert.equal(h.get('[data-store-domain-check]').disabled,false);
  });
  test(`${module}: mismatched domain response never populates DNS results`,async()=>{
@@ -82,10 +82,40 @@ for(const module of ['public']){
  });
  for(const theme of ['shopify','shopify-theme2'])test(`${module}/${theme}: sender domain remains readonly with a permission-gated query dialog`,()=>{
   const base=path.join(root,'WEB-INF',theme),source=fs.readFileSync(path.join(base,'stores.jsp'),'utf8');
-  assert.ok(source.includes('store-domain-verification.js?v=20261024-store-query'));
+  assert.ok(source.includes('store-domain-verification.js?v=20261027-domain-registration'));
   assert.ok(source.includes('include file="fragments/sender-domain-verification.jspf"'));
   const fragment=fs.readFileSync(path.join(base,'fragments/sender-domain-verification.jspf'),'utf8');
   assert.ok(fragment.includes('pageEncoding="UTF-8"'));assert.ok(fragment.includes('data-store-domain-panel'));
   assert.ok(fragment.includes('刷新验证状态'));assert.ok(fragment.includes('仅重新查询状态'));
  });
 }
+
+for(const module of ['public']){
+ test(module+': provider and DNS purposes show separate assurance and priority',async()=>{
+  const h=harness(module);
+  h.respond({provider:'INFOBIP',domain:'mail.example.com',status:'VERIFIED',dnsRecords:[
+   {type:'CNAME',host:'mail.example.com',value:'return.infobip.com',verified:true,purpose:'RETURN_PATH',source:'PROVIDER'},
+   {type:'MX',host:'mail.example.com',value:'mx.example.com',verified:false,purpose:'RECEIVING',source:'DNS',lookupStatus:'PRESENT',priority:10},
+   {type:'TXT',host:'_dmarc.example.com',value:'v=DMARC1; p=none',verified:true,purpose:'DMARC',source:'DNS',lookupStatus:'INHERITED',note:'采用主域记录 <script>attack()</script>'}
+  ]});
+  h.get('[data-store-domain-open]').fire('click');await tick();
+  const rows=h.get('[data-store-domain-records]').children;
+  assert.match(rows[0].children[3].textContent,/退信域.*供应商/);assert.equal(rows[0].children[4].textContent,'供应商已验证');
+  assert.match(rows[1].children[3].textContent,/收信路由.*DNS.*10/);assert.equal(rows[1].children[4].textContent,'已查询到');
+  assert.equal(rows[2].children[4].textContent,'采用主域记录');assert.ok(h.allText().includes('采用主域记录 <script>attack()</script>'));
+  assert.match(h.get('[data-store-domain-scope]').textContent,/不证明.*对齐/);assert.match(h.get('[data-store-domain-scope]').textContent,/独立入站域/);
+ });
+ for(const lookupStatus of ['MISSING','UNAVAILABLE','INVALID'])test(module+': '+lookupStatus+' DNS placeholder cannot be copied',async()=>{
+  const h=harness(module);h.respond({provider:'INFOBIP',domain:'mail.example.com',status:'VERIFIED',dnsRecords:[{type:'TXT',host:'_dmarc.mail.example.com',value:'未查到有效记录',source:'DNS',purpose:'DMARC',lookupStatus,verified:true}]});
+  h.get('[data-store-domain-open]').fire('click');await tick();const row=h.get('[data-store-domain-records]').children[0];
+  assert.equal(row.children[4].textContent,{MISSING:'未查到',UNAVAILABLE:'查询失败',INVALID:'记录异常'}[lookupStatus]);
+  assert.equal(row.children[5].children[1].disabled,true);row.children[5].children[0].fire('click');row.children[5].children[1].fire('click');await tick();assert.deepEqual(h.copied,['_dmarc.mail.example.com']);
+ });
+ test(module+': legacy records infer purposes and explain unchecked DMARC',async()=>{
+  const h=harness(module);h.panel.dataset.provider='MAILGUN';h.respond({provider:'MAILGUN',domain:'mail.example.com',status:'VERIFIED',dnsRecords:[{type:'MX',host:'mail.example.com',value:'mxa.mailgun.org',verified:true},{type:'TXT',host:'smtp._domainkey.mail.example.com',value:'k=rsa; p=public',verified:true},{type:'TXT',host:'mail.example.com',value:'v=spf1 include:mailgun.org ~all',verified:true}]});
+  h.get('[data-store-domain-open]').fire('click');await tick();const rows=h.get('[data-store-domain-records]').children;
+  assert.match(rows[0].children[3].textContent,/收信路由/);assert.match(rows[1].children[3].textContent,/DKIM/);assert.match(rows[2].children[3].textContent,/SPF/);assert.match(h.get('[data-store-domain-scope]').textContent,/未查询 DMARC/);
+ });
+}
+
+for(const module of ['public'])test(module+': unregistered supplier domain only asks merchant to contact administrator',async()=>{const h=harness(module);h.respond({provider:'INFOBIP',domain:'mail.example.com',status:'NOT_FOUND',dnsRecords:[]});h.get('[data-store-domain-open]').fire('click');await tick();assert.match(h.get('[data-store-domain-message]').textContent,/联系平台管理员/);h.get('[data-store-domain-verify]').fire('click');h.get('[data-store-domain-verify-confirm]').fire('click');await tick();assert.equal(h.calls.filter(c=>c.options.method==='POST').length,0);assert.ok(!fs.readFileSync(path.join(root,'shopify/js/store-domain-verification.js'),'utf8').includes('sender-domain-registration'));});

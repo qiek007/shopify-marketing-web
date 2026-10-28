@@ -6,7 +6,14 @@
 <title>邮件模板 - Shopify 邮件营销</title><c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css"><link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css"><link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261020-template-list-actions">
 </head><body class="shopify-console"><%@ include file="fragments/header.jspf" %><div class="console-layout"><%@ include file="fragments/navigation.jspf" %>
-<main class="console-main"><section class="page-heading"><div><p class="eyebrow">邮件模板</p></div></section>
+<main class="console-main">
+<style data-template-sync-dialog-styles>
+    .template-sync-dialog.sync-detail-dialog { box-sizing: border-box; padding: 20px; }
+    .template-sync-dialog > .sync-dialog-heading { display: flex; align-items: center; min-height: 32px; margin-bottom: 16px; padding-right: 44px; }
+    .template-sync-dialog .sync-dialog-heading > .dialog-close-button { top: 0; right: 0; }
+    .template-sync-dialog > [data-sync-dialog-body] { overflow-x: auto; }
+</style>
+<section class="page-heading"><div><p class="eyebrow">邮件模板</p></div></section>
 <c:if test="${not empty successMessage}"><div class="flash-message success"><i class="fa fa-check-circle"></i><c:out value="${successMessage}"/></div></c:if><c:if test="${not empty errorMessage}"><div class="flash-message danger"><i class="fa fa-exclamation-circle"></i><c:out value="${errorMessage}"/></div></c:if>
 <c:url var="platformCatalogUrl" value="/templates/platform/catalog"><c:param name="shop" value="${selectedShop}"/></c:url>
 <section class="content-section" data-platform-template-catalog data-catalog-url="${platformCatalogUrl}"><details class="platform-template-details"><summary class="section-heading"><div><h2>平台通用模板</h2><p>复制后成为当前店铺的独立模板，可继续编辑并覆盖同步</p></div><div class="section-heading-actions"><span class="section-count" data-platform-template-count hidden></span><span class="platform-template-toggle" aria-hidden="true"><i class="fa fa-chevron-down"></i></span></div></summary><div data-platform-template-results><div class="async-loading"><i class="fa fa-spinner fa-spin"></i><strong>正在加载平台模板</strong></div></div></details></section>
@@ -20,14 +27,14 @@
     <c:choose>
         <c:when test="${empty selectedShop}"><div class="empty-state"><i class="fa fa-lock"></i><strong>没有可用店铺</strong><span>连接店铺或由店铺 Owner 授权后即可创建模板。</span></div></c:when>
         <c:when test="${empty templates}"><div class="empty-state"><i class="fa fa-file-text-o"></i><strong>还没有模板</strong><span>可先保存模板草稿，同步到通道后即可创建营销活动。</span></div></c:when>
-        <c:otherwise><div class="table-wrap"><table class="status-table template-list-table"><thead><tr><th>名称</th><th>主题</th><th>同步</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
+        <c:otherwise><div class="table-wrap"><table class="status-table template-list-table"><thead><tr><th>名称</th><th>主题</th><th>同步状态</th><th>发布状态</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
         <c:forEach items="${templates}" var="template"><tr>
             <td><strong><c:out value="${template.name}"/></strong><c:if test="${template.hasDraft}"><div class="cell-note"><span class="status-pill neutral">草稿未同步</span></div></c:if></td>
             <td class="template-subject-cell" title="<c:out value="${template.subject}"/>"><c:out value="${template.subject}"/></td>
             <c:url var="syncBindingsUrl" value="/templates/bindings"><c:param name="shop" value="${selectedShop}"/><c:param name="templateId" value="${template.templateId}"/></c:url>
-            <td><span class="cell-note">线上版本</span><button class="sync-summary-button" type="button" data-sync-dialog-open="template-sync-${template.templateId}" data-sync-bindings-url="${syncBindingsUrl}"><span class="status-pill neutral" data-sync-summary>同步详情</span><span class="cell-note" data-sync-count hidden style="display: none;">点击查看</span></button>
-                <dialog class="sync-detail-dialog" id="template-sync-${template.templateId}">
-                    <div class="sync-dialog-heading"><div><h2>同步详情</h2><p><c:out value="${template.name}"/></p></div><button class="icon-button dialog-close-button" type="button" title="关闭" aria-label="关闭" data-sync-dialog-close><i class="fa fa-times"></i></button></div>
+            <td><button class="sync-summary-button" type="button" data-sync-dialog-open="template-sync-${template.templateId}" data-sync-bindings-url="${syncBindingsUrl}"><span class="status-pill neutral" data-sync-summary>同步详情</span><span class="cell-note" data-sync-count hidden style="display: none;">点击查看</span></button>
+                <dialog class="sync-detail-dialog template-sync-dialog" id="template-sync-${template.templateId}">
+                    <div class="sync-dialog-heading"><div><h2>同步详情</h2></div><button class="icon-button dialog-close-button" type="button" title="关闭" aria-label="关闭" data-sync-dialog-close><i class="fa fa-times"></i></button></div>
                     <div data-sync-dialog-body><div class="async-loading"><i class="fa fa-spinner fa-spin"></i><strong>打开后加载同步状态</strong></div></div>
                 </dialog>
             </td>

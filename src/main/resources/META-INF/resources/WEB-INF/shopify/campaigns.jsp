@@ -27,6 +27,7 @@
         .status-table .campaign-status[data-campaign-status="RUNNING"] { color: #115e59; background: #ccfbf1; }
         .status-table .campaign-status[data-campaign-status="QUEUED"] { color: #075985; background: #e0f2fe; }
         .status-table .campaign-status[data-campaign-status="PAUSED"] { color: #9a3412; background: #ffedd5; }
+        .status-table .campaign-archive-audit-warning { color: #92400e; background: #fef3c7; margin-left: 6px; font-weight: 600; white-space: nowrap; }
         .status-table .campaign-status[data-campaign-status="ARCHIVED"] { color: #5b21b6; background: #ede9fe; }
         .status-table .campaign-status[data-campaign-status="COMPLETED"] { color: #166534; background: #dcfce7; }
         .status-table .campaign-status[data-campaign-status="CANCELLED"] { color: #57534e; background: #e7e5e4; }
@@ -65,6 +66,9 @@
                         <td><a class="table-primary-link" href="${ctx}/campaigns/detail?shop=${campaign.shopDomain}&amp;campaignId=${campaign.campaignId}"><strong><c:out value="${campaign.name}"/></strong></a></td>
                         <td>
                             <span class="status-pill campaign-status" data-campaign-status="<c:out value='${empty campaign.displayStatus ? campaign.status : campaign.displayStatus}'/>"><c:out value="${campaign.statusDisplayName}"/></span>
+                            <c:if test="${campaign.archiveAuditMismatch}">
+                                <span class="status-pill campaign-archive-audit-warning" tabindex="0" title="<c:out value='${campaign.archiveAuditNote}'/>">核验有差异</span>
+                            </c:if>
                             <c:if test="${campaign.status eq 'SCHEDULED' and not empty campaign.scheduledAt}">
                                 <span class="cell-note campaign-scheduled-time">定时发送：<time data-browser-time="<c:out value='${campaign.scheduledAt}'/>" data-browser-time-format="date-time" datetime="<c:out value='${campaign.scheduledAt}'/>"><c:out value="${campaign.scheduledAt}"/></time></span>
                             </c:if>

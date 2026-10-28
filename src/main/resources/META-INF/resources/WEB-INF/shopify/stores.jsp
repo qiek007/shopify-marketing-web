@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261004-store-quota">
-    <link rel="stylesheet" href="${ctx}/shopify/css/store-domain-verification.css?v=20261024-store-query-verify-v2">
+    <link rel="stylesheet" href="${ctx}/shopify/css/store-domain-verification.css?v=20261028-dialog-layout">
     <style>.cell-note.store-sync-note { max-width:none; white-space:nowrap; margin:10px 18px 14px; overflow-x:auto; text-overflow:clip; }</style>
 </head>
 <body class="shopify-console">
@@ -138,7 +138,7 @@
 <script src="${ctx}/baseui/lib/jquery/3.6.1/jquery.min.js"></script>
 <script src="${ctx}/baseui/lib/layer/2.4/layer.js"></script>
 <script src="${ctx}/shopify/js/store-members.js?v=20261001-role-dialog"></script>
-<script src="${ctx}/shopify/js/store-domain-verification.js?v=20261024-store-query&amp;r=20261025-abbreviated-verify-v2" defer></script>
+<script src="${ctx}/shopify/js/store-domain-verification.js?v=20261027-domain-registration" defer></script>
 <script>
     (function () {
         var panel = document.querySelector('[data-store-pixel-status]');

@@ -59,7 +59,7 @@ class ThemeResourceParityTest {
         Set<String> classic = views("shopify");
         Set<String> theme2 = views("shopify-theme2");
 
-        assertThat(classic).hasSize(38).containsExactlyInAnyOrderElementsOf(theme2)
+        assertThat(classic).hasSize(39).containsExactlyInAnyOrderElementsOf(theme2)
                 .contains(Path.of("fragments","sender-domain-verification.jspf").toString());
         assertThat(ROOT.resolve("WEB-INF/org/index.jsp")).exists();
         assertThat(ROOT.resolve("shopify/css/dashboard.css")).exists();

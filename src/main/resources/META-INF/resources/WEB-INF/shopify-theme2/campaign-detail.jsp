@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261023-readable-recipients">
+<link rel="stylesheet" href="${ctx}/shopify/css/manual-campaign-receipts.css?v=20261028-manual">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -234,6 +235,8 @@
             <article><span>转化</span><strong id="campaign-orders"><c:out value="${campaignDetail.summary.orders}"/> 单</strong><small id="campaign-conversion-note"><c:out value="${campaignDetail.summary.convertedRecipients}"/> 位客户 · <c:out value="${campaignDetail.summary.netRevenue}"/></small></article>
             <article><span>风险反馈</span><strong id="campaign-risk"><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribed}"/></strong><small>退信 / 投诉 / 退订</small></article>
         </section>
+
+        <%@ include file="fragments/manual-campaign-receipts.jspf" %>
 
         <section id="ga4-campaign-evaluation" class="content-section ga4-campaign-evaluation">
             <div class="section-heading">
@@ -788,5 +791,6 @@
     });
 }());
 </script>
+<script src="${ctx}/shopify/js/manual-campaign-receipts.js?v=20261028-followup"></script>
 </body>
 </html>

@@ -1,6 +1,41 @@
 (function () {
     'use strict';
-    var labels = {UNKNOWN:'尚未查询', LOADING:'正在查询', VERIFIED:'已验证', PENDING:'等待验证', FAILED:'验证失败', NOT_FOUND:'供应商未登记', NOT_REQUIRED:'无需验证', UNAVAILABLE:'暂不可用'};
+    var labels = {UNKNOWN:'尚未查询', LOADING:'正在查询', VERIFIED:'发信验证通过', PENDING:'等待验证', FAILED:'验证失败', NOT_FOUND:'供应商未登记', NOT_REQUIRED:'无需验证', UNAVAILABLE:'暂不可用'};
+
+    var purposes = {SPF:'SPF 发信授权', DKIM:'DKIM 签名', TRACKING:'点击 / 打开追踪', RECEIVING:'收信路由', RETURN_PATH:'退信域认证', DMARC:'DMARC 策略', PROVIDER_DNS:'供应商 DNS 配置'};
+    var lookupLabels = {PRESENT:'已查询到', INHERITED:'采用主域记录', MISSING:'未查到', UNAVAILABLE:'查询失败', INVALID:'记录异常'};
+    function recordInfo(record, provider) {
+        var host=String(record.host||'').toLowerCase(), raw=String(record.value||''), type=String(record.type||'').toUpperCase();
+        var purpose=record.purpose;
+        if(!Object.prototype.hasOwnProperty.call(purposes,purpose)) {
+            if(host.indexOf('_dmarc.')===0||/^v=DMARC1\b/i.test(raw))purpose='DMARC';
+            else if(host.indexOf('._domainkey')>=0||/^(v=DKIM1\b|k=rsa\b)/i.test(raw))purpose='DKIM';
+            else if(/^v=spf1\b/i.test(raw))purpose='SPF';
+            else if(type==='MX')purpose=provider==='SENDGRID'?'RETURN_PATH':'RECEIVING';
+            else if(type==='CNAME'&&(/track|click|email\./i.test(host)))purpose='TRACKING';
+            else if(type==='CNAME'&&(provider==='INFOBIP'||provider==='SENDGRID'))purpose='RETURN_PATH';
+            else purpose='PROVIDER_DNS';
+        }
+        var dns=record.source==='DNS', lookup=record.lookupStatus, summary=purposes[purpose]+' / '+(dns?'DNS 查询':'供应商');
+        if(Number.isInteger(record.priority))summary+=' · 优先级 '+record.priority;
+        var note=record.note||'';
+        if(!note&&purpose==='RECEIVING'&&provider==='MAILGUN')note='仅用于收信路由，不代表发信验证要求。';
+        if(!note&&purpose==='RETURN_PATH'&&provider==='INFOBIP')note='CNAME 将 SPF、MX、A 委派给供应商，无需另加 MX。';
+        if(!note&&purpose==='RETURN_PATH'&&provider==='SENDGRID')note='用于退信域认证，不是收信 MX。';
+        return {purpose:purpose,dns:dns,summary:summary,note:note,
+            status:dns?(lookupLabels[lookup]||'查询失败'):(record.verified?'供应商已验证':'待配置'),
+            ok:!dns&&!!record.verified,
+            copyValue:!!raw.trim()&&(!dns||lookup==='PRESENT'||lookup==='INHERITED')};
+    }
+    function scopeText(provider, records) {
+        var text='发信验证状态以供应商结果为准。DNS 查询不证明实际邮件认证或 DMARC 对齐通过。';
+        if(provider==='MAILGUN')text+=' Mailgun MX 仅用于收信路由。';
+        if(provider==='INFOBIP')text+=' Infobip 收信需配置独立入站域；退信域 CNAME 已委派 SPF、MX、A。';
+        if(provider==='SENDGRID')text+=' SendGrid MX 用于退信域认证；独立链接品牌化不属于域认证返回列表。';
+        if(!records.some(function(record){return record.source==='DNS'&&recordInfo(record,provider).purpose==='DMARC';}))
+            text+=' 本次响应未查询 DMARC 实际策略，请单独检查；不能据此认为全部检查已完成。';
+        return text;
+    }
     document.querySelectorAll('[data-store-domain-panel]').forEach(function (panel) {
         var card=panel.closest('.sender-profile'), open=card.querySelector('[data-store-domain-open]');
         if (!open) return;
@@ -31,15 +66,22 @@
                 var number=Number(checked);checked=Number.isFinite(number)?new Date(number<100000000000?number*1000:number):new Date(checked);
             }
             panel.querySelector('[data-store-domain-checked]').textContent=checked&&!isNaN(checked.getTime())?'查询时间：'+checked.toLocaleString():'';
-            panel.querySelector('[data-store-domain-message]').textContent=value.message||'';
+            panel.querySelector('[data-store-domain-message]').textContent=(value.message||'')+(status==='NOT_FOUND'?' 请联系平台管理员向当前邮件通道登记发件域，再按返回的 DNS 记录配置。':'');
             var body=panel.querySelector('[data-store-domain-records]');clear(body);
-            (value.dnsRecords||[]).forEach(function (record) {
+            var records=Array.isArray(value.dnsRecords)?value.dnsRecords:[];
+            panel.querySelector('[data-store-domain-scope]').textContent=scopeText(panel.dataset.provider,records);
+            records.forEach(function (record) {
+                var info=recordInfo(record,panel.dataset.provider);
                 var row=document.createElement('tr');cell(row,record.type);cell(row,abbreviated(record.host,32));cell(row,abbreviated(record.value,48));
-                cell(row,record.verified?'已通过':'待配置').className=record.verified?'record-ok':'record-pending';
+                var purpose=cell(row,info.summary);purpose.className='record-purpose';
+                if(info.note){var note=document.createElement('small');note.className='record-note';note.textContent=info.note;purpose.appendChild(note);}
+                cell(row,info.status).className=info.ok?'record-ok':'record-pending';
                 var actions=cell(row,'');actions.textContent='';
                 [['复制主机',record.host],['复制值',record.value]].forEach(function (item) {
                     var button=document.createElement('button');button.type='button';button.className='action-button';button.textContent=item[0];
+                    button.disabled=item[0]==='复制值'?!info.copyValue:!item[1];
                     button.addEventListener('click',function () {
+                        if(button.disabled)return;
                         var feedback=panel.querySelector('[data-store-domain-copy-feedback]');
                         if(!navigator.clipboard||!navigator.clipboard.writeText) {feedback.textContent='当前浏览器无法访问剪贴板，请使用支持剪贴板的浏览器重试。';return;}
                         navigator.clipboard.writeText(item[1]||'').then(function () {feedback.textContent=item[0]+'已复制完整记录';},function () {feedback.textContent='复制失败，请允许浏览器访问剪贴板后重试。';});

@@ -1,0 +1,8 @@
+<%@ page pageEncoding="UTF-8" %>
+<c:if test="${canPullCampaignReceipts}">
+<details class="content-section manual-receipt-panel" data-manual-receipts data-base="${ctx}/campaigns/detail/receipt-reconciliation" data-shop="<c:out value='${campaignDetail.shopDomain}'/>" data-campaign="<c:out value='${campaignDetail.campaignId}'/>">
+ <summary class="manual-receipt-heading"><div><strong><i class="fa fa-refresh" aria-hidden="true"></i> 补拉活动回执</strong><span>仅 OWNER · 活动有效期内 · 不重新发送邮件</span></div><i class="fa fa-angle-down" aria-hidden="true"></i></summary>
+ <div class="manual-receipt-body"><p>从 Mailgun 查询当前活动的回执，重复事件自动去重。统计与客户时间线通过现有链路异步更新。</p><div class="manual-receipt-actions"><button type="button" class="action-button" data-receipt-preview><i class="fa fa-search" aria-hidden="true"></i>检查补拉范围</button><button type="button" class="action-button" data-receipt-status><i class="fa fa-refresh" aria-hidden="true"></i>刷新进度</button></div><p role="status" aria-live="polite" data-receipt-message>点击“检查补拉范围”进行预检，预检不会补入数据。</p><div class="manual-receipt-progress" data-receipt-job></div></div>
+ <dialog class="manual-receipt-dialog" data-receipt-dialog aria-label="确认补拉活动回执"><div class="manual-receipt-heading"><strong>确认补拉活动回执</strong><button type="button" class="action-button" data-receipt-close aria-label="关闭">×</button></div><div class="manual-receipt-body"><p data-receipt-scope></p><p>只查询当前活动的已发送消息，不会重新发送邮件；已处理回执不会重复统计。执行中活动到期或 OWNER 权限失效会停止。</p><p data-receipt-truncation></p></div><div class="manual-receipt-actions"><button class="action-button" type="button" data-receipt-cancel>取消</button><button class="primary-button" type="button" data-receipt-confirm>确认补拉</button></div></dialog>
+</details>
+</c:if>

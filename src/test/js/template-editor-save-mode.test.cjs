@@ -85,7 +85,9 @@ for (const page of pages) {
         const list = read(page.list);
         assert.match(list, /template\.hasDraft/);
         assert.match(list, /草稿未同步/);
-        assert.match(list, /线上版本/);
+        assert.match(list, /<th>同步状态<\/th>/);
+        assert.match(list, /<th>发布状态<\/th>/);
+        assert.doesNotMatch(list, />线上版本</);
         assert.match(list, /data-sync-summary/);
     });
 
