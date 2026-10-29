@@ -1,0 +1,30 @@
+.template-list-table.template-version-list { min-width: 1040px; }
+.template-version-list th:nth-child(1) { width: 130px; }
+.template-version-list th:nth-child(2) { width: auto; }
+.template-version-list th:nth-child(3) { width: 98px; }
+.template-version-list th:nth-child(4) { width: 124px; }
+.template-version-list th:nth-child(5) { width: 86px; }
+.template-version-list th:nth-child(6) { width: 150px; }
+.template-version-list th:nth-child(7) { width: 328px; }
+.template-version-list .template-editing-state .status-pill { max-width: none; white-space: nowrap; overflow: visible; text-overflow: clip; }
+.template-version-list td:first-child strong { display: block; overflow-wrap: anywhere; }
+.template-version-list .template-list-actions { width: auto; flex-wrap: wrap; }
+.template-version-status { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; margin: 14px 0; }
+.template-version-card { min-width: 0; padding: 16px 18px; background: #fff; border: 1px solid var(--line,#dce5e9); border-top: 3px solid #58738a; border-radius: 5px; }
+.template-version-card.is-published { border-top-color: #128459; }
+.template-version-card.is-draft { border-top-color: #b67a17; }
+.template-version-card header { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-bottom: 11px; }
+.template-version-card h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.template-version-card p { margin: 8px 0; font-size: 12px; line-height: 1.6; color: var(--muted,#687c89); }
+.template-version-card .version-subject { font-size: 13px; color: var(--ink,#18313d); overflow-wrap: anywhere; }
+.template-version-card .version-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 13px; }
+.template-version-card .version-actions form { margin: 0; }
+.template-version-card .version-discard-button { color: #9a5318; background: #fff; }
+.template-version-card .cell-note { max-width: none; overflow: visible; text-overflow: clip; white-space: normal; }
+.template-version-status .sync-detail-dialog { text-align: left; }
+.template-sync-dialog.sync-detail-dialog { box-sizing: border-box; padding: 20px; }
+.template-sync-dialog > .sync-dialog-heading { position: relative; display: flex; align-items: center; margin-bottom: 16px; padding-right: 44px; }
+.template-sync-dialog .sync-dialog-heading > .dialog-close-button { top: 0; right: 0; }
+@media(max-width:800px) { .template-version-status { grid-template-columns: 1fr; } }
+
+.template-sync-dialog .status-pill.warning { color: #8a5b06; background: #fff1cf; }

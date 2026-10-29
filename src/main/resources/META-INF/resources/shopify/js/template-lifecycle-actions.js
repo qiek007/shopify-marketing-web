@@ -56,6 +56,9 @@
     confirmButton.addEventListener('click', function () {
         if (!pendingForm || submitting) return;
         submitting = true;
+        if (pendingForm.querySelector('[name="action"]').value === 'discard-draft') {
+            window.dispatchEvent(new Event('template-draft-discard-confirmed'));
+        }
         dialog.classList.add('is-pending');
         dialog.setAttribute('aria-busy', 'true');
         cancelButton.disabled = true;

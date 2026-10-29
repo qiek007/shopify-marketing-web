@@ -23,7 +23,7 @@ class RouteParityContractTest {
         assertThat(routes).contains(
                 "/", "/dashboard", "/dashboard/trends", "/dashboard/trends/export.xlsx",
                 "/issues", "/issues/replay", "/issues/ignore",
-                "/stores", "/stores/quota/history", "/settings/ga4", "/settings/ga4/service-account",
+                "/stores", "/stores/quota/history", "/stores/quota/lots", "/settings/ga4", "/settings/ga4/service-account",
                 "/stores/web-pixel/status", "/stores/web-pixel/enable",
                 "/stores/sender-settings", "/stores/sender-domain-verification", "/stores/sync",
                 "/stores/members/grant", "/stores/members/revoke",

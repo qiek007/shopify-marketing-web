@@ -48,7 +48,7 @@ function setup() {
     dialog.querySelector = selector => nodes[selector];
     dialog.showModal = () => { dialog.open = true; };
     dialog.close = () => { dialog.open = false; };
-    const forms = ['disable', 'delete'].map(action => {
+    const forms = ['disable', 'delete', 'discard-draft'].map(action => {
         const form = element();
         form.dataset = {
             actionTitle: action === 'disable' ? '确认禁用模板' : '确认删除模板',
@@ -60,7 +60,7 @@ function setup() {
         form.submit = () => { form.submissions++; };
         return form;
     });
-    const timers = [];
+    const timers = [], notifications = [];
     const source = fs.readFileSync(path.resolve(__dirname,
         '../../main/resources/META-INF/resources/shopify/js/template-lifecycle-actions.js'), 'utf8');
     vm.runInNewContext(source, {
@@ -68,9 +68,10 @@ function setup() {
             getElementById: () => dialog,
             querySelectorAll: () => forms
         },
-        window: { setTimeout: callback => timers.push(callback) }
+        window: { setTimeout: callback => timers.push(callback), dispatchEvent: event => notifications.push(event.type) },
+        Event: class { constructor(type) { this.type = type; } }
     });
-    return { forms, dialog, title, progress, confirm, cancel, icon, timers };
+    return { forms, dialog, title, progress, confirm, cancel, icon, timers, notifications };
 }
 
 test('canceling confirmation never submits a template action', () => {
@@ -82,6 +83,18 @@ test('canceling confirmation never submits a template action', () => {
     ui.confirm.fire('click');
     assert.equal(ui.timers.length, 0);
     assert.equal(ui.forms[0].submissions, 0);
+});
+
+test('only confirmed discard releases editor exit guards before the action submits', () => {
+    const ui = setup(); const form = ui.forms[2];
+    form.fire('submit');
+    assert.equal(ui.notifications.length, 0);
+    ui.cancel.fire('click'); assert.equal(ui.notifications.length, 0);
+    form.fire('submit'); ui.confirm.fire('click');
+    assert.deepEqual(ui.notifications, ['template-draft-discard-confirmed']);
+    assert.equal(form.submissions, 0);
+    ui.timers.shift()(); assert.equal(form.submissions, 1);
+    assert.equal(ui.forms[0].submissions + ui.forms[1].submissions, 0);
 });
 
 for (const [index, action] of ['disable', 'delete'].entries()) {

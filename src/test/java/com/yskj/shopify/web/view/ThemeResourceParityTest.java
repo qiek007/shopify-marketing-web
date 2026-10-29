@@ -59,7 +59,7 @@ class ThemeResourceParityTest {
         Set<String> classic = views("shopify");
         Set<String> theme2 = views("shopify-theme2");
 
-        assertThat(classic).hasSize(39).containsExactlyInAnyOrderElementsOf(theme2)
+        assertThat(classic).hasSize(41).containsExactlyInAnyOrderElementsOf(theme2)
                 .contains(Path.of("fragments","sender-domain-verification.jspf").toString());
         assertThat(ROOT.resolve("WEB-INF/org/index.jsp")).exists();
         assertThat(ROOT.resolve("shopify/css/dashboard.css")).exists();
@@ -492,7 +492,7 @@ class ThemeResourceParityTest {
             Path root = ROOT.resolve("WEB-INF").resolve(theme);
             String styles = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
             String imports = Files.readString(root.resolve("customer-imports.jsp"));
-            String templates = Files.readString(root.resolve("templates.jsp"));
+            String templates = templateCatalogContract(root.resolve("templates.jsp"));
             String segments = Files.readString(root.resolve("segments.jsp"));
             String campaigns = Files.readString(root.resolve("campaigns.jsp"));
             String automations = Files.readString(root.resolve("automations.jsp"));
@@ -517,7 +517,7 @@ class ThemeResourceParityTest {
             Path root = ROOT.resolve("WEB-INF").resolve(theme);
             String styles = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
             String imports = Files.readString(root.resolve("customer-imports.jsp"));
-            String templates = Files.readString(root.resolve("templates.jsp"));
+            String templates = templateCatalogContract(root.resolve("templates.jsp"));
             String automations = Files.readString(root.resolve("automations.jsp"));
 
             assertThat(imports).contains(
@@ -560,7 +560,7 @@ class ThemeResourceParityTest {
     void classicTemplateEditorAndPreviewExposePreheader() throws Exception {
         Path root = ROOT.resolve("WEB-INF/shopify");
         String editor = Files.readString(root.resolve("template-editor.jsp"));
-        String templates = Files.readString(root.resolve("templates.jsp"));
+        String templates = templateCatalogContract(root.resolve("templates.jsp"));
 
         assertThat(editor).contains(
                 "name=\"preheader\"", "${editorTemplate.preheader}", "收件箱预览摘要",
@@ -589,7 +589,7 @@ class ThemeResourceParityTest {
     void templateLifecycleActionsLiveInEditorAndDisabledStatusIsExplicit() throws Exception {
         for (String theme : Set.of("shopify", "shopify-theme2")) {
             Path root = ROOT.resolve("WEB-INF").resolve(theme);
-            String templates = Files.readString(root.resolve("templates.jsp"));
+            String templates = templateCatalogContract(root.resolve("templates.jsp"));
             String editor = Files.readString(root.resolve("template-editor.jsp"));
             String styles = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
 
@@ -630,7 +630,7 @@ class ThemeResourceParityTest {
                     "id=\"template-action-dialog\"",
                     "data-template-action-confirm",
                     "data-template-action-cancel",
-                    "template-lifecycle-actions.js?v=20261020-action-dialog")
+                    "template-lifecycle-actions.js?v=20261029-restore-draft")
                     .doesNotContain("onsubmit=\"return confirm(");
             assertThat(styles).contains(
                     ".template-action-dialog",
@@ -833,5 +833,11 @@ class ThemeResourceParityTest {
                     .map(root::relativize).map(Path::toString)
                     .collect(Collectors.toSet());
         }
+    }
+
+    private static String templateCatalogContract(Path page) throws Exception {
+        return Files.readString(page)
+                + Files.readString(page.getParent().resolve("fragments/template-preview.jspf"))
+                + Files.readString(ROOT.resolve("shopify/js/template-version-preview.js"));
     }
 }

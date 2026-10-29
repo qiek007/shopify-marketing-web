@@ -1,0 +1,8 @@
+<c:url var="shopTemplatePreviewUrl" value="/templates/preview"/>
+<c:url var="platformTemplatePreviewUrl" value="/templates/platform/preview"/>
+<dialog id="platform-template-preview-dialog" class="template-preview-dialog" aria-labelledby="platform-template-preview-title"
+        data-shop="<c:out value='${selectedShop}'/>" data-shop-preview-url="<c:out value='${shopTemplatePreviewUrl}'/>"
+        data-platform-preview-url="<c:out value='${platformTemplatePreviewUrl}'/>">
+    <div class="template-preview-heading"><div><p class="eyebrow" id="platform-template-preview-kind">邮件模板</p><h2 id="platform-template-preview-title">模板预览</h2><p id="platform-template-preview-meta" class="cell-note"></p></div><button class="icon-button dialog-close-button" type="button" title="关闭" aria-label="关闭" data-platform-preview-close><i class="fa fa-times"></i></button></div>
+    <div class="template-preview-body"><div class="template-preview-summary"><strong id="platform-template-preview-subject"></strong><p id="platform-template-preview-preheader" class="cell-note"></p><div id="platform-template-preview-variables" class="template-preview-variables"></div></div><div id="platform-template-preview-error" class="template-preview-error" role="alert" hidden><span id="platform-template-preview-error-text"></span><button class="action-button" type="button" data-platform-preview-retry hidden><i class="fa fa-refresh"></i><span>重试</span></button></div><iframe id="platform-template-preview-frame" title="邮件 HTML 预览" sandbox="" referrerpolicy="no-referrer"></iframe><details class="template-preview-text"><summary>查看纯文本内容</summary><pre id="platform-template-preview-text"></pre></details></div>
+</dialog>

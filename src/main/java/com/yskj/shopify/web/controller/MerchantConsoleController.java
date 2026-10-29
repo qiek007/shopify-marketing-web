@@ -135,6 +135,11 @@ public class MerchantConsoleController {
         return view("store-quota.history", params, session, model, redirect);
     }
 
+    @GetMapping("/stores/quota/lots")
+    public String storeQuotaLots(@RequestParam MultiValueMap<String,String> params,HttpSession session,Model model,RedirectAttributes redirect) {
+        return view("store-quota.lots",params,session,model,redirect);
+    }
+
     @GetMapping("/settings/ga4")
     public String ga4Settings(@RequestParam MultiValueMap<String, String> params,
                               HttpSession session, Model model, RedirectAttributes redirect) {

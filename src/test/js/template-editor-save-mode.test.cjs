@@ -79,12 +79,12 @@ for (const page of pages) {
         assert.match(source, /id="template-form"[^>]*action="\$\{ctx\}\/templates\/draft"/);
         assert.match(source, /data-template-save-mode="SYNC"[^>]*formaction="\$\{ctx\}\/templates"/);
         assert.match(source, /editorTemplate\.hasDraft/);
-        assert.match(source, /草稿未同步/);
+        assert.match(source, /有未同步草稿/);
         assert.match(source, /线上版本/);
         assert.match(source, /data-template-action-form/);
         const list = read(page.list);
         assert.match(list, /template\.hasDraft/);
-        assert.match(list, /草稿未同步/);
+        assert.match(list, /有未同步草稿/);
         assert.match(list, /<th>同步状态<\/th>/);
         assert.match(list, /<th>发布状态<\/th>/);
         assert.doesNotMatch(list, />线上版本</);

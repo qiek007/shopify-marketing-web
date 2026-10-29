@@ -18,6 +18,19 @@
 <div class="console-layout">
     <%@ include file="fragments/navigation.jspf" %>
     <main class="console-main">
+<style data-store-panel-fold-styles>
+.store-panel-details > summary { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; list-style:none; cursor:pointer; }
+.store-panel-details > summary::-webkit-details-marker { display:none; }
+.store-panel-details > summary:focus-visible { outline:2px solid var(--green,#16845a); outline-offset:-2px; }
+.store-panel-details:not([open]) > summary, .store-quota-details > summary { border-bottom:0; }
+.store-panel-details > summary .section-heading-actions, .store-panel-details > summary .ga4-heading-actions { margin-left:auto; }
+.store-panel-toggle { display:inline-flex; align-items:center; gap:8px; color:#526574; font-size:12px; font-weight:600; white-space:nowrap; }
+.store-panel-toggle::before { content:"展开"; }
+.store-panel-toggle i { font-size:11px; transition:transform 160ms ease; }
+.store-panel-details[open] > summary .store-panel-toggle::before { content:"收起"; }
+.store-panel-details[open] > summary .store-panel-toggle i { transform:rotate(180deg); }
+.store-panel-content { min-width:0; }
+</style>
         <section class="page-heading">
             <div><p class="eyebrow">我的店铺</p></div>
         </section>
@@ -46,16 +59,21 @@
         <c:if test="${not empty selectedShop}">
             <c:url var="quotaHistoryUrl" value="/stores/quota/history"><c:param name="shop" value="${selectedShop}"/></c:url>
             <section class="content-section spaced-section store-quota-section">
-                <div class="section-heading"><div><h2>邮件发送额度</h2><p>发送前预留，送达后核销；所有额度变化均可追溯</p></div><div class="section-heading-actions"><a class="action-button" href="${quotaHistoryUrl}"><i class="fa fa-history"></i><span>查看变更记录</span></a></div></div>
+<details class="store-panel-details store-quota-details" data-store-panel="quota">
+<summary class="section-heading" id="store-quota-summary"><div><h2>邮件发送额度</h2><p>发送前预扣，按既有发送计费口径核销；到期回收和释放均留有记录</p></div><div class="section-heading-actions"><c:choose><c:when test="${storeEmailQuotaAvailable}"><span class="section-count">可用 <c:out value="${storeEmailQuota.availableCount}"/> 条</span></c:when><c:otherwise><span class="status-pill blocked">暂不可读</span></c:otherwise></c:choose><c:if test="${storeEmailQuota.expiryEnabled}"><c:url var="quotaLotsUrl" value="/stores/quota/lots"><c:param name="shop" value="${selectedShop}"/></c:url><a class="action-button" href="${quotaLotsUrl}"><i class="fa fa-calendar"></i><span>查看期限批次</span></a></c:if><a class="action-button" href="${quotaHistoryUrl}"><i class="fa fa-history"></i><span>查看变更记录</span></a><span class="store-panel-toggle" aria-hidden="true"><i class="fa fa-chevron-down"></i></span></div></summary>
+<div class="store-panel-content">
                 <c:choose><c:when test="${!storeEmailQuotaAvailable}"><div class="empty-state compact"><i class="fa fa-clock-o"></i><strong>暂时无法读取邮件额度</strong><span>请稍后刷新页面，其他店铺功能不受影响。</span></div></c:when><c:otherwise>
                     <div class="store-quota-grid" aria-label="邮件发送额度概览">
                         <article class="store-quota-metric available"><span>可发送数量</span><strong><c:out value="${storeEmailQuota.availableCount}"/></strong><small>当前可用于营销活动和自动营销</small></article>
-                        <article class="store-quota-metric balance"><span>额度总量</span><strong><c:out value="${storeEmailQuota.balanceCount}"/></strong><small>平台为当前店铺配置的总额度</small></article>
+                        <article class="store-quota-metric balance"><span>额度总量</span><strong><c:out value="${storeEmailQuota.balanceCount}"/></strong><small>当前剩余余额，含预扣和待核销占用</small></article>
                         <article class="store-quota-metric reserved"><span>活动预留</span><strong><c:out value="${storeEmailQuota.reservedCount}"/></strong><small>已进入发送流程、尚未完成核销</small></article>
-                        <article class="store-quota-metric consumed"><span>累计送达核销</span><strong><c:out value="${storeEmailQuota.consumedCount}"/></strong><small>按邮件通道接受数量累计核销</small></article>
+                        <article class="store-quota-metric consumed"><span>累计已核销</span><strong><c:out value="${storeEmailQuota.consumedCount}"/></strong><small>活动按提交量、自动营销按通道接受量核销</small></article>
+                        <c:if test="${storeEmailQuota.expiryEnabled}"><article class="store-quota-metric reserved"><span>未提交预扣</span><strong><c:out value="${storeEmailQuota.unsubmittedReservedCount}"/></strong><small>尚未提交，不能延长原额度有效期</small></article><article class="store-quota-metric balance"><span>已提交待核销</span><strong><c:out value="${storeEmailQuota.pendingCount}"/></strong><small>沿用提交时的原额度批次</small></article><article class="store-quota-metric consumed"><span>累计到期回收</span><strong><c:out value="${storeEmailQuota.expiredCount}"/></strong><small>包含到期回收及过期预扣释放</small></article><article class="store-quota-metric reserved"><span>已过期待回收</span><strong><c:out value="${storeEmailQuota.pendingExpiryCount}"/></strong><small>已经失效，等待后台逐笔记账回收</small></article></c:if>
                     </div>
                 </c:otherwise></c:choose>
-            </section>
+            </div>
+</details>
+</section>
         </c:if>
         <c:if test="${not empty selectedShop}">
             <c:if test="${shopifyStore}">
@@ -64,9 +82,13 @@
             <section class="content-section spaced-section" data-store-pixel-status
                      data-status-url="${pixelStatusUrl}" data-can-configure="${canConfigureSender}"
                      data-can-reauthorize="${canManageStoreLifecycle}">
-                <div class="section-heading"><div><h2>客户行为采集</h2><p>通过 Shopify Web Pixel 采集浏览、商品查看、搜索、加购与结账事件</p></div><div class="section-heading-actions"><span class="status-pill neutral" data-pixel-state>加载中</span><div class="pixel-heading-actions" data-pixel-actions hidden><a class="primary-button" href="${reauthorizeUrl}" data-pixel-reauthorize hidden><i class="fa fa-refresh"></i><span>重新授权 Shopify</span></a><form method="post" action="${ctx}/stores/web-pixel/enable" data-pixel-enable hidden><input type="hidden" name="shop" value="${selectedShop}"><button class="primary-button" type="submit"><i class="fa fa-plug"></i><span data-pixel-submit-label>启用客户行为采集</span></button></form></div></div></div>
+<details class="store-panel-details store-pixel-details" data-store-panel="pixel">
+<summary class="section-heading" id="store-pixel-summary"><div><h2>客户行为采集</h2><p>通过 Shopify Web Pixel 采集浏览、商品查看、搜索、加购与结账事件</p></div><div class="section-heading-actions"><span class="status-pill neutral" data-pixel-state>加载中</span><div class="pixel-heading-actions" data-pixel-actions hidden><a class="primary-button" href="${reauthorizeUrl}" data-pixel-reauthorize hidden><i class="fa fa-refresh"></i><span>重新授权 Shopify</span></a><form method="post" action="${ctx}/stores/web-pixel/enable" data-pixel-enable hidden><input type="hidden" name="shop" value="${selectedShop}"><button class="primary-button" type="submit"><i class="fa fa-plug"></i><span data-pixel-submit-label>启用客户行为采集</span></button></form></div><span class="store-panel-toggle" aria-hidden="true"><i class="fa fa-chevron-down"></i></span></div></summary>
+<div class="store-panel-content">
                 <div class="system-notice" data-pixel-notice><i class="fa fa-spinner fa-spin" data-pixel-icon></i><div><strong data-pixel-message>正在读取客户行为采集状态</strong><span data-pixel-id hidden></span></div></div>
-            </section>
+            </div>
+</details>
+</section>
             </c:if>
             <c:if test="${canConfigureStore}">
                 <%@ include file="fragments/store-ga4-connection.jspf" %>
