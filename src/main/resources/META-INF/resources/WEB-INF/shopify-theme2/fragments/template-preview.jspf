@@ -1,3 +1,4 @@
+<%@ page pageEncoding="UTF-8" %>
 <c:url var="shopTemplatePreviewUrl" value="/templates/preview"/>
 <c:url var="platformTemplatePreviewUrl" value="/templates/platform/preview"/>
 <dialog id="platform-template-preview-dialog" class="template-preview-dialog" aria-labelledby="platform-template-preview-title"

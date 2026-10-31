@@ -33,7 +33,7 @@
 </section>
 <textarea id="initial-html" hidden><c:out value="${editorTemplate.html}"/></textarea>
 <%@ include file="fragments/template-preview.jspf" %>
-<script src="${ctx}/shopify/js/template-version-preview.js?v=20261029-versions"></script><script src="${ctx}/shopify/js/template-sync-details.js?v=20261029-versions"></script>
+<script src="${ctx}/shopify/js/template-version-preview.js?v=20261030-visible-frame"></script><script src="${ctx}/shopify/js/template-sync-details.js?v=20261029-versions"></script>
 </main></div>
 <script src="${ctx}/shopify/vendor/grapesjs/grapes.min.js"></script>
 <script>

@@ -29,6 +29,24 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 
 class MerchantConsoleControllerTest {
+    @Test
+    void retryImportUsesTheExistingFacadeWithoutUploadingTheFileAgain() throws Exception {
+        when(client.exchange(eq("customer-imports.retry"), any(), eq("demo.myshopify.com"), any(), eq(null)))
+                .thenReturn(MerchantWebProtocol.redirect("/customers/imports", "Queued", null,
+                        new JSONObject(Map.of("shop", "demo.myshopify.com", "page", 2))));
+        var params = new LinkedMultiValueMap<String, String>();
+        params.add("shop", "demo.myshopify.com"); params.add("jobId", "failed-job");
+        params.add("confirm", "RETRY_IMPORT"); params.add("page", "2");
+        var redirect = new RedirectAttributesModelMap();
+        var method = MerchantConsoleController.class.getMethod("retryCustomerImport",
+                org.springframework.util.MultiValueMap.class, javax.servlet.http.HttpSession.class,
+                org.springframework.ui.Model.class, org.springframework.web.servlet.mvc.support.RedirectAttributes.class);
+        assertThat(method.invoke(controller, params, session(), new ExtendedModelMap(), redirect))
+                .isEqualTo("redirect:/customers/imports");
+        verify(client).exchange(eq("customer-imports.retry"), any(), eq("demo.myshopify.com"),
+                org.mockito.ArgumentMatchers.argThat(body -> "failed-job".equals(body.getString("jobId"))), eq(null));
+        assertThat(redirect.getFlashAttributes().get("successMessage")).isEqualTo("Queued");
+    }
     @Test void dedicatedDraftRouteUsesANewOperationInsteadOfLegacyPublication() {
         when(client.exchange(eq("templates.save-draft"),any(),eq("demo.myshopify.com"),any(),eq(null))).thenReturn(MerchantWebProtocol.redirect("/templates/editor","Draft saved",null,new JSONObject(Map.of("shop","demo.myshopify.com","templateId","tpl-draft"))));
         var params=new LinkedMultiValueMap<String,String>();params.add("shop","demo.myshopify.com");params.add("saveMode","SYNC");

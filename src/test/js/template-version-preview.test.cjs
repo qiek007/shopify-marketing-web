@@ -54,6 +54,16 @@ function setup() {
     return nodes.get(id);
   }
   const dialog = node('platform-template-preview-dialog');
+  function equipFrame(frame) {
+    frame.attributes={sandbox:'',referrerpolicy:'no-referrer',title:'邮件 HTML 预览',id:'platform-template-preview-frame'};
+    frame.cloneNode=()=>equipFrame({srcdoc:'',removeAttribute(name){delete this.attributes[name];},replaceWith(next){
+      assert.equal(dialog.open,true,'fresh iframe must be mounted after the dialog is visible');
+      nodes.set('platform-template-preview-frame',next);
+    }});
+    frame.replaceWith=function(next){assert.equal(dialog.open,true);nodes.set('platform-template-preview-frame',next);};
+    return frame;
+  }
+  equipFrame(node('platform-template-preview-frame'));
   dialog.dataset = { shop: 'demo.example', shopPreviewUrl: '/app/templates/preview', platformPreviewUrl: '/app/templates/platform/preview' };
   const close = node('close'), retry = node('retry');
   const document = {
@@ -86,6 +96,24 @@ function setup() {
   return { requests, click, node, close, retry, dialog };
 }
 async function flush() { for (let i = 0; i < 12; i++) await Promise.resolve(); }
+
+test('each preview mounts a fresh sandboxed iframe after opening the dialog', async () => {
+  const f=setup(),old=f.node('platform-template-preview-frame');f.click('WORKING');
+  const draft=f.node('platform-template-preview-frame');assert.notEqual(draft,old);
+  assert.equal(draft.attributes.sandbox,'');assert.equal(draft.attributes.referrerpolicy,'no-referrer');
+  f.requests[0].resolve({html:'<h1>Draft</h1>'});await flush();assert.equal(draft.srcdoc,'<h1>Draft</h1>');
+  f.close.listeners.click();f.click('PUBLISHED');
+  const published=f.node('platform-template-preview-frame');assert.notEqual(published,draft);
+  f.requests[1].resolve({html:'<h1>Published</h1>',hasDraft:false,status:'PUBLISHED'});await flush();
+  assert.equal(published.srcdoc,'<h1>Published</h1>');
+});
+
+test('closing a preview before its response arrives never paints a later session', async () => {
+  const f=setup();f.click('WORKING');f.close.listeners.click();f.click('PUBLISHED');
+  f.requests[1].resolve({html:'<h1>Published</h1>',hasDraft:false,status:'PUBLISHED'});await flush();
+  f.requests[0].resolve({html:'<h1>Draft</h1>'});await flush();
+  assert.equal(f.node('platform-template-preview-frame').srcdoc,'<h1>Published</h1>');
+});
 
 test('published and working previews send explicit versions without writes', async () => {
   const fixture = setup(); fixture.click('PUBLISHED');

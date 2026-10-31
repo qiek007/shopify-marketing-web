@@ -38,8 +38,16 @@
         subject.textContent = '正在加载模板…';
         preheader.textContent = ''; meta.textContent = ''; variables.textContent = ''; plainText.textContent = '';
         errorBox.hidden = true; retry.hidden = true;
-        frame.srcdoc = '<p style="padding:24px;color:#68757d">正在加载…</p>';
         if (!dialog.open) dialog.showModal();
+        // A browsing context created while the dialog was hidden can retain a
+        // zero-sized layout in embedded Chromium. Mount a fresh frame only once
+        // the dialog is visible; keep all sandbox/referrer restrictions intact.
+        var nextFrame = frame.cloneNode(false);
+        nextFrame.removeAttribute('srcdoc');
+        nextFrame.removeAttribute('src');
+        frame.replaceWith(nextFrame);
+        frame = nextFrame;
+        frame.srcdoc = '<p style="padding:24px;color:#68757d">正在加载…</p>';
         var timeoutId = window.setTimeout(function () { controller.abort(); }, 12000);
         fetch(endpoint + '?' + query.toString(), {
             credentials: 'same-origin', cache: 'no-store', redirect: 'manual', signal: controller.signal,

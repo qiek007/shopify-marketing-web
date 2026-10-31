@@ -97,6 +97,6 @@
     });
 }());
 </script>
-<script src="${ctx}/shopify/js/template-version-preview.js?v=20261029-versions"></script><script src="${ctx}/shopify/js/template-sync-details.js?v=20261029-versions"></script>
+<script src="${ctx}/shopify/js/template-version-preview.js?v=20261030-visible-frame"></script><script src="${ctx}/shopify/js/template-sync-details.js?v=20261029-versions"></script>
 </main></div>
 </body></html>

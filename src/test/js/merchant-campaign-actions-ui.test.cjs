@@ -46,11 +46,11 @@ for (const root of roots) {
 
   test(`${root.label}: campaign list limits withdrawal to its creator and supports copy`, () => {
     const source = read(root, 'campaigns.jsp');
-    assert.match(source, /<c:if test="\$\{canManageCampaigns and campaign\.status eq 'PENDING_APPROVAL' and not empty campaign\.createdBy and campaign\.createdBy eq logineduser\.id\}">\s*<form[^>]*data-merchant-action-form/);
+    assert.match(source, /<c:if test="\$\{canManageCampaigns and \(campaign\.status eq 'PENDING_APPROVAL' or campaign\.status eq 'APPROVED'\) and not empty campaign\.createdBy and campaign\.createdBy eq logineduser\.id\}">\s*<form[^>]*data-merchant-action-form/);
     const withdraw = actionForm(source, 'WITHDRAW');
     assert.ok(withdraw, 'withdraw form exists');
     assert.match(withdraw, /method="post" action="\$\{ctx\}\/campaigns\/action"/);
-    assert.match(withdraw, /data-confirm-message="撤回后返回草稿，可修改后重新提交审批"/);
+    assert.match(withdraw, /data-confirm-message="撤回后返回草稿并清除冻结受众，发送前需重新审批"/);
     assert.match(withdraw, /data-pending-label="撤回中…"/);
     const copy = actionForm(source, 'COPY');
     assert.ok(copy, 'copy form exists');
@@ -66,7 +66,7 @@ for (const root of roots) {
     assert.match(source, /<c:if test="\$\{canWithdrawCampaign\}">\s*<form[^>]*data-merchant-action-form/);
     const withdraw = actionForm(source, 'WITHDRAW');
     assert.ok(withdraw, 'withdraw form exists');
-    assert.match(withdraw, /data-confirm-message="撤回后返回草稿，可修改后重新提交审批"/);
+    assert.match(withdraw, /data-confirm-message="撤回后返回草稿并清除冻结受众，发送前需重新审批"/);
     assert.match(withdraw, /data-pending-label="撤回中…"/);
     for (const existing of ['SUBMIT', 'APPROVE', 'REJECT']) {
       assert.ok(actionForm(source, existing), `${existing} remains available`);

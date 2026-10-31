@@ -11,7 +11,10 @@
         <span><c:out value="${timelineWindow.fromDate}"/> 至 <c:out value="${timelineWindow.toDate}"/></span>
         <strong><c:out value="${timelineWindow.totalCount}"/> 项行为</strong>
     </div>
+    <c:if test="${timelineWindow.synchronizing}"><div class="notice info timeline-read-notice" role="status">数据同步中，已展示当前已同步的行为；最新事件可能稍后出现，请稍后重新查询。</div></c:if>
     <c:choose>
+        <c:when test="${timelineWindow.unavailable}"><div class="timeline-window-empty" role="status">时间线暂不可用，请稍后重试。当前无法读取 Doris，不能据此判断客户没有行为。</div></c:when>
+        <c:when test="${empty timelineWindow.groups and timelineWindow.synchronizing}"><div class="timeline-window-empty" role="status">当前尚无已同步的行为记录，不代表客户没有发生行为。</div></c:when>
         <c:when test="${empty timelineWindow.groups}">
             <div class="timeline-window-empty"><i class="fa fa-calendar-o"></i><span>这个时间段没有行为记录</span></div>
         </c:when>

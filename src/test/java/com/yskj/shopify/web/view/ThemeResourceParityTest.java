@@ -59,8 +59,9 @@ class ThemeResourceParityTest {
         Set<String> classic = views("shopify");
         Set<String> theme2 = views("shopify-theme2");
 
-        assertThat(classic).hasSize(41).containsExactlyInAnyOrderElementsOf(theme2)
-                .contains(Path.of("fragments","sender-domain-verification.jspf").toString());
+        assertThat(classic).hasSize(43).contains("custom-store-connection.jsp").containsExactlyInAnyOrderElementsOf(theme2)
+                .contains(Path.of("fragments","sender-domain-verification.jspf").toString(),
+                        Path.of("fragments","store-connection-readonly.jspf").toString());
         assertThat(ROOT.resolve("WEB-INF/org/index.jsp")).exists();
         assertThat(ROOT.resolve("shopify/css/dashboard.css")).exists();
         assertThat(ROOT.resolve("shopify-theme2/css/dashboard.css")).exists();
@@ -839,5 +840,32 @@ class ThemeResourceParityTest {
         return Files.readString(page)
                 + Files.readString(page.getParent().resolve("fragments/template-preview.jspf"))
                 + Files.readString(ROOT.resolve("shopify/js/template-version-preview.js"));
+    }
+    @Test void customConnectionIsInlineReadonlyAndTestFormNeverEchoesCredentials() throws Exception {
+        String shared=Files.readString(ROOT.resolve("WEB-INF/shopify/fragments/store-connection-readonly.jspf"));
+        assertThat(shared).contains("id=\"store-data-connection\"", "action=\"${ctx}/stores/custom-connection/test\"",
+                "name=\"_connectionCsrf\"", "name=\"shop\"", "name=\"expectedVersion\"",
+                "customConnection.canTest", "customConnection.featureEnabled", "customConnection.configured",
+                "数据签名尚未验证", "尚未启用客户、商品和订单同步", "c:out value=\"${customConnection.apiBaseUrl}\"")
+                .doesNotContain("name=\"apiBaseUrl\"", "name=\"apiToken\"", "type=\"password\"",
+                        "name=\"sourceStoreId\"", "name=\"datasetEpoch\"", "name=\"connectorKey\"",
+                        "${customConnection.apiToken}", "/custom-connection/save", "/custom-connection/source",
+                        "签名验证通过", "查看连接配置");
+        var document=org.jsoup.Jsoup.parse(shared);
+        assertThat(document.select("form")).hasSize(1);
+        assertThat(document.select("form input[name]").eachAttr("name"))
+                .containsExactlyInAnyOrder("shop", "expectedVersion", "_connectionCsrf");
+        for(String theme:Set.of("shopify","shopify-theme2")){
+            Path themeRoot=ROOT.resolve("WEB-INF").resolve(theme);
+            String stores=Files.readString(themeRoot.resolve("stores.jsp"));
+            String legacy=Files.readString(themeRoot.resolve("custom-store-connection.jsp"));
+            assertThat(stores).contains("include file=\"fragments/store-connection-readonly.jspf\"")
+                    .doesNotContain("查看连接配置", "var=\"customConnectionUrl\"");
+            assertThat(legacy).contains("include file=\"fragments/store-connection-readonly.jspf\"")
+                    .doesNotContain("name=\"apiBaseUrl\"", "name=\"apiToken\"", "name=\"sourceStoreId\"",
+                            "name=\"datasetEpoch\"", "name=\"connectorKey\"", "/custom-connection/save", "/custom-connection/source");
+        }
+        assertThat(Files.readString(ROOT.resolve("WEB-INF/shopify-theme2/fragments/store-connection-readonly.jspf")))
+                .contains("include file=\"../../shopify/fragments/store-connection-readonly.jspf\"");
     }
 }

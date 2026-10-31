@@ -43,7 +43,7 @@
                 </c:when>
                 <c:otherwise>
                     <div class="table-wrap"><table class="status-table wide-table"><thead><tr><th>店铺</th><th>连接</th><th>商品</th><th>客户</th><th>订单</th><th>安装时间</th><th>最近同步</th></tr></thead><tbody><tr>
-                        <td><strong><c:out value="${currentStore.shopDomain}"/></strong><span class="cell-note"><c:out value="${currentStore.grantedScopes}" default="未记录授权范围"/></span></td>
+                        <td><strong><c:out value="${currentStore.shopDomain}"/></strong><span class="cell-note">来源类型：<c:out value="${sourceProfile.sourceLabel}" default="暂不可用"/> · 连接器：<c:out value="${sourceProfile.connectorLabel}" default="未确认"/></span><c:if test="${shopifyStore}"><span class="cell-note"><c:out value="${currentStore.grantedScopes}" default="未记录授权范围"/></span></c:if></td>
                         <td><span class="status-pill"><c:out value="${currentStore.status}"/></span></td>
                         <td><span class="sync-state"><c:out value="${currentStore.productsStatus}" default="未同步"/></span></td>
                         <td><span class="sync-state"><c:out value="${currentStore.customersStatus}" default="未同步"/></span></td>
@@ -52,6 +52,7 @@
                         <td><div class="store-sync-cell"><time data-browser-time="<c:out value='${currentStore.lastSyncedAt}'/>" datetime="<c:out value='${currentStore.lastSyncedAt}'/>"><c:out value="${currentStore.lastSyncedAt}" default="尚未同步"/></time><c:if test="${canConfigureSender && shopifyStore}"><form method="post" action="${ctx}/stores/sync" onsubmit="var b=this.querySelector('button');b.disabled=true;b.innerHTML='<i class=&quot;fa fa-spinner fa-spin&quot;></i><span>同步中</span>';"><input type="hidden" name="shop" value="${selectedShop}"><button class="action-button" type="submit"><i class="fa fa-refresh"></i><span>立即同步</span></button></form></c:if></div></td>
                     </tr></tbody></table></div>
                     <c:if test="${shopifyStore && currentStore.status eq 'ACTIVE'}"><p class="cell-note store-sync-note">每日自动同步（距上次成功同步满 24 小时），无需保持页面打开；也可点击“立即同步”提前执行。</p></c:if>
+                    <c:if test="${not shopifyStore}"><%@ include file="fragments/store-connection-readonly.jspf" %></c:if>
                     <c:if test="${not empty currentStore.lastError}"><div class="system-notice danger" role="alert"><i class="fa fa-exclamation-circle"></i><div><strong>最近同步异常</strong><span><c:out value="${currentStore.lastError}"/></span></div></div></c:if>
                 </c:otherwise>
             </c:choose>

@@ -46,6 +46,9 @@ public class MerchantConsoleController {
 
     private final MerchantWebFacadeClient client;
     private final RemotePageSupport support;
+    private com.yskj.shopify.web.service.CustomStoreConnectionClient sourceConnections;
+    @Autowired(required = false)
+    public void setSourceConnections(com.yskj.shopify.web.service.CustomStoreConnectionClient value) { sourceConnections = value; }
     private SharedCustomerImportStore customerImportStore;
     private CustomerImportTransferClient customerImportTransfer;
     private CustomerImportTemplateExporter customerImportTemplateExporter;
@@ -125,7 +128,18 @@ public class MerchantConsoleController {
     @GetMapping("/stores")
     public String stores(@RequestParam MultiValueMap<String, String> params,
                          HttpSession session, Model model, RedirectAttributes redirect) {
-        return view("stores.load", params, session, model, redirect);
+        String result = view("stores.load", params, session, model, redirect);
+        Object shop = model.getAttribute("selectedShop");
+        if (sourceConnections != null && shop instanceof String key && !key.isBlank() && !result.startsWith("redirect:")) {
+            var profile = sourceConnections.sourceProfile(requireUser(session), key);
+            model.addAttribute("sourceProfile", profile);
+            model.addAttribute("shopifyStore", "SHOPIFY".equals(profile.getString("sourceType")));
+            if (profile.getBooleanValue("available") && "AUW_V2".equals(profile.getString("connectorKey"))) {
+                model.addAttribute("customConnection", sourceConnections.status(requireUser(session), key));
+                model.addAttribute("customConnectionCsrf", CustomStoreConnectionController.csrf(session));
+            }
+        }
+        return result;
     }
 
     @GetMapping("/stores/quota/history")
@@ -273,6 +287,12 @@ public class MerchantConsoleController {
     public String customerImports(@RequestParam MultiValueMap<String, String> params,
                                   HttpSession session, Model model, RedirectAttributes redirect) {
         return view("customer-imports.page", params, session, model, redirect);
+    }
+
+    @PostMapping("/customers/imports/retry")
+    public String retryCustomerImport(@RequestParam MultiValueMap<String, String> params,
+                                      HttpSession session, Model model, RedirectAttributes redirect) {
+        return view("customer-imports.retry", params, session, model, redirect);
     }
 
     @GetMapping("/customers/imports/template")

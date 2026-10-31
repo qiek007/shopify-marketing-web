@@ -65,7 +65,7 @@
                     <a class="action-button" href="${ctx}/campaigns/editor?shop=${campaignDetail.shopDomain}&amp;campaignId=${campaignDetail.campaignId}#campaign-test-send"><i class="fa fa-flask"></i>发送测试邮件</a>
                 </c:if>
                 <c:if test="${canWithdrawCampaign}">
-                    <form method="post" action="${ctx}/campaigns/action" data-merchant-action-form data-confirm-message="撤回后返回草稿，可修改后重新提交审批" data-pending-label="撤回中…">
+                    <form method="post" action="${ctx}/campaigns/action" data-merchant-action-form data-confirm-message="撤回后返回草稿并清除冻结受众，发送前需重新审批" data-pending-label="撤回中…">
                         <input type="hidden" name="shop" value="${campaignDetail.shopDomain}">
                         <input type="hidden" name="campaignId" value="${campaignDetail.campaignId}">
                         <input type="hidden" name="action" value="WITHDRAW">
