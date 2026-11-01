@@ -9,7 +9,18 @@
 .store-data-connection .connection-address { grid-column:1/-1; }
 .store-data-connection .connection-test-form { margin:0; }
 .store-data-connection .connection-test-form button:disabled { opacity:.5; cursor:not-allowed; }
+.store-data-connection .connection-readonly-status { margin:0 18px 16px;padding:16px 0 0;border-top:1px solid #e7edf0;color:#788890;font-size:12px;line-height:1.7; }.store-data-connection .connection-readonly-status h3 { color:#224d44;font-size:13px;margin:0 0 8px; }.store-data-connection .connection-readonly-status p { margin:5px 0; }
 .store-data-connection .connection-note { margin:0; padding:0 18px 16px; color:#788890; font-size:12px; line-height:1.7; }
+.store-data-connection .connection-sync-status { margin:0 18px 18px; padding:16px; border:1px solid #e2ebe6; border-radius:6px; background:#f8fbf9; }
+.store-data-connection .connection-sync-summary { display:grid; grid-template-columns:1fr 1fr; gap:14px 24px; }
+.store-data-connection .connection-sync-summary span { display:block; color:#7a8993; font-size:12px; margin-bottom:5px; }
+.store-data-connection .connection-sync-summary strong { color:#285b45; font-size:13px; }
+.store-data-connection .connection-sync-note { margin:12px 0 0; color:#788890; font-size:12px; line-height:1.7; }
+.store-data-connection .connection-sync-table-wrap { margin-top:14px; overflow-x:auto; }
+.store-data-connection .connection-sync-table { width:100%; min-width:400px; border-collapse:collapse; font-size:12px; }
+.store-data-connection .connection-sync-table th,.store-data-connection .connection-sync-table td { padding:9px 10px; border-bottom:1px solid #e2ebe6; text-align:left; }
+.store-data-connection .connection-sync-table th { color:#71877a; background:#eff5f1; font-size:11px; font-weight:600; }
+.store-data-connection .connection-sync-table td { color:#3b5548; }
 @media(max-width:640px){.store-data-connection .connection-info-grid { grid-template-columns:1fr; }.store-data-connection .connection-address { grid-column:auto; }}
 </style>
 <div class="section-heading"><div><h2>店铺数据连接</h2><p>连接配置由平台管理端维护，店铺端可查看和测试。</p></div>
@@ -32,6 +43,38 @@
 <c:when test="${sourceProfile.connectorKey eq 'NONE'}"><p class="connection-note">未选择连接器，请联系平台管理员配置。</p></c:when>
 <c:when test="${sourceProfile.sourceType eq 'SHOPLINE'}"><p class="connection-note">Shopline 连接器待开发，尚未启用业务同步。</p></c:when>
 <c:when test="${sourceProfile.connectorKey eq 'AUW_V2' and not customConnection.available}"><p class="connection-note" role="status">连接状态暂不可用，请稍后刷新或联系平台管理员。</p></c:when>
-<c:otherwise><p class="connection-note">当前测试仅验证 API 鉴权和来源身份；数据签名尚未验证，尚未启用客户、商品和订单同步。测试与回填不会触发正式营销发送。</p></c:otherwise>
+<c:when test="${sourceProfile.connectorKey eq 'AUW_V2'}">
+<section id="store-sync-status" class="connection-sync-status" aria-label="数据签名与同步状态">
+<c:choose><c:when test="${empty customSync or not customSync.available}"><p class="connection-sync-note" role="status">同步状态暂不可用，请联系平台管理员统一更新服务。API 鉴权结果与数据签名、同步结果分别管理。</p></c:when>
+<c:otherwise>
+<div class="connection-sync-summary">
+<div><span>数据签名</span><strong><c:choose><c:when test="${customSync.signatureState eq 'VERIFIED'}">签名验证通过</c:when><c:when test="${customSync.signatureState eq 'STALE'}">配置已变化，需重新验证</c:when><c:otherwise>尚未验证</c:otherwise></c:choose></strong></div>
+<div><span>同步任务</span><strong><c:choose><c:when test="${not customSync.featureEnabled}">同步功能尚未启用</c:when><c:when test="${customSync.syncState eq 'COMPLETED'}">本批同步完成</c:when><c:when test="${customSync.syncState eq 'ACTIVE'}">正在同步</c:when><c:when test="${customSync.syncState eq 'PAUSED'}">已暂停</c:when><c:when test="${customSync.syncState eq 'FAILED'}">任务失败</c:when><c:when test="${customSync.syncState eq 'DEGRADED'}">需检查异常数据</c:when><c:when test="${customSync.syncState eq 'CANCELLED'}">已取消</c:when><c:otherwise>尚未启动</c:otherwise></c:choose></strong></div>
+</div>
+<c:if test="${not empty customSync.resources}"><div class="connection-sync-table-wrap"><table class="connection-sync-table"><thead><tr><th>资源</th><th>处理状态</th><th>已接收 / 已处理记录</th></tr></thead><tbody>
+<c:forEach var="resource" items="${customSync.resources}"><tr><td><c:choose><c:when test="${resource.resource eq 'PRODUCT'}">商品</c:when><c:when test="${resource.resource eq 'CUSTOMER'}">客户</c:when><c:otherwise>订单</c:otherwise></c:choose></td><td><c:choose><c:when test="${resource.status eq 'COMPLETED' or resource.status eq 'READY'}">已完成</c:when><c:when test="${resource.status eq 'ACTIVE'}">处理中</c:when><c:when test="${resource.status eq 'PAUSED'}">已暂停</c:when><c:when test="${resource.status eq 'FAILED'}">失败</c:when><c:when test="${resource.status eq 'DEGRADED'}">需检查</c:when><c:when test="${resource.status eq 'CANCELLED'}">已取消</c:when><c:otherwise>等待处理</c:otherwise></c:choose></td><td><c:out value="${resource.receivedRecords}" default="0"/> / <c:out value="${resource.appliedRecords}" default="0"/></td></tr></c:forEach>
+</tbody></table></div></c:if>
+<c:if test="${not empty customSync.lastCompletedAt}"><p class="connection-sync-note">最近完成：<time data-browser-time="<c:out value='${customSync.lastCompletedAt}'/>" datetime="<c:out value='${customSync.lastCompletedAt}'/>"><c:out value="${customSync.lastCompletedAt}"/></time></p></c:if>
+<c:if test="${not empty customSync.lastErrorCode}"><p class="connection-sync-note">最近任务结果：<c:out value="${customSync.lastErrorCode}"/></p></c:if>
+<p class="connection-sync-note">TEST · SUPPRESS：同步、回填和重放不会触发正式营销发送。配置与任务操作由平台管理端维护。</p>
+</c:otherwise></c:choose>
+</section>
+</c:when>
+<c:otherwise><p class="connection-note">请使用与店铺来源匹配的连接器，连接配置由平台管理端维护。</p></c:otherwise>
 </c:choose>
+
+<section id="store-automation-status" class="connection-readonly-status" aria-label="自动同步状态">
+ <h3>自动回调与增量轮询</h3>
+ <c:choose><c:when test="${empty customAutomation or not customAutomation.available}"><p>自动同步状态暂不可用，请联系平台管理员统一更新。</p></c:when><c:otherwise>
+ <p>定时轮询：<strong>${customAutomation.pollEnabled ? '已开启' : '未开启'}</strong> · 回调：<strong>${customAutomation.callbackEnabled ? '已开启' : '未开启'}</strong> · 轮询间隔 <c:out value="${customAutomation.pollIntervalSeconds}"/> 秒</p>
+ <c:if test="${customAutomation.awaitingBaseline}"><p>等待管理员完成首次全量同步，自动流程不会自行导入整店数据。</p></c:if><c:if test="${customAutomation.hasPendingCallback}"><p>已有待处理回调通知，数据会通过增量流程统一校验和处理。</p></c:if>
+ <c:if test="${not empty customAutomation.nextPollAt}"><p>下次轮询 <time data-browser-time="<c:out value='${customAutomation.nextPollAt}'/>"><c:out value="${customAutomation.nextPollAt}"/></time></p></c:if>
+ <c:if test="${not empty customAutomation.lastErrorCode}"><p>状态提示：<c:out value="${customAutomation.lastErrorCode}"/></p></c:if>
+ <p>设置由平台管理端维护。TEST · SUPPRESS，自动同步不会触发正式营销发送。</p>
+ </c:otherwise></c:choose>
+</section>
+<section id="store-identity-status" class="connection-readonly-status" aria-label="客户身份关联概况">
+ <h3>导入客户身份关联</h3>
+ <c:choose><c:when test="${empty customIdentities or not customIdentities.available}"><p>关联概况暂不可用，请联系平台管理员检查服务准备状态。</p></c:when><c:otherwise><p>当前候选页已关联 <strong><c:out value="${customIdentities.linkedOnPage}" default="0"/></strong> 条。身份关联须由管理员逐条确认，不按邮箱自动合并。</p><p>本地标签、历史行为及退订／抑制限制保留；店铺端仅可查看。</p></c:otherwise></c:choose>
+</section>
 </div>

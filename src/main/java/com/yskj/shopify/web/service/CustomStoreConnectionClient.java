@@ -24,4 +24,59 @@ import com.alibaba.fastjson.JSONObject;import com.yskj.core.annotation.HkInject;
   for(String field:List.of("selectionAvailable","canSelect","legacy"))if(!(raw.get(field) instanceof Boolean))return profileUnavailable(shop);
   var v=new JSONObject();v.put("available",true);v.put("shopDomain",shop);v.put("sourceType",source);v.put("connectorKey",connector);v.put("sourceLabel",Map.of("SHOPIFY","Shopify","SHOPLINE","Shopline","CUSTOM","自建站").get(source));v.put("connectorLabel",Map.of("SHOPIFY_NATIVE","Shopify 原生连接","SHOPLINE_PENDING","Shopline（待适配）","NONE","未选择连接器","AUW_V2","AUW v2").get(connector));v.put("connectorStatus",status);v.put("profileVersion",n.longValue());v.put("selectionAvailable",raw.getBooleanValue("selectionAvailable"));v.put("canSelect",false);v.put("legacy",raw.getBooleanValue("legacy"));v.put("bindingRequired",Boolean.TRUE.equals(raw.get("bindingRequired")));return v;
  }
+ /** Merchant surface exposes status only; it never forwards sync or trust commands. */
+ public JSONObject syncStatus(LoginedUser user,String shop){var r=request(user,shop,null);try{return syncView(remote.getSyncStatus(r),r.getString("shopDomain"));}catch(RuntimeException unavailable){return unavailableSync(r.getString("shopDomain"));}}
+ private static boolean canonicalUuid(String s){try{return s!=null&&UUID.fromString(s).toString().equals(s);}catch(RuntimeException invalid){return false;}}
+ public static JSONObject unavailableSync(String shop){var v=new JSONObject();v.put("available",false);v.put("shopDomain",shop);v.put("featureEnabled",false);v.put("canManage",false);v.put("configVersion",0L);v.put("signatureState","NOT_VERIFIED");v.put("syncState","NOT_VERIFIED");v.put("resources",new com.alibaba.fastjson.JSONArray());v.put("environment","TEST");v.put("effectPolicy","SUPPRESS");return v;}
+ static JSONObject syncView(JSONObject raw,String shop){
+  try{
+   if(raw==null||raw.containsKey("errorCode")||Boolean.FALSE.equals(raw.get("success"))||!Integer.valueOf(1).equals(raw.get("schemaVersion"))||!shop.equals(raw.getString("shopDomain"))||!Boolean.TRUE.equals(raw.get("available")))return unavailableSync(shop);
+   for(String field:List.of("featureEnabled","canManage"))if(!(raw.get(field) instanceof Boolean))return unavailableSync(shop);
+   String signature=raw.getString("signatureState"),state=raw.getString("syncState");
+   if(signature==null||!Set.of("NOT_VERIFIED","VERIFIED","STALE").contains(signature)||state==null||!Set.of("NOT_VERIFIED","IDLE","ACTIVE","PAUSED","FAILED","DEGRADED","CANCELLED","COMPLETED").contains(state))return unavailableSync(shop);
+   long version=syncCount(raw.get("configVersion"));if(version==Long.MAX_VALUE)return unavailableSync(shop);
+   if(raw.containsKey("environment")&&!"TEST".equals(raw.getString("environment"))||raw.containsKey("effectPolicy")&&!"SUPPRESS".equals(raw.getString("effectPolicy")))return unavailableSync(shop);
+   var v=new JSONObject();v.put("available",true);v.put("shopDomain",shop);v.put("configVersion",version);v.put("featureEnabled",raw.getBooleanValue("featureEnabled"));v.put("canManage",false);v.put("signatureState",signature);v.put("syncState",state);v.put("environment","TEST");v.put("effectPolicy","SUPPRESS");
+   String batch=raw.getString("batchId");if(batch!=null&&!batch.isEmpty()){if(!canonicalUuid(batch))return unavailableSync(shop);v.put("batchId",batch);}
+   String mode=raw.getString("mode");if(mode!=null){if(!Set.of("FULL","INCREMENTAL").contains(mode))return unavailableSync(shop);v.put("mode",mode);}
+   for(String field:List.of("lastCompletedAt","nextAttemptAt")){Object value=raw.get(field);if(value!=null){if(!(value instanceof String s)||s.length()>64)return unavailableSync(shop);v.put(field,java.time.Instant.parse(s).toString());}}
+   safeSyncCode(raw,v,"lastErrorCode");
+   if(!(raw.get("resources") instanceof com.alibaba.fastjson.JSONArray rows)||rows.size()>3)return unavailableSync(shop);
+   var resources=new com.alibaba.fastjson.JSONArray();var seen=new HashSet<String>();
+   for(Object item:rows){if(!(item instanceof JSONObject row))return unavailableSync(shop);String resource=row.getString("resource"),status=row.getString("status"),phase=row.getString("phase");if(resource==null||!Set.of("CUSTOMER","PRODUCT","ORDER").contains(resource)||!seen.add(resource)||status==null||!Set.of("PENDING","WAITING","QUEUED","IDLE","ACTIVE","PAUSED","FAILED","DEGRADED","CANCELLED","COMPLETED","READY").contains(status)||phase!=null&&!Set.of("BASELINE","FEED","DONE","DETAIL","WAITING","QUEUED").contains(phase))return unavailableSync(shop);
+    var target=new JSONObject();target.put("resource",resource);target.put("resourceLabel",Map.of("CUSTOMER","客户","PRODUCT","商品","ORDER","订单").get(resource));target.put("status",status);target.put("phase",phase);
+    String runId=row.getString("runId");if(runId!=null){if(!canonicalUuid(runId))return unavailableSync(shop);target.put("runId",runId);}
+    for(String field:List.of("receivedPages","appliedPages","receivedRecords","appliedRecords"))target.put(field,syncCount(row.get(field)));
+    if(target.getLongValue("appliedPages")>target.getLongValue("receivedPages")||target.getLongValue("appliedRecords")>target.getLongValue("receivedRecords"))return unavailableSync(shop);
+    safeSyncCode(row,target,"errorCode");resources.add(target);
+   }
+   v.put("resources",resources);return v;
+  }catch(RuntimeException malformed){return unavailableSync(shop);}
+ }
+ private static long syncCount(Object value){if(!(value instanceof Number n)||n.longValue()<0||n.doubleValue()!=n.longValue())throw new IllegalArgumentException();return n.longValue();}
+ private static void safeSyncCode(JSONObject raw,JSONObject target,String key){Object value=raw.get(key);if(value==null)return;if(!(value instanceof String s)||!s.matches("[A-Z][A-Z0-9_]{0,63}"))throw new IllegalArgumentException();target.put(key,value);}
+
+ public JSONObject automationStatus(LoginedUser user,String shop){var r=request(user,shop,null);try{return automationView(remote.getAutomationStatus(r),r.getString("shopDomain"));}catch(RuntimeException unavailable){return unavailableAutomation(r.getString("shopDomain"));}}
+ public JSONObject identityStatus(LoginedUser user,String shop){var p=new JSONObject();p.put("size",20);p.put("q","");var r=request(user,shop,p);try{var raw=remote.getImportedIdentityCandidates(r);if(!t15Base(raw,r.getString("shopDomain"))||!(raw.get("candidates") instanceof com.alibaba.fastjson.JSONArray rows)||rows.size()>20)return unavailableIdentities(r.getString("shopDomain"));int linked=0;for(Object item:rows){if(!(item instanceof JSONObject row)||!(row.get("linked") instanceof Boolean))return unavailableIdentities(r.getString("shopDomain"));if(row.getBooleanValue("linked"))linked++;}var v=unavailableIdentities(r.getString("shopDomain"));v.remove("candidates");v.put("available",true);v.put("featureEnabled",raw.getBooleanValue("featureEnabled"));v.put("configVersion",syncCount(raw.get("configVersion")));v.put("linkedOnPage",linked);v.put("candidateCount",rows.size());return v;}catch(RuntimeException unavailable){return unavailableIdentities(r.getString("shopDomain"));}}
+
+ public static JSONObject unavailableAutomation(String shop){var v=new JSONObject();v.put("available",false);v.put("shopDomain",shop);v.put("featureEnabled",false);v.put("canManage",false);v.put("configVersion",0L);v.put("automationVersion",0L);v.put("pollEnabled",false);v.put("callbackEnabled",false);v.put("pollIntervalSeconds",300);v.put("baselineReady",false);v.put("awaitingBaseline",false);v.put("hasPendingCallback",false);v.put("environment","TEST");v.put("effectPolicy","SUPPRESS");return v;}
+ static boolean t15Base(JSONObject raw,String shop){return raw!=null&&!raw.containsKey("errorCode")&&!Boolean.FALSE.equals(raw.get("success"))&&Integer.valueOf(1).equals(raw.get("schemaVersion"))&&shop.equals(raw.getString("shopDomain"))&&Boolean.TRUE.equals(raw.get("available"))&&raw.get("featureEnabled") instanceof Boolean&&raw.get("canManage") instanceof Boolean&&"TEST".equals(raw.getString("environment"))&&"SUPPRESS".equals(raw.getString("effectPolicy"));}
+ static JSONObject automationView(JSONObject raw,String shop){
+  try{
+   if(!t15Base(raw,shop))return unavailableAutomation(shop);
+   for(String key:List.of("pollEnabled","callbackEnabled","baselineReady","awaitingBaseline","hasPendingCallback"))if(!(raw.get(key) instanceof Boolean))return unavailableAutomation(shop);
+   var v=unavailableAutomation(shop);v.put("available",true);v.put("featureEnabled",raw.getBooleanValue("featureEnabled"));v.put("canManage",false);
+   for(String key:List.of("configVersion","automationVersion")){long version=syncCount(raw.get(key));if(version==Long.MAX_VALUE)return unavailableAutomation(shop);v.put(key,version);}
+   long interval=syncCount(raw.get("pollIntervalSeconds"));if(interval<60||interval>86400)return unavailableAutomation(shop);v.put("pollIntervalSeconds",interval);
+   for(String key:List.of("pollEnabled","callbackEnabled","baselineReady","awaitingBaseline","hasPendingCallback"))v.put(key,raw.getBooleanValue(key));
+   if(raw.getBooleanValue("baselineReady")&&raw.getBooleanValue("awaitingBaseline"))return unavailableAutomation(shop);
+   for(String key:List.of("nextPollAt","lastAttemptAt","lastSuccessAt")){Object value=raw.get(key);if(value!=null){if(!(value instanceof String text)||text.length()>64)return unavailableAutomation(shop);v.put(key,java.time.Instant.parse(text).toString());}}
+   safeSyncCode(raw,v,"lastErrorCode");
+   Object callback=raw.get("callbackUrl");if(callback!=null){if(!(callback instanceof String url)||url.length()>2048||url.chars().anyMatch(c->c<=32||c==127))return unavailableAutomation(shop);if(!url.isEmpty()){var uri=java.net.URI.create(url);if(!"https".equalsIgnoreCase(uri.getScheme())||uri.getHost()==null||uri.getRawUserInfo()!=null||uri.getRawQuery()!=null||uri.getRawFragment()!=null||uri.getPort()==0||uri.getPort()>65535)return unavailableAutomation(shop);/* Callback endpoint is managed only by the platform admin. */}}
+   return v;
+  }catch(RuntimeException malformed){return unavailableAutomation(shop);}
+ }
+ public static JSONObject unavailableIdentities(String shop){var v=new JSONObject();v.put("available",false);v.put("shopDomain",shop);v.put("featureEnabled",false);v.put("canManage",false);v.put("configVersion",0L);v.put("candidates",new com.alibaba.fastjson.JSONArray());v.put("environment","TEST");v.put("effectPolicy","SUPPRESS");return v;}
+ private static String identityId(Object value,int maximum){if(!(value instanceof String s)||s.isBlank()||s.length()>maximum||!s.equals(s.strip())||s.chars().anyMatch(c->c<32||c==127))throw new IllegalArgumentException("客户标识无效");return s;}
+ private static void identityText(JSONObject row,JSONObject target,String key,int maximum){Object value=row.get(key);if(value==null)return;if(!(value instanceof String s)||s.length()>maximum||s.chars().anyMatch(c->c<32||c==127))throw new IllegalArgumentException();target.put(key,s);}
 }

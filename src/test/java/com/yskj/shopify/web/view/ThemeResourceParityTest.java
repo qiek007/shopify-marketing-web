@@ -846,15 +846,17 @@ class ThemeResourceParityTest {
         assertThat(shared).contains("id=\"store-data-connection\"", "action=\"${ctx}/stores/custom-connection/test\"",
                 "name=\"_connectionCsrf\"", "name=\"shop\"", "name=\"expectedVersion\"",
                 "customConnection.canTest", "customConnection.featureEnabled", "customConnection.configured",
-                "数据签名尚未验证", "尚未启用客户、商品和订单同步", "c:out value=\"${customConnection.apiBaseUrl}\"")
+                "id=\"store-sync-status\"", "customSync.signatureState eq 'VERIFIED'", "customSync.syncState eq 'COMPLETED'",
+                "已接收 / 已处理记录", "TEST · SUPPRESS", "c:out value=\"${customConnection.apiBaseUrl}\"")
                 .doesNotContain("name=\"apiBaseUrl\"", "name=\"apiToken\"", "type=\"password\"",
                         "name=\"sourceStoreId\"", "name=\"datasetEpoch\"", "name=\"connectorKey\"",
                         "${customConnection.apiToken}", "/custom-connection/save", "/custom-connection/source",
-                        "签名验证通过", "查看连接配置");
+                        "name=\"signingSecret\"", "/custom-connection/sync/trust", "/custom-connection/sync/command", "查看连接配置");
         var document=org.jsoup.Jsoup.parse(shared);
         assertThat(document.select("form")).hasSize(1);
         assertThat(document.select("form input[name]").eachAttr("name"))
                 .containsExactlyInAnyOrder("shop", "expectedVersion", "_connectionCsrf");
+        assertThat(document.select("#store-sync-status form, #store-sync-status input, #store-sync-status button")).isEmpty();
         for(String theme:Set.of("shopify","shopify-theme2")){
             Path themeRoot=ROOT.resolve("WEB-INF").resolve(theme);
             String stores=Files.readString(themeRoot.resolve("stores.jsp"));

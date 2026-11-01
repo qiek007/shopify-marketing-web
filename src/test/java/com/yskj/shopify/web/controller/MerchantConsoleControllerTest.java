@@ -29,6 +29,27 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 
 class MerchantConsoleControllerTest {
+    @Test void auwStoresLoadIndependentReadonlySyncStatusIntoThePageModel() {
+        var connections=mock(com.yskj.shopify.web.service.CustomStoreConnectionClient.class);controller.setSourceConnections(connections);
+        String shop="custom.example";
+        when(client.exchange(eq("stores.load"),any(),eq(shop),any(),eq(null))).thenReturn(MerchantWebProtocol.view("shopify/stores",new JSONObject(Map.of("selectedShop",shop))));
+        when(connections.sourceProfile(any(),eq(shop))).thenReturn(new JSONObject(Map.of("available",true,"sourceType","CUSTOM","connectorKey","AUW_V2")));
+        var sync=new JSONObject(Map.of("available",true,"signatureState","VERIFIED","syncState","COMPLETED","canManage",false));
+        when(connections.syncStatus(any(),eq(shop))).thenReturn(sync);
+        var params=new LinkedMultiValueMap<String,String>();params.add("shop",shop);var model=new ExtendedModelMap();
+        assertThat(controller.stores(params,session(),model,new RedirectAttributesModelMap())).isEqualTo("shopify/stores");
+        assertThat(model.get("customSync")).isSameAs(sync);
+        verify(connections).syncStatus(org.mockito.ArgumentMatchers.argThat(u->"user-1".equals(u.getId())),eq(shop));
+    }
+    @Test void shopifyStoresNeverAskForAuwSyncStatus() {
+        var connections=mock(com.yskj.shopify.web.service.CustomStoreConnectionClient.class);controller.setSourceConnections(connections);
+        String shop="demo.myshopify.com";
+        when(client.exchange(eq("stores.load"),any(),eq(shop),any(),eq(null))).thenReturn(MerchantWebProtocol.view("shopify/stores",new JSONObject(Map.of("selectedShop",shop))));
+        when(connections.sourceProfile(any(),eq(shop))).thenReturn(new JSONObject(Map.of("available",true,"sourceType","SHOPIFY","connectorKey","SHOPIFY_NATIVE")));
+        var params=new LinkedMultiValueMap<String,String>();params.add("shop",shop);var model=new ExtendedModelMap();
+        controller.stores(params,session(),model,new RedirectAttributesModelMap());
+        assertThat(model).doesNotContainKey("customSync");org.mockito.Mockito.verify(connections,org.mockito.Mockito.never()).syncStatus(any(),any());
+    }
     @Test
     void retryImportUsesTheExistingFacadeWithoutUploadingTheFileAgain() throws Exception {
         when(client.exchange(eq("customer-imports.retry"), any(), eq("demo.myshopify.com"), any(), eq(null)))

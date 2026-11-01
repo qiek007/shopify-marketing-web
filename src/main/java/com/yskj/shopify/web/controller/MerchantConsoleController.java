@@ -136,6 +136,9 @@ public class MerchantConsoleController {
             model.addAttribute("shopifyStore", "SHOPIFY".equals(profile.getString("sourceType")));
             if (profile.getBooleanValue("available") && "AUW_V2".equals(profile.getString("connectorKey"))) {
                 model.addAttribute("customConnection", sourceConnections.status(requireUser(session), key));
+                model.addAttribute("customSync", sourceConnections.syncStatus(requireUser(session), key));
+                model.addAttribute("customAutomation", sourceConnections.automationStatus(requireUser(session), key));
+                model.addAttribute("customIdentities", sourceConnections.identityStatus(requireUser(session), key));
                 model.addAttribute("customConnectionCsrf", CustomStoreConnectionController.csrf(session));
             }
         }

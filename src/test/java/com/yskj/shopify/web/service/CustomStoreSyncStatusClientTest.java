@@ -1,0 +1,24 @@
+package com.yskj.shopify.web.service;
+
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.yskj.dao.dto.org.LoginedUser;
+import com.yskj.shopify.contract.connection.ICustomStoreConnectionService;
+import org.junit.jupiter.api.Test;
+import java.util.List;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+
+class CustomStoreSyncStatusClientTest {
+ static final String SHOP="custom.example",ID="11111111-1111-4111-8111-111111111111";
+ LoginedUser user(){var u=new LoginedUser();u.setId("merchant-session");u.setDomainid("tenant");u.setAclNameList("[店铺治理]");return u;}
+ JSONObject raw(){var v=new JSONObject();v.put("schemaVersion",1);v.put("shopDomain",SHOP);v.put("available",true);v.put("featureEnabled",true);v.put("canManage",true);v.put("configVersion",3L);v.put("signatureState","VERIFIED");v.put("syncState","ACTIVE");v.put("batchId",ID);v.put("mode","FULL");v.put("environment","TEST");v.put("effectPolicy","SUPPRESS");var rows=new JSONArray();v.put("resources",rows);var row=new JSONObject();row.put("resource","ORDER");row.put("status","QUEUED");row.put("phase","QUEUED");for(String f:List.of("receivedPages","appliedPages","receivedRecords","appliedRecords"))row.put(f,0L);rows.add(row);return v;}
+ JSONObject sync(CustomStoreConnectionClient c,LoginedUser u,String shop){return c.syncStatus(u,shop);}
+ @Test void merchantStatusIsReadonlyAndAcceptsQueuedResourcePhase(){var remote=mock(ICustomStoreConnectionService.class);when(remote.getSyncStatus(any())).thenReturn(raw());var value=sync(new CustomStoreConnectionClient(remote),user(),SHOP);assertThat(value.getBooleanValue("available")).isTrue();assertThat(value.getBooleanValue("canManage")).isFalse();assertThat(value.getString("signatureState")).isEqualTo("VERIFIED");assertThat(value.getJSONArray("resources").getJSONObject(0).getString("phase")).isEqualTo("QUEUED");verify(remote).getSyncStatus(argThat(r->"MERCHANT".equals(r.getString("surface"))&&"merchant-session".equals(r.getJSONObject("user").getString("id"))));verify(remote,never()).verifySyncTrust(any());verify(remote,never()).commandSync(any());}
+ @Test void secretsAndUnknownRemoteFieldsNeverReachMerchantModel(){var remote=mock(ICustomStoreConnectionService.class);var raw=raw();raw.put("signingSecret","private-key-material");raw.put("sourceStoreId","private-key-material");raw.put("datasetEpoch","private-key-material");raw.put("message","private-key-material");raw.getJSONArray("resources").getJSONObject(0).put("apiToken","private-key-material");when(remote.getSyncStatus(any())).thenReturn(raw);assertThat(sync(new CustomStoreConnectionClient(remote),user(),SHOP).toJSONString()).doesNotContain("private-key-material","signingSecret","apiToken","sourceStoreId","datasetEpoch");}
+ @Test void oldCoreUnavailableAndExceptionAreSafeReadonlyResults(){var remote=mock(ICustomStoreConnectionService.class);var client=new CustomStoreConnectionClient(remote);var absent=sync(client,user(),SHOP);assertThat(absent.getBooleanValue("available")).isFalse();assertThat(absent.getBooleanValue("canManage")).isFalse();when(remote.getSyncStatus(any())).thenThrow(new IllegalStateException("private-token"));assertThat(sync(client,user(),SHOP).toJSONString()).doesNotContain("private-token");}
+ @Test void invalidPrincipalAndShopDoNotCallRemote(){var remote=mock(ICustomStoreConnectionService.class);var client=new CustomStoreConnectionClient(remote);assertThatThrownBy(()->sync(client,null,SHOP)).isInstanceOf(IllegalArgumentException.class);assertThatThrownBy(()->sync(client,user(),"https://"+SHOP)).isInstanceOf(IllegalArgumentException.class);verifyNoInteractions(remote);}
+ @Test void crossShopMalformedFlagsVersionAndEnvironmentFailClosed(){var remote=mock(ICustomStoreConnectionService.class);var client=new CustomStoreConnectionClient(remote);for(String field:List.of("schemaVersion","shopDomain","featureEnabled","canManage","configVersion","signatureState","syncState","environment","effectPolicy")){var raw=raw();raw.put(field,"invalid");when(remote.getSyncStatus(any())).thenReturn(raw);assertThat(sync(client,user(),SHOP).getBooleanValue("available")).as(field).isFalse();}}
+ @Test void resourceCountersAndPhasesCannotBeForged(){var remote=mock(ICustomStoreConnectionService.class);var client=new CustomStoreConnectionClient(remote);var raw=raw();raw.getJSONArray("resources").getJSONObject(0).put("appliedRecords",1);when(remote.getSyncStatus(any())).thenReturn(raw);assertThat(sync(client,user(),SHOP).getBooleanValue("available")).isFalse();raw=raw();raw.getJSONArray("resources").getJSONObject(0).put("phase","EVIL");when(remote.getSyncStatus(any())).thenReturn(raw);assertThat(sync(client,user(),SHOP).getBooleanValue("available")).isFalse();}
+}
