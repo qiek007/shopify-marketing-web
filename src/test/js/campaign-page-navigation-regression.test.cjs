@@ -44,7 +44,7 @@ function navigationHarness(script, campaign) {
   vm.runInNewContext(script, {window, document, URL, DOMParser, AbortController, setTimeout, clearTimeout, console});
   return {state, assigned, fetched, async click(target) {
     const link = {href: new URL(target, location).href, target: '', classList: {add() {}, remove() {}}};
-    const event = {button: 0, defaultPrevented: false, target: {closest: () => link},
+    const event = {button: 0, defaultPrevented: false, target: {closest: selector => selector === '[data-console-navigation] a[href]' ? link : null},
       preventDefault() { this.defaultPrevented = true; }};
     for (const listener of docs.get('click') || []) listener(event);
     await new Promise(resolve => setImmediate(resolve));
@@ -70,6 +70,10 @@ for (const root of roots) {
   });
   test(`${root.label}: every campaign state is styled for full and partial rendering`, () => {
     const css = styles(mainHtml(source));
+    assert.match(source, /campaign\.archiveAuditMismatch/);
+    assert.match(source, /title="<c:out value='\$\{campaign\.archiveAuditNote\}'\/>"/);
+    assert.ok(source.includes('核验有差异'));
+    assert.match(css, /campaign-archive-audit-warning[^}]*background:\s*#fef3c7/);
     assert.ok(source.includes('empty campaign.displayStatus ? campaign.status : campaign.displayStatus'), 'old backend response keeps original styling');
     for (const status of ['DRAFT','PENDING_APPROVAL','APPROVED','PREPARING','SCHEDULED','RUNNING','QUEUED','PAUSED','COMPLETED','ARCHIVED','CANCELLED','FAILED'])
       assert.ok(background(css, status), `${status} available inside main`);

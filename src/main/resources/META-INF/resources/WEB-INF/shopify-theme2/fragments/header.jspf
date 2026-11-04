@@ -5,8 +5,8 @@
 <script src="${ctx}/shopify/js/account-password.js?v=20260924-native-password" defer></script>
 <script id="session-keepalive" src="${ctx}/shopify/js/session-keepalive.js"
         data-context-path="${ctx}" defer></script>
-<link rel="stylesheet" href="${ctx}${uiAssetBase}/css/shop-switcher.css?v=20261020-shop-search-icon">
-<script id="console-navigation" src="${ctx}/shopify/js/console-navigation.js?v=20261020-shop-search-name-sort-20261024"
+<link rel="stylesheet" href="${ctx}${uiAssetBase}/css/shop-switcher.css?v=20261020-shop-search-icon-20261104">
+<script id="console-navigation" src="${ctx}/shopify/js/console-navigation.js?v=20261020-shop-search-name-sort-20261104"
         data-context-path="${ctx}" defer></script>
 <script src="${ctx}/shopify/js/browser-time.js" defer></script>
 <header class="console-header">
@@ -21,12 +21,7 @@
                 <form class="shop-switcher" method="get" action="${ctx}/${currentPath}" data-shop-switcher
                       data-shop-storage-key="shopify:last-shop:<c:out value='${logineduser.domainid}'/>:<c:out value='${logineduser.id}'/>">
                     <label for="current-shop">当前店铺</label>
-                    <span class="shop-switcher-search-wrap">
-                        <i class="fa fa-search shop-switcher-search-icon" aria-hidden="true"></i>
-                        <input class="shop-switcher-search" type="search"
-                               placeholder="搜索店铺名称或域名" aria-label="搜索店铺名称或域名"
-                               autocomplete="off" data-shop-switcher-search>
-                    </span>
+                    <div class="shop-switcher-picker" data-shop-picker>
                     <select id="current-shop" name="shop" data-shop-switcher-select>
                         <c:forEach items="${accessibleShops}" var="shopItem">
                             <option value="<c:out value='${shopItem.shopDomain}'/>"
@@ -36,7 +31,20 @@
                             </option>
                         </c:forEach>
                     </select>
-                    <span class="shop-switcher-empty" data-shop-search-empty hidden>无匹配店铺</span>
+                        <button class="shop-picker-trigger" type="button" data-shop-picker-trigger hidden aria-expanded="false" aria-haspopup="listbox" aria-controls="shop-picker-panel">
+                            <span data-shop-picker-label>当前店铺</span><i class="fa fa-angle-down" aria-hidden="true"></i>
+                        </button>
+                        <div class="shop-picker-panel" id="shop-picker-panel" data-shop-picker-panel hidden>
+                    <span class="shop-switcher-search-wrap">
+                        <i class="fa fa-search shop-switcher-search-icon" aria-hidden="true"></i>
+                        <input class="shop-switcher-search" type="search"
+                               placeholder="搜索店铺名称或域名" aria-label="搜索店铺名称或域名"
+                               autocomplete="off" data-shop-switcher-search>
+                    </span>
+                            <div class="shop-picker-options" data-shop-picker-options role="listbox" aria-label="店铺列表"></div>
+                            <span class="shop-switcher-empty" data-shop-search-empty hidden>无匹配店铺</span>
+                        </div>
+                    </div>
                 </form>
             </c:when>
             <c:otherwise><span class="no-shop-label">尚未获得店铺授权</span></c:otherwise>

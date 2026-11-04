@@ -44,9 +44,9 @@ for (const root of roots) {
     assert.doesNotMatch(source, /(?:validUntil[\s\S]{0,60}(?:plusHours|7200000)|colspan="6")/);
   });
 
-  test(`${root.label}: campaign list limits withdrawal to its creator and supports copy`, () => {
+  test(`${root.label}: campaign list gates withdrawal by server permission and supports copy`, () => {
     const source = read(root, 'campaigns.jsp');
-    assert.match(source, /<c:if test="\$\{canManageCampaigns and \(campaign\.status eq 'PENDING_APPROVAL' or campaign\.status eq 'APPROVED'\) and not empty campaign\.createdBy and campaign\.createdBy eq logineduser\.id\}">\s*<form[^>]*data-merchant-action-form/);
+    assert.match(source, /<c:if test="\$\{canManageCampaigns and campaignWithdrawPermissions\[campaign\.campaignId\]\}">\s*<form[^>]*data-merchant-action-form/);
     const withdraw = actionForm(source, 'WITHDRAW');
     assert.ok(withdraw, 'withdraw form exists');
     assert.match(withdraw, /method="post" action="\$\{ctx\}\/campaigns\/action"/);

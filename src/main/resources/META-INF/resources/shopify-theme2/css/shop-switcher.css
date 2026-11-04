@@ -70,3 +70,38 @@
         width: min(165px, 34vw);
     }
 }
+
+
+/* One searchable control while preserving the native select as a fallback. */
+.shop-switcher-picker { position: relative; min-width: 0; }
+.shop-switcher-picker [hidden] { display: none !important; }
+.shop-switcher-picker.is-enhanced > select { display: none; }
+.shop-picker-trigger {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    width: min(230px, 25vw); height: 34px; padding: 0 10px;
+    border: 1px solid #bcc7d1; border-radius: 4px; background: #fff;
+    color: var(--ink, #16212c); font: inherit; text-align: left; cursor: pointer;
+}
+.shop-picker-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shop-picker-trigger:focus-visible, .shop-picker-option:focus-visible {
+    outline: 2px solid #358966; outline-offset: 1px;
+}
+.shop-picker-panel {
+    position: absolute; z-index: 1000; top: calc(100% + 5px); right: 0;
+    width: min(320px, calc(100vw - 24px)); padding: 8px; box-sizing: border-box;
+    border: 1px solid #d7e0e5; border-radius: 6px; background: #fff;
+    box-shadow: 0 8px 22px rgba(23, 42, 52, .16);
+}
+.shop-picker-panel .shop-switcher-search-wrap, .shop-picker-panel .shop-switcher-search { width: 100%; }
+.shop-picker-options { max-height: min(320px, 50vh); overflow-y: auto; margin-top: 6px; }
+.shop-picker-option {
+    display: flex; width: 100%; flex-direction: column; align-items: flex-start;
+    gap: 2px; padding: 8px 10px; border: 0; border-radius: 4px; background: transparent;
+    color: var(--ink, #16212c); font: inherit; text-align: left; cursor: pointer;
+}
+.shop-picker-option:hover, .shop-picker-option[aria-selected="true"] { background: #e9f4ee; }
+.shop-picker-option span, .shop-picker-option small { max-width: 100%; overflow-wrap: anywhere; }
+.shop-picker-option small { color: #71818b; font-size: 11px; }
+.shop-picker-panel .shop-switcher-empty { display: block; padding: 10px; }
+.shop-picker-panel .shop-switcher-empty[hidden] { display: none; }
+@media (max-width: 720px) { .shop-picker-trigger { width: min(200px, 40vw); } }

@@ -15,6 +15,19 @@ class ThemeResourceParityTest {
     private static final Path ROOT = Path.of("src/main/resources/META-INF/resources");
 
     @Test
+    void bothProductThemesShowUnavailableSalesInsteadOfFalseZero() throws Exception {
+        for (String theme : Set.of("shopify", "shopify-theme2")) {
+            String list = Files.readString(ROOT.resolve("WEB-INF").resolve(theme).resolve("products.jsp"));
+            String detail = Files.readString(ROOT.resolve("WEB-INF").resolve(theme).resolve("product-detail.jsp"));
+            assertThat(list).contains("product.salesStatsState eq 'UNAVAILABLE'", "统计暂不可用",
+                    "product.orderCount", "product.unitsSold", "product.grossSales");
+            assertThat(detail).contains("productDetail.product.salesStatsState eq 'UNAVAILABLE'", "统计暂不可用",
+                    "productDetail.product.orderCount", "productDetail.product.grossSales",
+                    "productDetail.product.orderDetailsState eq 'UNAVAILABLE'", "关联订单明细暂不可用");
+        }
+    }
+
+    @Test
     void classicCampaignEditorSubmitsSavedDraftsForApprovalAndGuardsUnsavedChanges()
             throws Exception {
         String source = Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-editor.jsp"));

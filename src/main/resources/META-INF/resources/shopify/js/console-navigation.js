@@ -198,7 +198,83 @@
         navigateToShop(select);
     }
 
+    function renderShopPicker(form, matches) {
+        var list = form.querySelector('[data-shop-picker-options]');
+        var select = form.querySelector('[data-shop-switcher-select]');
+        if (!list || !select) return;
+        list.replaceChildren();
+        matches.forEach(function (option) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'shop-picker-option';
+            button.setAttribute('role', 'option');
+            button.setAttribute('data-shop-picker-option', option.value);
+            button.setAttribute('aria-selected', option.value === select.value ? 'true' : 'false');
+            var name = document.createElement('span');
+            name.textContent = (option.getAttribute('data-shop-name') || option.textContent || option.value).trim();
+            var domain = document.createElement('small');
+            domain.textContent = option.value;
+            button.append(name, domain);
+            list.appendChild(button);
+        });
+    }
+
+    function closeShopPicker(form, focusTrigger) {
+        var panel = form.querySelector('[data-shop-picker-panel]');
+        var trigger = form.querySelector('[data-shop-picker-trigger]');
+        var input = form.querySelector('[data-shop-switcher-search]');
+        if (!panel || !trigger || panel.hidden) return;
+        panel.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+        if (input) {
+            input.value = '';
+            renderShopPicker(form, matchingShopOptions(input));
+        }
+        if (focusTrigger) trigger.focus();
+    }
+
+    function setupShopPicker() {
+        var form = document.querySelector('[data-shop-switcher]');
+        var picker = form && form.querySelector('[data-shop-picker]');
+        if (!picker) return;
+        var select = form.querySelector('[data-shop-switcher-select]');
+        var trigger = form.querySelector('[data-shop-picker-trigger]');
+        var label = form.querySelector('[data-shop-picker-label]');
+        var input = form.querySelector('[data-shop-switcher-search]');
+        if (!select || !trigger || !label || !input) return;
+        var selected = Array.prototype.find.call(select.options, function (option) {
+            return option.value === select.value;
+        });
+        label.textContent = selected ? (selected.textContent || selected.value).trim() : '选择店铺';
+        renderShopPicker(form, matchingShopOptions(input));
+        trigger.hidden = false;
+        picker.classList.add('is-enhanced');
+    }
+
     document.addEventListener('click', function (event) {
+        var trigger = event.target.closest('[data-shop-picker-trigger]');
+        if (trigger) {
+            var form = switcherForm(trigger);
+            var panel = form.querySelector('[data-shop-picker-panel]');
+            if (!panel.hidden) {
+                closeShopPicker(form, true);
+            } else {
+                panel.hidden = false;
+                trigger.setAttribute('aria-expanded', 'true');
+                form.querySelector('[data-shop-switcher-search]').focus();
+            }
+            return;
+        }
+        var option = event.target.closest('[data-shop-picker-option]');
+        if (option) {
+            var optionForm = switcherForm(option);
+            var select = optionForm.querySelector('[data-shop-switcher-select]');
+            select.value = option.getAttribute('data-shop-picker-option');
+            navigateToShop(select);
+            return;
+        }
+        var openForm = document.querySelector('[data-shop-switcher]');
+        if (openForm && openForm.contains && !openForm.contains(event.target)) closeShopPicker(openForm, false);
         var link = event.target.closest('[data-console-navigation] a[href]');
         if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey
                 || event.ctrlKey || event.shiftKey || event.altKey || link.target) return;
@@ -216,21 +292,40 @@
 
     document.addEventListener('input', function (event) {
         var input = event.target.closest('[data-shop-switcher-search]');
-        if (input) matchingShopOptions(input);
+        if (input) renderShopPicker(switcherForm(input), matchingShopOptions(input));
     });
 
     document.addEventListener('keydown', function (event) {
         var input = event.target.closest('[data-shop-switcher-search]');
-        if (!input) return;
+        if (!input) {
+            var option = event.target.closest('[data-shop-picker-option]');
+            if (!option) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeShopPicker(switcherForm(option), true);
+            } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                var sibling = event.key === 'ArrowDown' ? option.nextElementSibling : option.previousElementSibling;
+                if (sibling) sibling.focus();
+                else if (event.key === 'ArrowUp') switcherForm(option).querySelector('[data-shop-switcher-search]').focus();
+            }
+            return;
+        }
         if (event.key === 'Escape') {
             input.value = '';
             matchingShopOptions(input);
+            closeShopPicker(switcherForm(input), true);
+            return;
+        }
+        if (event.key === 'ArrowDown') {
+            var first = switcherForm(input).querySelector('[data-shop-picker-option]');
+            if (first) { event.preventDefault(); first.focus(); }
             return;
         }
         if (event.key !== 'Enter') return;
+        event.preventDefault();
         var visibleOptions = matchingShopOptions(input);
         if (visibleOptions.length === 1) {
-            event.preventDefault();
             var select = switcherForm(input).querySelector('[data-shop-switcher-select]');
             select.value = visibleOptions[0].value;
             navigateToShop(select);
@@ -243,4 +338,5 @@
 
     sortShopOptions();
     restoreRememberedShop();
+    setupShopPicker();
 }());

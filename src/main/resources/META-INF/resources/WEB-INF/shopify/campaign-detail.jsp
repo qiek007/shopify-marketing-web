@@ -51,10 +51,29 @@
         <c:if test="${not empty successMessage}"><div class="flash-message success"><i class="fa fa-check-circle"></i><c:out value="${successMessage}"/></div></c:if>
         <c:if test="${not empty errorMessage}"><div class="flash-message danger"><i class="fa fa-exclamation-circle"></i><c:out value="${errorMessage}"/></div></c:if>
 
+        <section class="content-section spaced-section">
+            <div class="section-heading"><div><h2>活动操作记录</h2></div></div>
+            <div style="display:flex;flex-wrap:wrap;gap:24px;padding:16px">
+                <div><strong>创建人</strong> <c:out value="${campaignActors.creator}" default="未记录"/><br><span>创建时间 </span><c:choose><c:when test="${not empty campaignActors.createdAt}"><time data-browser-time="<c:out value='${campaignActors.createdAt}'/>" data-browser-time-format="date-time"><c:out value="${campaignActors.createdAt}"/></time></c:when><c:otherwise>未记录</c:otherwise></c:choose></div>
+                <div><strong>审批人</strong> <c:out value="${campaignActors.approver}" default="未记录"/><br><span>审批时间 </span><c:choose><c:when test="${not empty campaignActors.approvedAt}"><time data-browser-time="<c:out value='${campaignActors.approvedAt}'/>" data-browser-time-format="date-time"><c:out value="${campaignActors.approvedAt}"/></time></c:when><c:otherwise>未记录</c:otherwise></c:choose></div>
+                <div><strong>执行人</strong> <c:out value="${campaignActors.executor}" default="未记录"/><br><span>执行时间 </span><c:choose><c:when test="${not empty campaignActors.executedAt}"><time data-browser-time="<c:out value='${campaignActors.executedAt}'/>" data-browser-time-format="date-time"><c:out value="${campaignActors.executedAt}"/></time></c:when><c:otherwise>未执行</c:otherwise></c:choose></div>
+            </div>
+        </section>
+        <c:if test="${campaignDetail.status eq 'APPROVED' and approvedSendState eq 'APPROVE_AND_SEND'}"><div class="system-notice"><strong>已批准并发送</strong><span>正在冻结受众，完成后自动提交发送。</span></div></c:if>
+        <c:if test="${campaignDetail.status eq 'APPROVED' and approvedSendState eq 'APPROVE_AND_SEND_FAILED'}"><div class="system-notice"><strong>自动发送未完成</strong><span>请检查冻结受众、额度及模板状态；如有尚未明确订阅的客户，请确认后手动发送。</span></div></c:if>
         <section class="campaign-command-bar">
             <div>
                 <strong>审批与执行</strong>
                 <span>批准后系统冻结受众，完成后可立即发送或设定发送时间。</span>
+                <c:if test="${campaignDetail.pendingApproval}">
+                    <form id="campaign-approve-send-form" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px" method="post" action="${ctx}/campaigns/action" onsubmit="return confirm('确认批准活动并在受众冻结完成后自动发送？');">
+                        <input type="hidden" name="shop" value="${campaignDetail.shopDomain}">
+                        <input type="hidden" name="campaignId" value="${campaignDetail.campaignId}">
+                        <input type="hidden" name="action" value="APPROVE_AND_SEND">
+                        <label class="campaign-send-confirmation"><input type="checkbox" name="confirmNotSubscribed" value="true">如有尚未明确订阅的客户，我确认向其发送</label>
+
+                    </form>
+                </c:if>
             </div>
             <div class="campaign-actions">
                 <c:if test="${campaignDetail.status eq 'DRAFT' && canManageCampaigns}">
@@ -83,13 +102,20 @@
                         <input type="hidden" name="action" value="APPROVE">
                         <button class="primary-button" type="submit"><i class="fa fa-check"></i>批准</button>
                     </form>
-                    <form class="reject-form" method="post" action="${ctx}/campaigns/action">
-                        <input type="hidden" name="shop" value="${campaignDetail.shopDomain}">
-                        <input type="hidden" name="campaignId" value="${campaignDetail.campaignId}">
-                        <input type="hidden" name="action" value="REJECT">
-                        <input name="reason" required maxlength="500" placeholder="填写驳回原因">
-                        <button class="action-button danger-text" type="submit"><i class="fa fa-times"></i>驳回</button>
-                    </form>
+                    <button class="primary-button" type="submit" form="campaign-approve-send-form"><i class="fa fa-paper-plane"></i>批准并发送</button>
+
+                    <button class="action-button danger-text" type="button" onclick="document.getElementById('campaign-reject-dialog').showModal()"><i class="fa fa-times"></i>驳回</button>
+                    <dialog id="campaign-reject-dialog" class="campaign-send-dialog campaign-schedule-dialog" aria-labelledby="campaign-reject-title">
+                        <div class="campaign-send-dialog-icon"><i class="fa fa-times" aria-hidden="true"></i></div>
+                        <div><h2 id="campaign-reject-title">驳回活动</h2><p>请填写驳回原因，提交后活动将返回草稿。</p></div>
+                        <form method="post" action="${ctx}/campaigns/action" onsubmit="var reason=this.elements.reason;if(!reason.value.trim()){reason.setCustomValidity('请填写驳回原因');reason.reportValidity();return false;}return true;">
+                            <input type="hidden" name="shop" value="${campaignDetail.shopDomain}">
+                            <input type="hidden" name="campaignId" value="${campaignDetail.campaignId}">
+                            <input type="hidden" name="action" value="REJECT">
+                            <label class="campaign-schedule-field"><span>驳回原因</span><input name="reason" required maxlength="500" placeholder="填写驳回原因" oninput="this.setCustomValidity('')" autofocus></label>
+                            <div class="campaign-send-dialog-actions"><button class="action-button" type="button" onclick="document.getElementById('campaign-reject-dialog').close()">取消</button><button class="primary-button" type="submit">确认驳回</button></div>
+                        </form>
+                    </dialog>
                 </c:if>
                 <c:if test="${showExecutionRefresh}">
                     <a id="campaign-detail-refresh" class="action-button" href="${campaignRefreshUrl}"
@@ -323,7 +349,7 @@
                 <input type="hidden" name="size" value="10">
                 <input name="q" value="${campaignFilter.search}" placeholder="客户姓名、邮箱或 ID">
                 <select name="provider"><option value="ALL">全部通道</option><c:forEach items="${campaignDetail.providers}" var="item"><option value="${item}" ${campaignFilter.provider eq item ? 'selected' : ''}><c:out value="${providerAliases[item]}"/></option></c:forEach></select>
-                <select name="lifecycle"><option value="ALL">全部状态</option><option value="PENDING" ${campaignFilter.lifecycle eq 'PENDING' ? 'selected' : ''}>待处理</option><option value="ACCEPTED" ${campaignFilter.lifecycle eq 'ACCEPTED' ? 'selected' : ''}>已接受</option><option value="DELIVERED" ${campaignFilter.lifecycle eq 'DELIVERED' ? 'selected' : ''}>已送达</option><option value="OPENED" ${campaignFilter.lifecycle eq 'OPENED' ? 'selected' : ''}>已打开</option><option value="CLICKED" ${campaignFilter.lifecycle eq 'CLICKED' ? 'selected' : ''}>已点击</option><option value="CONVERTED" ${campaignFilter.lifecycle eq 'CONVERTED' ? 'selected' : ''}>已下单</option><option value="FAILED" ${campaignFilter.lifecycle eq 'FAILED' ? 'selected' : ''}>失败</option><option value="UNKNOWN" ${campaignFilter.lifecycle eq 'UNKNOWN' ? 'selected' : ''}>结果未知</option><option value="BOUNCED" ${campaignFilter.lifecycle eq 'BOUNCED' ? 'selected' : ''}>退信</option><option value="UNSUBSCRIBED" ${campaignFilter.lifecycle eq 'UNSUBSCRIBED' ? 'selected' : ''}>退订</option><option value="COMPLAINT" ${campaignFilter.lifecycle eq 'COMPLAINT' ? 'selected' : ''}>投诉</option></select>
+                <select name="lifecycle"><option value="ALL">全部状态</option><option value="PENDING" ${campaignFilter.lifecycle eq 'PENDING' ? 'selected' : ''}>待处理</option><option value="ACCEPTED" ${campaignFilter.lifecycle eq 'ACCEPTED' ? 'selected' : ''}>已接受</option><c:if test="${canFilterCampaignNoFeedback}"><option value="NO_FEEDBACK" ${campaignFilter.lifecycle eq 'NO_FEEDBACK' ? 'selected' : ''}>无回执</option></c:if><option value="DELIVERED" ${campaignFilter.lifecycle eq 'DELIVERED' ? 'selected' : ''}>已送达</option><option value="OPENED" ${campaignFilter.lifecycle eq 'OPENED' ? 'selected' : ''}>已打开</option><option value="CLICKED" ${campaignFilter.lifecycle eq 'CLICKED' ? 'selected' : ''}>已点击</option><option value="CONVERTED" ${campaignFilter.lifecycle eq 'CONVERTED' ? 'selected' : ''}>已下单</option><option value="FAILED" ${campaignFilter.lifecycle eq 'FAILED' ? 'selected' : ''}>失败</option><option value="UNKNOWN" ${campaignFilter.lifecycle eq 'UNKNOWN' ? 'selected' : ''}>结果未知</option><option value="BOUNCED" ${campaignFilter.lifecycle eq 'BOUNCED' ? 'selected' : ''}>退信</option><option value="UNSUBSCRIBED" ${campaignFilter.lifecycle eq 'UNSUBSCRIBED' ? 'selected' : ''}>退订</option><option value="COMPLAINT" ${campaignFilter.lifecycle eq 'COMPLAINT' ? 'selected' : ''}>投诉</option></select>
                 <button class="action-button" type="submit"><i class="fa fa-search"></i>查询</button>
                 <c:if test="${canExportCustomerData}"><button class="action-button campaign-export-button" type="submit" formaction="${ctx}/campaigns/detail/recipients/export" formmethod="post" data-campaign-recipient-export disabled title="请先执行查询"><i class="fa fa-file-excel-o"></i>导出查询结果</button></c:if>
             </form>
