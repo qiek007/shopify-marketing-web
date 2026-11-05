@@ -191,7 +191,7 @@
         <section class="campaign-policy-strip" aria-label="当前活动发送设置">
             <div><i class="fa fa-filter"></i><span>客户分群</span><strong><c:out value="${campaignDetail.segmentName}"/></strong></div>
             <div><i class="fa fa-file-text-o"></i><span>邮件模板</span><strong><c:out value="${campaignDetail.templateName}"/></strong></div>
-            <div><i class="fa fa-envelope-o"></i><span>发送通道</span><strong><c:forEach items="${campaignDetail.providers}" var="provider" varStatus="status"><c:if test="${not status.first}">、</c:if><c:out value="${providerAliases[provider]}"/></c:forEach></strong></div>
+            <div><i class="fa fa-envelope-o"></i><span>发送通道</span><strong><c:forEach items="${campaignDetail.providers}" var="provider" varStatus="status"><c:if test="${not status.first}">、</c:if><c:out value="${providerAliases[provider]}"/></c:forEach></strong><c:if test="${not empty campaignDetail.channelWeights}"><small style="grid-column:2" title="权重为计划分配比例，实际发送比例可能因限流或通道不可用而变化">配置权重：<c:forEach items="${campaignDetail.providers}" var="provider" varStatus="status"><c:if test="${not status.first}"> : </c:if><c:out value="${campaignDetail.channelWeights[provider]}"/></c:forEach></small></c:if></div>
             <div><i class="fa fa-clock-o"></i><span>重复发送间隔</span><strong><c:choose><c:when test="${campaignDetail.repeatIntervalHours == 0}">不限制</c:when><c:otherwise><c:out value="${campaignDetail.repeatIntervalHours}"/> 小时</c:otherwise></c:choose></strong></div>
             <div><i class="fa fa-database"></i><span>热数据保留</span><strong><c:out value="${campaignDetail.hotRetentionDays}"/> 天</strong></div>
             <div><i class="fa fa-users"></i><span>冻结状态</span><strong id="campaign-snapshot-status"><c:out value="${campaignDetail.snapshotStatusDisplayName}"/></strong></div>
@@ -357,7 +357,7 @@
                         sandbox src="about:blank"></iframe>
             </div>
         </dialog>
-        <script src="${ctx}/shopify/js/customer-timeline.js?v=20260925-p130"></script>
+        <script src="${ctx}/shopify/js/customer-timeline.js?v=20261105-shanghai1"></script>
     </main>
 </div>
 <div id="provider-alias-data" hidden><c:forEach items="${providerAliases}" var="entry"><span data-provider-code="<c:out value='${entry.key}'/>" data-provider-alias="<c:out value='${entry.value}'/>"></span></c:forEach></div>

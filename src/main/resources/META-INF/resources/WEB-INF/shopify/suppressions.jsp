@@ -84,7 +84,7 @@
             <div class="template-preview-heading"><div><p class="eyebrow">客户实际内容</p><h2 id="suppression-customer-email-title">营销邮件预览</h2></div><button class="icon-button dialog-close-button" type="button" data-suppression-email-close title="关闭预览" aria-label="关闭预览"><i class="fa fa-times" aria-hidden="true"></i></button></div>
             <div class="template-preview-body"><iframe id="suppression-customer-email-frame" title="该客户收到的营销邮件" sandbox src="about:blank"></iframe></div>
         </dialog>
-        <script src="${ctx}/shopify/js/customer-timeline.js?v=20260925-p130"></script>
+        <script src="${ctx}/shopify/js/customer-timeline.js?v=20261105-shanghai1"></script>
         <script>
         (function () {
             var filterForm = document.querySelector('[data-suppression-filter-form]');

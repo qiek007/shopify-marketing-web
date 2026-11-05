@@ -787,6 +787,7 @@ class ThemeResourceParityTest {
             Path themeRoot = ROOT.resolve("WEB-INF").resolve(theme);
             String page = Files.readString(themeRoot.resolve("campaign-editor.jsp"));
             String styles = Files.readString(ROOT.resolve(theme).resolve("css/dashboard.css"));
+            String pickerStyles = Files.readString(ROOT.resolve("shopify/css/campaign-search-picker.css"));
 
             assertThat(page).contains(
                     "活动名称 <span class=\"required-marker\" aria-hidden=\"true\">*</span>",
@@ -794,8 +795,11 @@ class ThemeResourceParityTest {
                     "活动内容参数<span class=\"campaign-personalization-note\">"
                             + "（审批通过后与客户资料一起冻结，发送时提交给邮件通道动态模板）</span>",
                     "class=\"campaign-product-compose\"",
-                    "class=\"campaign-product-search-row\"",
-                    "class=\"campaign-discount-field\"");
+                    "class=\"campaign-discount-field\"",
+                    "id=\"campaign-product-picker\"", "id=\"campaign-discount-picker\"",
+                    "data-picker-trigger", "data-picker-search", "data-picker-options",
+                    "name=\"productSourceIds\"", "name=\"discountSourceId\"",
+                    "campaign-search-picker.js?v=20261105-picker2");
             int product = page.indexOf("class=\"campaign-product-picker\"");
             int coupon = page.indexOf("class=\"campaign-discount-field\"");
             int selected = page.indexOf("class=\"campaign-selected-products\"");
@@ -809,13 +813,14 @@ class ThemeResourceParityTest {
                     ".campaign-product-compose { display: grid;",
                     "grid-template-areas: \"product selected\" \"coupon selected\";",
                     ".campaign-product-picker { grid-area: product;",
-                    ".campaign-product-search-row { display: grid;",
-                    "grid-template-columns: auto minmax(0, 1fr);",
-                    "width: 100%;",
                     ".campaign-discount-field { grid-area: coupon;",
                     ".campaign-selected-products { grid-area: selected;",
-                    "grid-template-areas: \"product\" \"coupon\" \"selected\";",
-                    ".campaign-product-search-row { grid-template-columns: 1fr;");
+                    "grid-template-areas: \"product\" \"coupon\" \"selected\";");
+            assertThat(pickerStyles).contains(".campaign-search-picker { position: relative;",
+                    ".campaign-picker-trigger { width: 100%;",
+                    ".campaign-picker-panel { position: absolute;",
+                    ".campaign-picker-search { display: block; width: 100%;",
+                    ".campaign-picker-options { max-height: 220px; overflow-y: auto;");
         }
     }
 

@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20260924-p118">
-    <script src="${ctx}/shopify/js/customer-timeline.js?v=20260925-p126" defer></script>
+    <script src="${ctx}/shopify/js/customer-timeline.js?v=20261105-shanghai1" defer></script>
 </head>
 <body class="shopify-console">
 <c:url var="customerListUrl" value="/customers">

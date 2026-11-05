@@ -1,0 +1,36 @@
+.channel-weight-editor {
+    margin-top: 16px;
+    padding: 14px;
+    border: 1px solid #dbe7df;
+    border-radius: 6px;
+    background: #f8fbf9;
+}
+.channel-weight-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin-bottom: 12px;
+}
+.channel-weight-heading strong { color: #244f3e; font-size: 13px; }
+.channel-weight-hint { color: #667788; font-size: 12px; }
+.channel-weight-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
+.channel-weight-row { padding: 10px 12px; border: 1px solid #e1e9e4; border-radius: 5px; background: #fff; }
+.channel-weight-row[hidden] { display: none; }
+.channel-weight-row-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.channel-weight-row-heading strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.channel-weight-row-heading output { color: #18764d; font-weight: 700; font-variant-numeric: tabular-nums; }
+.channel-weight-controls { display: flex; align-items: center; gap: 10px; margin-top: 7px; }
+.workspace-form .channel-weight-controls input[type="range"] {
+    flex: 1 1 auto; min-width: 70px; height: 24px; padding: 0;
+    border: 0; background: transparent; box-shadow: none; accent-color: #187c51;
+}
+.channel-weight-controls label { display: flex; align-items: center; gap: 4px; color: #667788; font-size: 11px; white-space: nowrap; }
+.workspace-form .channel-weight-controls input[type="number"] { width: 58px; height: 30px; padding: 0 5px; }
+.channel-weight-note { margin: 10px 0 0; color: #667788; font-size: 11px; line-height: 1.5; }
+
+
+.channel-option-card { min-width: 0; border: 1px solid var(--line, #dbe4e8); border-radius: 4px; background: #fff; }
+.channel-option-card .channel-option { border: 0; border-radius: 0; }
+.channel-option-card .channel-weight-row { margin: 0 10px; padding: 8px 0 10px; border: 0; border-top: 1px solid #e1e9e4; border-radius: 0; }

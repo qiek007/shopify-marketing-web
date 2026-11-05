@@ -195,7 +195,7 @@
             </dialog>
         </c:otherwise>
     </c:choose>
-    <script src="${ctx}/shopify/js/customer-timeline.js?v=20260925-p130"></script>
+    <script src="${ctx}/shopify/js/customer-timeline.js?v=20261105-shanghai1"></script>
     <script src="${ctx}/shopify/js/automations.js?v=20261004-recipient-export"></script>
 </main>
 </div>

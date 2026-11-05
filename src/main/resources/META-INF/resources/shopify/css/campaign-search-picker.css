@@ -1,0 +1,14 @@
+.campaign-search-picker { position: relative; min-width: 0; }
+.campaign-discount-field { display: grid; align-content: start; gap: 8px; }
+.campaign-search-picker select[hidden] { display: none !important; }
+.campaign-picker-trigger { width: 100%; min-height: 36px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; border: 1px solid #c8d5df; border-radius: 4px; color: #20394b; background: #fff; cursor: pointer; }
+.campaign-picker-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.campaign-picker-trigger:focus-visible, .campaign-picker-search:focus-visible, .campaign-picker-option:focus-visible { outline: 2px solid #20845a; outline-offset: 2px; }
+.campaign-picker-panel { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20; padding: 8px; border: 1px solid #d8e2e8; border-radius: 5px; background: #fff; box-shadow: 0 6px 20px rgba(19, 42, 54, .15); }
+.campaign-picker-panel[hidden], .campaign-picker-trigger[hidden] { display: none; }
+.campaign-picker-search { display: block; width: 100%; box-sizing: border-box; min-height: 34px; margin-bottom: 6px; padding: 7px 9px; border: 1px solid #c8d5df; border-radius: 4px; }
+.campaign-picker-options { max-height: 220px; overflow-y: auto; }
+.campaign-picker-option { display: block; width: 100%; padding: 8px 9px; border: 0; border-radius: 3px; background: transparent; color: #20394b; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.campaign-picker-option:hover, .campaign-picker-option:focus-visible { background: #eef7f1; }
+.campaign-picker-status { display: block; padding: 8px 9px; color: #71838e; }
+.campaign-picker-status[hidden] { display: none; }

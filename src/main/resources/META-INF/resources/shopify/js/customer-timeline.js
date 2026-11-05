@@ -11,6 +11,15 @@
                 + '-' + String(date.getUTCDate()).padStart(2, '0');
     }
 
+    function todayInTimelineZone() {
+        var parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).formatToParts(new Date());
+        var values = {};
+        parts.forEach(function (part) { values[part.type] = part.value; });
+        return values.year + '-' + values.month + '-' + values.day;
+    }
+
     function shiftDate(value, days) {
         var date = parseDate(value);
         if (!date) return '';
@@ -252,7 +261,7 @@
         });
 
         if (!blocks().length) {
-            var initialTo = form.elements.timelineToDate.value || formatDate(new Date());
+            var initialTo = form.elements.timelineToDate.value || todayInTimelineZone();
             var initialFrom = form.elements.timelineFromDate.value || shiftDate(initialTo, -29);
             requestWindow(initialFrom, initialTo, false);
         } else {

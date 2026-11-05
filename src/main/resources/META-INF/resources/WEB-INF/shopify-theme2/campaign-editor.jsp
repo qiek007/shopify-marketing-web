@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261010-p93">
+    <link rel="stylesheet" href="${ctx}/shopify/css/campaign-channel-weights.css?v=20261105-weights-card1">
+    <link rel="stylesheet" href="${ctx}/shopify/css/campaign-search-picker.css?v=20261105-picker1">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -40,8 +42,8 @@
                             <div class="section-intro"><strong>活动内容参数<span class="campaign-personalization-note">（审批通过后与客户资料一起冻结，发送时提交给邮件通道动态模板）</span></strong></div>
                             <div id="campaign-custom-variables" class="form-grid two"></div>
                             <div class="campaign-product-compose">
-                                <div class="campaign-product-picker"><div class="campaign-product-search-row"><label for="campaign-product-search">关联商品（最多 12 个）</label><div class="field-with-action"><input id="campaign-product-search" placeholder="搜索当前店铺商品"><button id="campaign-product-search-button" type="button"><i class="fa fa-search"></i><span>搜索</span></button></div></div><select id="campaign-product" aria-label="选择关联商品"><option value="">选择商品后加入</option></select><div id="campaign-product-inputs"><c:forEach items="${editorCampaign.productSourceIds}" var="productSourceId"><input type="hidden" name="productSourceIds" value="<c:out value='${productSourceId}'/>"></c:forEach></div></div>
-                                <label class="campaign-discount-field"><span>优惠券</span><div class="field-with-action"><input id="campaign-discount-search" placeholder="搜索有效优惠码"><button id="campaign-discount-search-button" type="button"><i class="fa fa-search"></i><span>搜索</span></button></div><select id="campaign-discount" name="discountSourceId"><option value="">不使用优惠券</option></select></label>
+                                <div class="campaign-product-picker"><label for="campaign-product">关联商品（最多 12 个）</label><div class="campaign-search-picker" id="campaign-product-picker"><select id="campaign-product" aria-label="选择关联商品"><option value="">选择商品后加入</option></select><button class="campaign-picker-trigger" type="button" data-picker-trigger hidden aria-label="选择关联商品" aria-haspopup="listbox" aria-expanded="false" aria-controls="campaign-product-options"><span data-picker-label>选择商品后加入</span><i class="fa fa-angle-down" aria-hidden="true"></i></button><div class="campaign-picker-panel" data-picker-panel hidden><input class="campaign-picker-search" id="campaign-product-search" type="search" data-picker-search placeholder="搜索当前店铺商品" aria-label="搜索当前店铺商品" autocomplete="off"><div class="campaign-picker-options" id="campaign-product-options" data-picker-options role="listbox" aria-label="商品列表"></div><span class="campaign-picker-status" data-picker-status role="status" hidden></span></div></div><div id="campaign-product-inputs"><c:forEach items="${editorCampaign.productSourceIds}" var="productSourceId"><input type="hidden" name="productSourceIds" value="<c:out value='${productSourceId}'/>"></c:forEach></div></div>
+                                <div class="campaign-discount-field"><label for="campaign-discount">优惠券</label><div class="campaign-search-picker" id="campaign-discount-picker"><select id="campaign-discount" name="discountSourceId" aria-label="选择优惠券"><option value="">不使用优惠券</option></select><button class="campaign-picker-trigger" type="button" data-picker-trigger hidden aria-label="选择优惠券" aria-haspopup="listbox" aria-expanded="false" aria-controls="campaign-discount-options"><span data-picker-label>不使用优惠券</span><i class="fa fa-angle-down" aria-hidden="true"></i></button><div class="campaign-picker-panel" data-picker-panel hidden><input class="campaign-picker-search" id="campaign-discount-search" type="search" data-picker-search placeholder="搜索有效优惠码" aria-label="搜索有效优惠码" autocomplete="off"><div class="campaign-picker-options" id="campaign-discount-options" data-picker-options role="listbox" aria-label="优惠券列表"></div><span class="campaign-picker-status" data-picker-status role="status" hidden></span></div></div></div>
                                 <div class="campaign-selected-products"><div class="selected-products-header"><strong>已选商品</strong><span id="selected-products-count" aria-live="polite">0 / 12</span></div><div id="campaign-selected-products" class="selected-products-list" role="list" aria-live="polite"></div></div>
                             </div>
                         </section>
@@ -51,8 +53,22 @@
                             <label><span>重复发送间隔（小时）</span><input name="repeatIntervalHours" type="number" min="0" max="8760" step="1" value="${editorCampaign.repeatIntervalHours}" required><small class="field-note">0 表示不限制且不查询历史发送记录；默认 24 小时。</small></label>
                             <label><span>持续天数</span><input name="hotRetentionDays" type="number" min="7" max="60" step="1" value="${editorCampaign.hotRetentionDays}" required><small class="field-note">发送完成后在热表和热索引中保留，默认 14 天，可设置 7 至 60 天；到期后归档至 Doris。</small></label>
                         </div>
-                        <fieldset class="channel-selector"><legend>发送邮件通道</legend><p class="field-note">可多选，邮件发送服务会在选中的可用通道中自动分配。</p><div class="channel-options-grid">
-                            <c:forEach items="${senderSettings}" var="setting"><label class="channel-option"><input type="checkbox" name="providers" value="${setting.provider}" <c:if test="${not editorCampaign.existing or editorCampaign.providerSelections[setting.provider]}">checked</c:if>><span><strong><c:out value="${providerAliases[setting.provider]}"/></strong><small><c:out value="${setting.fromHeader}"/></small></span></label></c:forEach></div>
+                        <fieldset class="channel-selector">
+                            <legend>发送邮件通道</legend>
+                            <p class="field-note">可多选，拖动所选通道下方的滑块或输入权重，调整计划发送比例。</p>
+                            <input type="hidden" name="channelWeightsJson" value="" data-channel-weights-json disabled>
+                            <div class="channel-options-grid" data-channel-weight-editor>
+                                <c:forEach items="${senderSettings}" var="setting">
+                                    <div class="channel-option-card">
+                                        <label class="channel-option"><input type="checkbox" name="providers" value="${setting.provider}" <c:if test="${not editorCampaign.existing or editorCampaign.providerSelections[setting.provider]}">checked</c:if>><span><strong><c:out value="${providerAliases[setting.provider]}"/></strong><small><c:out value="${setting.fromHeader}"/></small></span></label>
+                                        <div class="channel-weight-row" data-channel-weight-row data-provider="<c:out value='${setting.provider}'/>" data-default-weight="<c:out value='${editorCampaign.channelWeights[setting.provider]}' default='1'/>" hidden>
+                                            <div class="channel-weight-row-heading"><strong>计划发送比例</strong><output data-channel-weight-percent aria-label="<c:out value='${providerAliases[setting.provider]}'/>建议占比">—</output></div>
+                                            <div class="channel-weight-controls"><input type="range" min="1" max="100" step="1" value="1" data-channel-weight-range aria-label="<c:out value='${providerAliases[setting.provider]}'/>发送权重"><label>权重<input type="number" min="1" max="100" step="1" value="1" required data-channel-weight-number aria-label="<c:out value='${providerAliases[setting.provider]}'/>发送权重数值"></label></div>
+                                        </div>
+                                    </div>
+                                </c:forEach>
+                            </div>
+                            <p class="channel-weight-note">比例为计划分配目标。通道不可用或限流时，系统可使用其他已选通道，实际占比可能变化。</p>
                         </fieldset>
                         <div class="form-actions spaced-actions"><c:if test="${canManageCampaigns and editorCampaign.existing and editorCampaign.status eq 'DRAFT'}"><button class="action-button danger-action" type="submit" form="campaign-draft-delete-form" formnovalidate style="margin-right:auto"><i class="fa fa-trash" aria-hidden="true"></i><span>删除草稿</span></button></c:if><a class="action-button" href="${ctx}/campaigns?shop=${selectedShop}">取消</a><button class="primary-button" type="submit" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-save"></i>保存活动</button></div>
                     </form>
@@ -85,6 +101,8 @@
             });
         }());
         </script>
+        <script src="${ctx}/shopify/js/campaign-channel-weights.js?v=20261105-range10"></script>
+        <script src="${ctx}/shopify/js/campaign-search-picker.js?v=20261105-picker2"></script>
     </main>
 </div>
 <script src="${ctx}/shopify/js/campaign-editor-audience.js?v=20261004-a1"></script>
@@ -108,6 +126,8 @@
         productInputHost.querySelectorAll('input[name="productSourceIds"]'),
         function (input) { return { sourceId: input.value, title: input.value }; });
     var productCatalog = {};
+    var productPicker = null, discountPicker = null;
+    var productLookupVersion = 0, discountLookupVersion = 0;
     var variableLabels = { campaignMessage: '活动文案', promoText: '促销文案' };
     var initialDiscount = '<c:out value="${editorCampaign.discountSourceId}"/>';
     function api(path, query) {
@@ -149,7 +169,7 @@
             select.appendChild(option);
         });
         if (selected && !found) {
-            var retained = document.createElement('option'); retained.value = selected;
+            var retained = document.createElement('option'); retained.value = selected; retained.setAttribute('data-picker-retained', 'true');
             retained.textContent = '当前已选 · ' + selected; retained.selected = true; select.appendChild(retained);
         }
     }
@@ -222,7 +242,9 @@
         renderSelectedProducts(); loadProducts('');
     }
     function loadProducts(query) {
+        var lookupVersion = ++productLookupVersion;
         return api('/templates/products', { shop: shop, q: query || '' }).then(function (items) {
+            if (lookupVersion !== productLookupVersion) return;
             items.forEach(function (item) { productCatalog[item.sourceId] = item; });
             selectedProducts.forEach(function (product) {
                 if (productCatalog[product.sourceId]) product.title = productCatalog[product.sourceId].title;
@@ -237,15 +259,26 @@
                 option.textContent = item.title + (item.price ? ' · ' + item.price + ' ' + (item.currency || '') : '');
                 select.appendChild(option);
             });
+            if (productPicker) productPicker.refresh();
         });
     }
     function loadDiscounts(query, selected) {
+        var lookupVersion = ++discountLookupVersion;
+        var discountSelect = document.getElementById('campaign-discount');
+        var oldOption = Array.prototype.find.call(discountSelect.options, function (option) { return option.value === selected; });
+        var oldLabel = oldOption && oldOption.textContent;
         return api('/templates/discounts', { shop: shop, q: query || '' }).then(function (items) {
+            if (lookupVersion !== discountLookupVersion) return;
             populate(document.getElementById('campaign-discount'), items, selected,
                 '不使用优惠券', function (item) {
                     var label = item.title === item.code ? item.code : item.title + ' · ' + item.code;
                     return item.summary ? label + ' · ' + item.summary : label;
                 });
+            if (selected && oldLabel && !items.some(function (item) { return item.sourceId === selected; })) {
+                var retained = Array.prototype.find.call(discountSelect.options, function (option) { return option.value === selected; });
+                if (retained) retained.textContent = oldLabel;
+            }
+            if (discountPicker) discountPicker.refresh();
         });
     }
     function loadTemplateOptions(reset) {
@@ -261,17 +294,18 @@
             }).catch(function (error) { alert(error.message); });
     }
     templateSelect.addEventListener('change', function () { loadTemplateOptions(true); });
-    document.getElementById('campaign-product-search-button').addEventListener('click', function () {
-        loadProducts(document.getElementById('campaign-product-search').value.trim());
-    });
+
     document.getElementById('campaign-product').addEventListener('change', function (event) {
         var product = productCatalog[event.target.value];
         if (product) addProduct(product);
         event.target.value = '';
     });
-    document.getElementById('campaign-discount-search-button').addEventListener('click', function () {
-        loadDiscounts(document.getElementById('campaign-discount-search').value.trim(),
-            document.getElementById('campaign-discount').value);
+    productPicker = window.CampaignSearchPicker.create(document.getElementById('campaign-product-picker'), document.getElementById('campaign-product'), {
+        placeholder: '选择商品后加入', includeEmpty: false, load: loadProducts, invalidate: function () { productLookupVersion++; }
+    });
+    discountPicker = window.CampaignSearchPicker.create(document.getElementById('campaign-discount-picker'), document.getElementById('campaign-discount'), {
+        placeholder: '不使用优惠券', includeEmpty: true, load: function (query) { return loadDiscounts(query, document.getElementById('campaign-discount').value); },
+        invalidate: function () { discountLookupVersion++; }
     });
     renderSelectedProducts();
     loadDiscounts('', initialDiscount).catch(function (error) { alert(error.message); });

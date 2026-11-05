@@ -57,7 +57,7 @@
                 <div class="template-preview-body"><iframe id="customer-email-preview-frame" title="该客户收到的营销邮件" sandbox src="about:blank"></iframe></div>
             </dialog>
         </section>
-        <script src="${ctx}/shopify/js/customer-timeline.js?v=20260925-p130"></script>
+        <script src="${ctx}/shopify/js/customer-timeline.js?v=20261105-shanghai1"></script>
         <script>
             (function () {
                 var form = document.querySelector('[data-customer-results-form]');
