@@ -640,6 +640,181 @@
         }
 
 
+        .alternative-login-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0 12px;
+            color: #87908b;
+            font-size: 11px;
+            letter-spacing: .12em;
+        }
+
+        .alternative-login-divider::before,
+        .alternative-login-divider::after {
+            content: "";
+            height: 1px;
+            flex: 1;
+            background: rgba(119, 132, 124, .24);
+        }
+
+        .alternative-login-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .alternative-login-button {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 14px;
+            border: 1px solid #bfc9c3;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, .72);
+            color: #26332d;
+            font-size: 13px;
+            font-weight: 600;
+            transition: border-color .18s ease, background .18s ease, color .18s ease;
+        }
+
+        .alternative-login-button:hover,
+        .alternative-login-button:focus-visible {
+            border-color: var(--focus);
+            background: #f3fbf7;
+            color: var(--signal-dark);
+            outline: none;
+        }
+
+        .alternative-login-button:disabled {
+            cursor: not-allowed;
+            opacity: .5;
+        }
+
+        .alternative-login-button svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .alternative-login-message {
+            min-height: 18px;
+            margin: 8px 0 0;
+            color: var(--ink-soft);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .auth-login-dialog {
+            width: min(480px, calc(100vw - 32px));
+            padding: 0;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, .78);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .96);
+            color: var(--ink);
+            box-shadow: 0 34px 90px rgba(6, 23, 19, .3), 0 8px 24px rgba(8, 63, 145, .14);
+        }
+
+        .auth-login-dialog::backdrop {
+            background: rgba(5, 17, 14, .68);
+            backdrop-filter: blur(5px);
+        }
+
+        .auth-login-dialog-shell {
+            padding: 24px;
+        }
+
+        .auth-login-dialog-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 18px;
+        }
+
+        .auth-login-dialog-header h2 {
+            margin: 4px 0 0;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .auth-login-dialog-close {
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            background: #fff;
+            color: var(--ink-soft);
+            font-size: 20px;
+        }
+
+        .face-login-stage {
+            position: relative;
+            width: min(100%, 360px);
+            aspect-ratio: 4 / 3;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #0f172a;
+        }
+
+        .face-login-stage video,
+        .face-login-stage canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .face-login-stage video {
+            opacity: 0;
+        }
+
+        .face-login-status,
+        .qr-login-status {
+            min-height: 42px;
+            margin: 12px 0 0;
+            padding: 10px 12px;
+            border-radius: 6px;
+            background: #eef6ff;
+            color: #175f91;
+            font-size: 13px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .qr-login-code {
+            width: 224px;
+            min-height: 224px;
+            display: grid;
+            place-items: center;
+            margin: 0 auto;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .auth-login-dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 18px;
+        }
+
+        .auth-login-dialog-actions button {
+            min-height: 40px;
+            padding: 0 18px;
+            border: 1px solid #bfc9c3;
+            border-radius: 5px;
+            background: #fff;
+            color: var(--ink);
+        }
+
+
         .agreement-row {
             display: flex;
             align-items: flex-start;
@@ -1439,7 +1614,10 @@
             <h2>欢迎回来</h2>
 
             <form class="form-panel" id="userPanel" novalidate action="<%=request.getContextPath()%>/org/login/login"
-                  method="post">
+                  method="post" data-app-id="${appid}" data-client-type="${clienttypeid}"
+                  data-ws-url="${ws}" data-wss-url="${wss}"
+                  data-scan-config-url="<%=request.getContextPath()%>/org/login/scan-config"
+                  data-scan-complete-url="<%=request.getContextPath()%>/org/login/scan-complete">
                 <script type="text/javascript" src="baseui/lib/endecrypt/crypto-js.min.js"></script>
                 <script type="text/javascript" src="baseui/lib/jquery/3.6.1/jquery.min.js"></script>
                 <select id="domain" name="domain" onchange="domain_change();" style="height: 30px;display:none">
@@ -1448,6 +1626,7 @@
                     </c:forEach>
                 </select>
                 <input type="hidden" name="logintype" id="logintype" value="0">
+                <input type="hidden" id="FacePic" name="FacePic" value="">
                 <div class="field">
                     <div class="field-head"><label for="user">账号</label></div>
                     <div class="field-wrap">
@@ -1521,6 +1700,18 @@
                 <button class="submit-button" type="submit">
                     <span>登录</span>
                 </button>
+                <div class="alternative-login-divider"><span>其他登录方式</span></div>
+                <div class="alternative-login-actions">
+                    <button class="alternative-login-button" id="faceLoginButton" type="button" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/><circle cx="12" cy="10" r="3"/><path d="M7.5 18c.8-2.3 2.3-3.5 4.5-3.5s3.7 1.2 4.5 3.5"/></svg>
+                        <span>刷脸登录</span>
+                    </button>
+                    <button class="alternative-login-button" id="qrLoginButton" type="button" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3"/></svg>
+                        <span>扫码登录</span>
+                    </button>
+                </div>
+                <p class="alternative-login-message" id="alternativeLoginMessage" aria-live="polite"></p>
                 <p class="form-message" aria-live="polite"></p>
             </form>
 
@@ -1709,6 +1900,38 @@
         </article>
         <footer class="policy-dialog-footer">
             <button class="policy-dialog-confirm" type="button" data-policy-close>我已阅读</button>
+        </footer>
+    </div>
+</dialog>
+
+<dialog class="auth-login-dialog" id="faceLoginDialog" aria-labelledby="faceLoginDialogTitle">
+    <div class="auth-login-dialog-shell">
+        <header class="auth-login-dialog-header">
+            <div><p class="eyebrow">REMOTE IDENTITY</p><h2 id="faceLoginDialogTitle">刷脸登录</h2></div>
+            <button class="auth-login-dialog-close" type="button" data-face-login-close aria-label="关闭刷脸登录">×</button>
+        </header>
+        <div class="face-login-stage">
+            <video id="video2" width="360" height="270" preload="auto" playsinline autoplay muted></video>
+            <canvas id="overlay" width="360" height="270"></canvas>
+        </div>
+        <canvas id="faceCaptureCanvas" width="320" height="240" hidden></canvas>
+        <p class="face-login-status" id="faceLoginStatus" aria-live="polite">请允许浏览器访问摄像头</p>
+        <footer class="auth-login-dialog-actions">
+            <button type="button" data-face-login-close>取消</button>
+        </footer>
+    </div>
+</dialog>
+
+<dialog class="auth-login-dialog" id="qrLoginDialog" aria-labelledby="qrLoginDialogTitle">
+    <div class="auth-login-dialog-shell">
+        <header class="auth-login-dialog-header">
+            <div><p class="eyebrow">REMOTE IDENTITY</p><h2 id="qrLoginDialogTitle">扫码登录</h2></div>
+            <button class="auth-login-dialog-close" type="button" data-qr-login-close aria-label="关闭扫码登录">×</button>
+        </header>
+        <div class="qr-login-code" id="qrLoginCode" aria-label="扫码登录二维码"></div>
+        <p class="qr-login-status" id="qrLoginStatus" aria-live="polite">正在连接统一认证服务...</p>
+        <footer class="auth-login-dialog-actions">
+            <button type="button" data-qr-login-close>取消</button>
         </footer>
     </div>
 </dialog>
@@ -1985,5 +2208,11 @@
         drawSignal();
     })();
 </script>
+<script src="baseui/lib/qrcode/qrcode.min.js"></script>
+<script src="baseui/lib/mediapipe/face_mesh/face_mesh.js"></script>
+<script src="baseui/lib/mediapipe/face_mesh/camera_utils.js"></script>
+<script src="baseui/lib/mediapipe/face_mesh/drawing_utils.js"></script>
+<script src="baseui/js/face-login-mediapipe.js"></script>
+<script src="shopify/js/merchant-alternative-login.js?v=20261106"></script>
 </body>
 </html>

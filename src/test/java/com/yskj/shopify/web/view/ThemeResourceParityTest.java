@@ -799,7 +799,7 @@ class ThemeResourceParityTest {
                     "id=\"campaign-product-picker\"", "id=\"campaign-discount-picker\"",
                     "data-picker-trigger", "data-picker-search", "data-picker-options",
                     "name=\"productSourceIds\"", "name=\"discountSourceId\"",
-                    "campaign-search-picker.js?v=20261105-picker2");
+                    "campaign-search-picker.js?v=20261106-audience1");
             int product = page.indexOf("class=\"campaign-product-picker\"");
             int coupon = page.indexOf("class=\"campaign-discount-field\"");
             int selected = page.indexOf("class=\"campaign-selected-products\"");

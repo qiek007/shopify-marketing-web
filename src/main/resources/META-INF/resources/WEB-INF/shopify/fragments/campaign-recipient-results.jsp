@@ -1,5 +1,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page language="java" pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
+<c:if test="${not empty recipientQuality}"><div class="campaign-recipient-read-notice" role="status"><i class="fa fa-info-circle" aria-hidden="true"></i><div><strong>邮件明细覆盖：<c:choose><c:when test="${recipientQuality.coverage eq 'COUNT_ALIGNED'}">数量对齐，尚未逐条核验</c:when><c:when test="${recipientQuality.coverage eq 'COUNT_MISMATCH'}">数量未对齐</c:when><c:otherwise>尚未确认</c:otherwise></c:choose></strong><c:if test="${not empty recipientQuality.expectedMessages and not empty recipientQuality.observedMessages}"><span>上次记录：任务 <c:out value="${recipientQuality.expectedMessages}"/> 条，当前来源 <c:out value="${recipientQuality.observedMessages}"/> 条；数量差异不直接等于丢失，匿名化等情况可能影响结果。</span></c:if><strong>通道接收核验：<c:choose><c:when test="${recipientQuality.acceptance eq 'ALIGNED'}">上次核验对齐</c:when><c:when test="${recipientQuality.acceptance eq 'MISMATCH'}">存在差异</c:when><c:otherwise>尚未确认</c:otherwise></c:choose></strong><strong>回调统计一致性：<c:choose><c:when test="${recipientQuality.callbacks eq 'ALIGNED'}">上次核验对齐</c:when><c:when test="${recipientQuality.callbacks eq 'MISMATCH'}">存在差异</c:when><c:otherwise>尚未确认</c:otherwise></c:choose></strong><span>没有回调是正常情况；这里比较的是同类回调在不同记录中的统计。</span><c:if test="${not empty recipientQuality.differences}"><span>上次核验差异（汇总记录 / 明细投影）：<c:forEach items="${recipientQuality.differences}" var="difference"><c:out value="${difference.label}"/> <c:out value="${difference.summaryCount}"/> / <c:out value="${difference.projectedCount}"/>；</c:forEach>不能单凭差异判断哪一侧有误。</span></c:if></div></div></c:if>
 <c:if test="${recipientReadState eq 'CURRENT'}"><div class="campaign-recipient-read-notice" role="status"><i class="fa fa-info-circle" aria-hidden="true"></i><div><strong>活动有效期内，已展示当前数据</strong><span>数据持续更新，可导出当前查询快照；尚未处理的事件不包含在快照内。</span></div></div></c:if>
 <c:if test="${recipientReadState eq 'UPDATING' or recipientReadState eq 'PARTIAL'}">
     <div class="campaign-recipient-read-notice" role="status" data-campaign-recipient-incomplete>
@@ -18,8 +19,8 @@
                 <span>当前热明细与完整性依据未完全对齐；这不等于活动已过有效期或尚未写入 Doris。部分回执次数与筛选结果可能不完整，完整导出待核验通过后开放。</span>
             </c:when>
             <c:when test="${recipientReadReason eq 'CONSISTENCY_MISMATCH'}">
-                <strong>统计核验尚未对齐，已展示可读明细</strong>
-                <span>最近一次核验存在统计差异，结果已记录，不能据此判定明细丢失。差异不阻止到期热数据清理；当前展示可读取的明细，完整性未确认时不提供完整导出。</span>
+                <strong>历史核验尚未对齐，已展示可读明细</strong>
+                <span>最近一次核验存在差异，结果已记录，不能据此判定明细丢失。差异不阻止到期热数据清理；当前展示可读取的明细，完整性未确认时不提供完整导出。</span>
             </c:when>
             <c:when test="${recipientReadReason eq 'EXPIRY_AUDIT_FAILED'}">
                 <strong>到期核验异常，已展示可读明细</strong>

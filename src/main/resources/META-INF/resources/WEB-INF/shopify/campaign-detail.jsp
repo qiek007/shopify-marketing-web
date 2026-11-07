@@ -32,6 +32,21 @@
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261023-readable-recipients">
 <link rel="stylesheet" href="${ctx}/shopify/css/manual-campaign-receipts.css?v=20261028-manual">
+    <style data-campaign-detail-status-styles>
+        #campaign-current-status { color: #475569; background: #f1f5f9; font-weight: 600; white-space: nowrap; }
+        #campaign-current-status[data-campaign-status="DRAFT"] { color: #475569; background: #f1f5f9; }
+        #campaign-current-status[data-campaign-status="PENDING_APPROVAL"] { color: #854d0e; background: #fef9c3; }
+        #campaign-current-status[data-campaign-status="APPROVED"] { color: #164e63; background: #cffafe; }
+        #campaign-current-status[data-campaign-status="PREPARING"] { color: #3730a3; background: #e0e7ff; }
+        #campaign-current-status[data-campaign-status="SCHEDULED"] { color: #1e40af; background: #dbeafe; }
+        #campaign-current-status[data-campaign-status="RUNNING"] { color: #115e59; background: #ccfbf1; }
+        #campaign-current-status[data-campaign-status="QUEUED"] { color: #075985; background: #e0f2fe; }
+        #campaign-current-status[data-campaign-status="PAUSED"] { color: #9a3412; background: #ffedd5; }
+        #campaign-current-status[data-campaign-status="ARCHIVED"] { color: #5b21b6; background: #ede9fe; }
+        #campaign-current-status[data-campaign-status="COMPLETED"] { color: #166534; background: #dcfce7; }
+        #campaign-current-status[data-campaign-status="CANCELLED"] { color: #57534e; background: #e7e5e4; }
+        #campaign-current-status[data-campaign-status="FAILED"] { color: #991b1b; background: #fee2e2; }
+    </style>
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -45,7 +60,7 @@
             <div>
                 <h1><c:out value="${campaignDetail.name}"/></h1>
             </div>
-            <span id="campaign-current-status" class="status-pill neutral"><c:out value="${campaignDetail.status}"/></span>
+            <span id="campaign-current-status" data-archived="${campaignStatusDisplayName eq '已归档'}" data-campaign-status="<c:out value='${campaignStatusDisplayName eq "已归档" ? "ARCHIVED" : campaignDetail.status}'/>" class="status-pill campaign-status"><c:choose><c:when test="${not empty campaignStatusDisplayName}"><c:out value="${campaignStatusDisplayName}"/></c:when><c:when test="${campaignDetail.status eq 'DRAFT'}">草稿</c:when><c:when test="${campaignDetail.status eq 'PENDING_APPROVAL'}">待审批</c:when><c:when test="${campaignDetail.status eq 'APPROVED'}">已审批</c:when><c:when test="${campaignDetail.status eq 'PREPARING'}">准备中</c:when><c:when test="${campaignDetail.status eq 'SCHEDULED'}">已计划</c:when><c:when test="${campaignDetail.status eq 'RUNNING'}">发送中</c:when><c:when test="${campaignDetail.status eq 'QUEUED'}">已进入队列</c:when><c:when test="${campaignDetail.status eq 'PAUSED'}">已暂停</c:when><c:when test="${campaignDetail.status eq 'COMPLETED'}">已完成</c:when><c:when test="${campaignDetail.status eq 'CANCELLED'}">已取消</c:when><c:when test="${campaignDetail.status eq 'FAILED'}">失败</c:when><c:otherwise><c:out value="${campaignDetail.status}"/></c:otherwise></c:choose></span>
         </section>
 
         <c:if test="${not empty successMessage}"><div class="flash-message success"><i class="fa fa-check-circle"></i><c:out value="${successMessage}"/></div></c:if>
@@ -268,9 +283,9 @@
         <section class="campaign-kpi-grid">
             <article><span>冻结受众</span><strong id="campaign-audience"><c:out value="${campaignDetail.summary.audience}"/></strong><small id="campaign-audience-note"><c:choose><c:when test="${campaignDetail.audienceReady}">审批后已固化</c:when><c:otherwise>已检查 <c:out value="${campaignDetail.snapshotProcessedCount}"/> 条候选记录</c:otherwise></c:choose></small></article>
             <article><span>发送处理</span><strong id="campaign-send-progress"><c:out value="${campaignDetail.summary.progressPercent}"/>%</strong><small id="campaign-send-note"><c:out value="${campaignDetail.summary.accepted}"/> 接受 / <c:out value="${campaignDetail.summary.failed}"/> 失败 / <c:out value="${campaignDetail.summary.unknown}"/> 结果未知</small></article>
-            <article><span>送达</span><strong id="campaign-delivered"><c:out value="${campaignDetail.summary.delivered}"/></strong><small id="campaign-delivery-rate">送达率 <fmt:formatNumber value="${campaignDetail.summary.accepted gt 0 ? campaignDetail.summary.delivered * 100.0 / campaignDetail.summary.accepted : 0}" minFractionDigits="1" maxFractionDigits="1"/>% · <c:out value="${campaignDetail.summary.delivered}"/> / <c:out value="${campaignDetail.summary.accepted}"/></small><small id="campaign-delivery-note">打开 <c:out value="${campaignDetail.summary.openedRecipients}"/> 人 / <c:out value="${campaignDetail.summary.opened}"/> 次 · 点击 <c:out value="${campaignDetail.summary.clickedRecipients}"/> 人 / <c:out value="${campaignDetail.summary.clicked}"/> 次</small></article>
+            <article><span>送达</span><strong id="campaign-delivered"><c:out value="${campaignDetail.summary.delivered}"/></strong><small id="campaign-delivery-rate">送达率 <fmt:formatNumber value="${campaignDetail.summary.accepted gt 0 ? campaignDetail.summary.delivered * 100.0 / campaignDetail.summary.accepted : 0}" minFractionDigits="1" maxFractionDigits="1"/>% · <c:out value="${campaignDetail.summary.delivered}"/> / <c:out value="${campaignDetail.summary.accepted}"/></small><small id="campaign-delivery-note">打开 <c:choose><c:when test="${campaignDetail.summary.openedRecipients eq null}">待核验</c:when><c:otherwise><c:out value="${campaignDetail.summary.openedRecipients}"/> 人</c:otherwise></c:choose> / <c:out value="${campaignDetail.summary.opened}"/> 次 · 点击 <c:choose><c:when test="${campaignDetail.summary.clickedRecipients eq null}">待核验</c:when><c:otherwise><c:out value="${campaignDetail.summary.clickedRecipients}"/> 人</c:otherwise></c:choose> / <c:out value="${campaignDetail.summary.clicked}"/> 次</small></article>
             <article><span>转化</span><strong id="campaign-orders"><c:out value="${campaignDetail.summary.orders}"/> 单</strong><small id="campaign-conversion-note"><c:out value="${campaignDetail.summary.convertedRecipients}"/> 位客户 · <c:out value="${campaignDetail.summary.netRevenue}"/></small></article>
-            <article><span>风险反馈</span><strong id="campaign-risk"><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribed}"/></strong><small id="campaign-risk-note">退信 <c:out value="${campaignDetail.summary.bounced}"/> / 投诉 <c:out value="${campaignDetail.summary.complained}"/> / 退订 <c:out value="${campaignDetail.summary.unsubscribed}"/></small></article>
+            <article><span>风险反馈</span><strong id="campaign-risk"><c:choose><c:when test="${not empty campaignDetail.summary.unsubscribedRecipients}"><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribedRecipients}"/></c:when><c:otherwise><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribed}"/></c:otherwise></c:choose></strong><small id="campaign-risk-note">退信 <c:out value="${campaignDetail.summary.bounced}"/> / 投诉 <c:out value="${campaignDetail.summary.complained}"/> / 退订人数 <c:out value="${campaignDetail.summary.unsubscribedRecipients}" default="待核验"/><c:if test="${empty campaignDetail.summary.unsubscribedRecipients}">（退订事件 <c:out value="${campaignDetail.summary.unsubscribed}"/>）</c:if></small></article>
         </section>
 
         <%@ include file="fragments/manual-campaign-receipts.jspf" %>
@@ -537,6 +552,11 @@
             return acceptedCount > 0 ? (deliveredCount * 100 / acceptedCount).toFixed(1) : '0.0';
         }
 
+        function displayCampaignStatus(status) {
+            var badge = document.getElementById('campaign-current-status');
+            if (status === 'COMPLETED' && badge && badge.dataset.archived === 'true') return '已归档';
+            return ({ DRAFT: '草稿', PENDING_APPROVAL: '待审批', APPROVED: '已审批', PREPARING: '准备中', SCHEDULED: '已计划', RUNNING: '发送中', QUEUED: '已进入队列', PAUSED: '已暂停', COMPLETED: '已完成', CANCELLED: '已取消', FAILED: '失败' })[status] || status || '-';
+        }
         function displaySnapshotStatus(status) {
             return ({ READY: '已完成', BUILDING: '计算中', PROCESSING: '计算中',
                 FAILED: '失败' })[status] || status || '-';
@@ -630,6 +650,8 @@
             host.appendChild(list);
         }
 
+        function engagementPeople(value) { return value == null ? '待核验' : value + ' 人'; }
+
         function scheduleRefresh() {
             clearTimeout(refreshTimer);
             if (autoRefresh) refreshTimer = setTimeout(refreshProgress, 10000);
@@ -641,7 +663,9 @@
                 return;
             }
             var summary = progress.summary;
-            setText('campaign-current-status', progress.status);
+            var statusBadge = document.getElementById('campaign-current-status');
+            if (statusBadge) statusBadge.dataset.campaignStatus = progress.status === 'COMPLETED' && statusBadge.dataset.archived === 'true' ? 'ARCHIVED' : progress.status;
+            setText('campaign-current-status', displayCampaignStatus(progress.status));
             setText('campaign-snapshot-status', displaySnapshotStatus(progress.snapshotStatus));
             setText('campaign-audience', summary.audience);
             setText('campaign-send-audience', summary.audience);
@@ -652,11 +676,11 @@
                     + ' 失败 / ' + summary.unknown + ' 结果未知');
             setText('campaign-delivered', summary.delivered);
             setText('campaign-delivery-rate', '送达率 ' + deliveryRate(summary.delivered, summary.accepted) + '% · ' + summary.delivered + ' / ' + summary.accepted);
-            setText('campaign-delivery-note', '打开 ' + summary.openedRecipients + ' 人 / ' + summary.opened + ' 次 · 点击 ' + summary.clickedRecipients + ' 人 / ' + summary.clicked + ' 次');
+            setText('campaign-delivery-note', '打开 ' + engagementPeople(summary.openedRecipients) + ' / ' + summary.opened + ' 次 · 点击 ' + engagementPeople(summary.clickedRecipients) + ' / ' + summary.clicked + ' 次');
             setText('campaign-orders', summary.orders + ' 单');
             setText('campaign-conversion-note', summary.convertedRecipients + ' 位客户 · ' + summary.netRevenue);
-            setText('campaign-risk', summary.bounced + summary.complained + summary.unsubscribed);
-            setText('campaign-risk-note', '退信 ' + summary.bounced + ' / 投诉 ' + summary.complained + ' / 退订 ' + summary.unsubscribed);
+            setText('campaign-risk', summary.bounced + summary.complained + (summary.unsubscribedRecipients == null ? summary.unsubscribed : summary.unsubscribedRecipients));
+            setText('campaign-risk-note', '退信 ' + summary.bounced + ' / 投诉 ' + summary.complained + ' / 退订人数 ' + (summary.unsubscribedRecipients == null ? '待核验（退订事件 ' + summary.unsubscribed + '）' : summary.unsubscribedRecipients));
             renderJobs(progress.jobs);
             applySendGate(progress);
             applyScheduleGate(progress);

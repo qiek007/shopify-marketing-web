@@ -12,3 +12,15 @@
 .campaign-picker-option:hover, .campaign-picker-option:focus-visible { background: #eef7f1; }
 .campaign-picker-status { display: block; padding: 8px 9px; color: #71838e; }
 .campaign-picker-status[hidden] { display: none; }
+
+.campaign-audience-tags .customer-tag-options [hidden] { display: none !important; }
+.campaign-audience-tags .customer-tag-options input[data-tag-search] { box-sizing: border-box; width: 100% !important; height: 34px; min-height: 34px !important; padding: 7px 9px; border: 1px solid #c8d5df; border-radius: 4px; }
+.campaign-audience-tags .customer-tag-search-empty { padding: 8px; color: #71838e; }
+.campaign-segment-field { display: grid; align-content: start; gap: 6px; min-width: 0; }
+.campaign-segment-field > label { color: #4e5c69; font-size: 12px; font-weight: 600; }
+
+.customer-tag-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding-bottom: 4px; }
+.campaign-audience-tags .customer-tag-toolbar input[data-tag-search] { flex: 1 1 140px; width: auto !important; min-width: 0; }
+.customer-tag-mode { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px; }
+.customer-tag-options .customer-tag-mode label { display: inline-flex; gap: 4px; padding: 4px 0; white-space: nowrap; font-size: 12px; }
+.customer-tag-options .customer-tag-mode input[type="radio"] { flex: 0 0 14px; width: 14px !important; height: 14px; min-height: 14px !important; accent-color: #16865a; }

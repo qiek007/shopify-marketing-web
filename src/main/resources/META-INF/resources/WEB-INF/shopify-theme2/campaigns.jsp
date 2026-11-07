@@ -21,7 +21,7 @@
         .status-table .campaign-status { color: #475569; background: #f1f5f9; font-weight: 600; white-space: nowrap; }
         .status-table .campaign-status[data-campaign-status="DRAFT"] { color: #475569; background: #f1f5f9; }
         .status-table .campaign-status[data-campaign-status="PENDING_APPROVAL"] { color: #854d0e; background: #fef9c3; }
-        .status-table .campaign-status[data-campaign-status="APPROVED"] { color: #6b21a8; background: #f3e8ff; }
+        .status-table .campaign-status[data-campaign-status="APPROVED"] { color: #164e63; background: #cffafe; }
         .status-table .campaign-status[data-campaign-status="PREPARING"] { color: #3730a3; background: #e0e7ff; }
         .status-table .campaign-status[data-campaign-status="SCHEDULED"] { color: #1e40af; background: #dbeafe; }
         .status-table .campaign-status[data-campaign-status="RUNNING"] { color: #115e59; background: #ccfbf1; }

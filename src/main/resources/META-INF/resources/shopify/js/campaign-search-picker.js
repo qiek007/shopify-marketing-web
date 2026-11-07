@@ -14,7 +14,8 @@
         function refresh() {
             list.replaceChildren();
             var options = Array.prototype.slice.call(select.options).filter(function (option) {
-                return !option.disabled && (config.includeEmpty || option.value !== '');
+                return !option.disabled && (config.includeEmpty || option.value !== '')
+                    && (!config.match || config.match(option, input.value.trim()));
             });
             var selected = Array.prototype.find.call(select.options, function (option) {
                 return option.value === select.value;

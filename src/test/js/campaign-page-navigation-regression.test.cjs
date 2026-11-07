@@ -58,7 +58,7 @@ for (const root of roots) {
     await h.click('/workspace/campaigns?shop=demo');
     assert.equal(h.assigned.length, 0, 'no full-page fallback required');
     assert.equal(background(styles(h.state.main.html), 'PENDING_APPROVAL'), '#fef9c3', 'pending style arrives with partial page');
-    assert.equal(background(styles(h.state.main.html), 'APPROVED'), '#f3e8ff');
+    assert.equal(background(styles(h.state.main.html), 'APPROVED'), '#cffafe');
     assert.equal(background(styles(h.state.main.html), 'COMPLETED'), '#dcfce7');
     assert.equal(background(styles(h.state.main.html), 'FAILED'), '#fee2e2');
     assert.equal(background(styles(h.state.main.html), 'ARCHIVED'), '#ede9fe');
