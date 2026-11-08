@@ -1,7 +1,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page language="java" pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/><c:set var="mobilePage" value="dashboard"/>
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>数据总览 · 滴答营销</title><link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css"></head><body>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>数据总览 · 滴答营销</title><link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css?v=20261108"></head><body>
 <%@ include file="fragments/header.jspf" %>
 <main class="mobile-main">
     <section class="mobile-page-title"><p class="mobile-eyebrow">OVERVIEW / 数据总览</p><h1><c:out value="${selectedShopDisplayName}" default="店铺总览"/></h1><p><c:out value="${selectedShop}" default="请选择有权限的店铺"/></p></section>

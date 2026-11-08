@@ -4,16 +4,29 @@
     if (root && root.document) api.mount(root);
 }(typeof window === 'undefined' ? null : window, function () {
     'use strict';
+    function calendarDate(value) {
+        var parts;
+        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            parts = value.split('-').map(Number);
+        } else if (Array.isArray(value) && value.length === 3 && value.every(Number.isInteger)) {
+            parts = value;
+        } else return null;
+        var year = parts[0], month = parts[1], day = parts[2];
+        if (year < 1 || year > 9999 || month < 1 || month > 12 || day < 1) return null;
+        var leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+        var monthDays = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        if (day > monthDays[month - 1]) return null;
+        return String(year).padStart(4, '0') + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    }
     function classify(data) {
         if (!data || typeof data.ready !== 'boolean') return 'incomplete';
         if (!data.ready) return 'preparing';
         if (!Array.isArray(data.days)) return 'incomplete';
         if (!data.days.length) return 'empty';
-        if (data.days.length !== 30 || data.days.some(function (day) {
-            return !day || typeof day.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(day.date);
-        })) return 'incomplete';
-        for (var i = 1; i < data.days.length; i++) {
-            if (data.days[i - 1].date >= data.days[i].date) return 'incomplete';
+        var dates = data.days.map(function (day) { return day ? calendarDate(day.date) : null; });
+        if (dates.length !== 30 || dates.some(function (date) { return date === null; })) return 'incomplete';
+        for (var i = 1; i < dates.length; i++) {
+            if (dates[i - 1] >= dates[i]) return 'incomplete';
         }
         return 'ready';
     }
@@ -29,7 +42,9 @@
     }
     function summarize(data, range) {
         if (classify(data) !== 'ready' || (range !== 7 && range !== 30)) return null;
-        var selected = data.days.slice(-range);
+        var selected = data.days.slice(-range).map(function (day) {
+            return Object.assign({}, day, {date: calendarDate(day.date)});
+        });
         return { days: selected, sent: sum(selected, 'emailSentCount'),
             delivered: sum(selected, 'emailDeliveredCount'),
             orders: data.shopifyOrdersAvailable === true ? sum(selected, 'shopifyOrderCount') : null };

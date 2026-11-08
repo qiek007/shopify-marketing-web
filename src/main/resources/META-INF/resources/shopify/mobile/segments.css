@@ -1,0 +1,16 @@
+.ms-card,.ms-form,.ms-group,.ms-result { margin:14px 0; padding:16px; background:#fff; border:1px solid #dce8e1; border-radius:12px; }
+.ms-card { display:block; text-decoration:none; color:inherit; overflow-wrap:anywhere; }
+.ms-card h2,.ms-group h2 { font-size:17px; margin:0 0 8px; }
+.ms-card p,.ms-result p { margin:6px 0; }
+.ms-form label { display:grid; gap:6px; margin:12px 0; font-weight:600; }
+.ms-form input,.ms-form select { box-sizing:border-box; width:100%; min-height:44px; padding:8px; border:1px solid #afc2b6; border-radius:8px; background:#fff; font:inherit; font-size:16px; }
+.ms-row { display:grid; gap:8px; padding:12px 0; border-top:1px solid #e4ece6; }
+.ms-buttons,.ms-pagination { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0; }
+.ms-button { min-height:44px; box-sizing:border-box; padding:10px 14px; border:1px solid #176c4c; border-radius:8px; background:#fff; color:#176c4c; text-decoration:none; font:inherit; }
+.ms-button.primary { background:#176c4c; color:white; }
+.ms-button:disabled { opacity:.55; }
+.ms-note { color:#5c7065; font-size:14px; line-height:1.55; }
+.ms-error { color:#9a3029; }
+.ms-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.ms-metrics div { background:#f1f7f3; padding:10px; border-radius:8px; }
+.ms-metrics strong,.ms-metrics span { display:block; }

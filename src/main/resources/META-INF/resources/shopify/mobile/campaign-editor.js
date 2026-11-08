@@ -9,6 +9,18 @@
         return Boolean(String(segment || '').trim()) || confirmed === true;
     }
 
+    function creationStepError(step, values) {
+        if (step === 0) {
+            if (!String(values.name || '').trim()) return '请填写活动名称。';
+            if (!values.templateReady) return '请选择可用模板，并等待模板检查完成。';
+        }
+        if (step === 1 && !audienceAllowed(values.segment, values.allCustomers)) {
+            return '请选择客户分群，或明确确认全部符合发送资格的客户。';
+        }
+        if (step === 2 && !values.channelCount) return '请至少选择一个发送通道。';
+        return '';
+    }
+
     function equalChannelWeights(providers) {
         var values = Object.create(null);
         providers.forEach(function (provider) { values[provider] = 1; });
@@ -33,6 +45,16 @@
                 || /^(title|imageUrl|price|url)$/.test(name)
                 || (builtIn.indexOf(name) === -1 && !Object.prototype.hasOwnProperty.call(options.customVariables, name));
         });
+    }
+
+    function referencedCustomVariables(options) {
+        var values = Object.create(null);
+        options.referencedVariables.forEach(function (key) {
+            if (Object.prototype.hasOwnProperty.call(options.customVariables, key)) {
+                values[key] = options.customVariables[key];
+            }
+        });
+        return values;
     }
 
     function createTemplateLoader(fetchOptions, onState) {
@@ -103,6 +125,104 @@
         var ready = false;
         var previewGeneration = 0;
         var submitting = false;
+        var steps = Array.prototype.slice.call(form.querySelectorAll('[data-editor-step]'));
+        var progress = document.getElementById('mobile-editor-progress');
+        var stepStatus = document.getElementById('mobile-editor-step-status');
+        var stepError = document.getElementById('mobile-editor-step-error');
+        var previous = document.getElementById('mobile-editor-previous');
+        var next = document.getElementById('mobile-editor-next');
+        var review = document.getElementById('mobile-editor-review');
+        var currentStep = 0;
+        var keyboardTimer;
+
+        function revealFocusedInput() {
+            window.clearTimeout(keyboardTimer);
+            keyboardTimer = window.setTimeout(function () {
+                var input = document.activeElement;
+                if (input && form.contains(input) && input.matches('input:not([type=hidden]), textarea, select')) {
+                    input.scrollIntoView({block: 'center', behavior: 'smooth'});
+                }
+            }, 200);
+        }
+
+        form.addEventListener('focusin', revealFocusedInput);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', revealFocusedInput);
+
+        function validateStep(step) {
+            var message = creationStepError(step, {
+                name: form.querySelector('[name="name"]').value,
+                templateReady: ready,
+                segment: segment.value,
+                allCustomers: confirmation.checked,
+                channelCount: form.querySelectorAll('[name="providers"]:checked').length
+            });
+            stepError.textContent = message;
+            stepError.hidden = !message;
+            if (message) stepError.scrollIntoView({block: 'center'});
+            return !message;
+        }
+
+        function renderReview() {
+            review.replaceChildren();
+            var rows = [
+                ['活动名称', form.querySelector('[name="name"]').value],
+                ['邮件模板', template.options[template.selectedIndex].text],
+                ['目标受众', segment.value ? segment.options[segment.selectedIndex].text : '全部符合发送资格的客户'],
+                ['发送通道', Array.prototype.filter.call(channelChecks, function (input) { return input.checked; })
+                    .map(function (input) {
+                        var label = input.closest('label');
+                        var alias = label.querySelector('strong').textContent;
+                        var sender = label.querySelector('span').textContent.replace(alias, '').trim();
+                        return alias + ' · ' + sender;
+                    }).join('\n')],
+                ['发送规则', '选中通道等权分配 · 重复间隔 24 小时 · 数据保留 14 天']
+            ];
+            variableHost.querySelectorAll('[data-variable]').forEach(function (input) {
+                rows.push([input.closest('label').querySelector('span').textContent, input.value || '未填写']);
+            });
+            rows.forEach(function (row) {
+                var item = document.createElement('div');
+                var label = document.createElement('dt');
+                var value = document.createElement('dd');
+                label.textContent = row[0];
+                value.textContent = row[1];
+                item.appendChild(label);
+                item.appendChild(value);
+                review.appendChild(item);
+            });
+        }
+
+        function showStep(index, focus) {
+            currentStep = index;
+            steps.forEach(function (step, position) { step.hidden = position !== index; });
+            Array.prototype.forEach.call(progress.querySelectorAll('li'), function (item, position) {
+                if (position === index) item.setAttribute('aria-current', 'step');
+                else item.removeAttribute('aria-current');
+            });
+            stepStatus.textContent = '第 ' + (index + 1) + ' 步，共 ' + steps.length + ' 步 · 可返回修改已填内容';
+            previous.hidden = index === 0;
+            next.hidden = index === steps.length - 1;
+            save.hidden = index !== steps.length - 1;
+            stepError.hidden = true;
+            if (index === steps.length - 1) renderReview();
+            if (focus) {
+                var heading = steps[index].querySelector('h2');
+                heading.tabIndex = -1;
+                heading.focus({preventScroll: true});
+                progress.scrollIntoView({block: 'start'});
+            }
+        }
+
+        function advanceStep() {
+            if (!validateStep(currentStep)) return;
+            showStep(Math.min(currentStep + 1, steps.length - 1), true);
+        }
+
+        form.noValidate = true;
+        progress.hidden = false;
+        previous.addEventListener('click', function () { showStep(currentStep - 1, true); });
+        next.addEventListener('click', advanceStep);
+        showStep(0, false);
 
         function fetchJson(path, params) {
             var query = new URLSearchParams(params);
@@ -152,8 +272,11 @@
             save.disabled = !ready || submitting;
             preview.disabled = !ready;
             if (state.status === 'ready') {
-                showVariables(state.options.customVariables);
-                status.textContent = '模板已就绪，请检查文案及默认变量。';
+                var editableVariables = referencedCustomVariables(state.options);
+                showVariables(editableVariables);
+                status.textContent = Object.keys(editableVariables).length
+                    ? '模板已就绪，请检查文案及默认变量。'
+                    : '模板已就绪，当前模板没有需要填写的活动变量。';
             } else {
                 variableHost.replaceChildren();
                 variables.value = '{}';
@@ -192,6 +315,24 @@
                 });
         });
         form.addEventListener('submit', function (event) {
+            if (currentStep !== steps.length - 1) {
+                event.preventDefault();
+                advanceStep();
+                return;
+            }
+            for (var step = 0; step < steps.length - 1; step++) {
+                if (!validateStep(step)) {
+                    event.preventDefault();
+                    showStep(step, true);
+                    validateStep(step);
+                    return;
+                }
+            }
+            if (!form.reportValidity()) {
+                event.preventDefault();
+                showStep(0, true);
+                return;
+            }
             var checked = form.querySelectorAll('[name="providers"]:checked').length;
             if (!ready || submitting || !audienceAllowed(segment.value, confirmation.checked) || !checked) {
                 event.preventDefault();
@@ -211,6 +352,8 @@
     }
 
     return {audienceAllowed: audienceAllowed, templateAllowed: templateAllowed,
+        creationStepError: creationStepError,
+        referencedCustomVariables: referencedCustomVariables,
         equalChannelWeights: equalChannelWeights, updateChannelWeights: updateChannelWeights,
         createTemplateLoader: createTemplateLoader, installTestSendGuard: installTestSendGuard, init: init};
 }));

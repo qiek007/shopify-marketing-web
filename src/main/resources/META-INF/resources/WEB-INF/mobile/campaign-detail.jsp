@@ -5,12 +5,14 @@
 <c:url var="detailUrl" value="/mobile/campaigns/detail"><c:param name="shop" value="${campaignDetail.shopDomain}"/><c:param name="campaignId" value="${campaignDetail.campaignId}"/></c:url>
 <c:url var="listUrl" value="/mobile/campaigns"><c:param name="shop" value="${campaignDetail.shopDomain}"/></c:url>
 <c:url var="testUrl" value="/mobile/campaigns/editor"><c:param name="shop" value="${campaignDetail.shopDomain}"/><c:param name="campaignId" value="${campaignDetail.campaignId}"/><c:param name="mode" value="test"/></c:url>
+<c:set var="hasMobileActions" value="${canWithdrawCampaign or (canManageCampaigns and (campaignDetail.status eq 'DRAFT' or campaignDetail.pendingApproval or campaignDetail.sendable or campaignDetail.status eq 'SCHEDULED' or campaignDetail.status eq 'PREPARING' or campaignDetail.status eq 'QUEUED' or campaignDetail.status eq 'RUNNING' or campaignDetail.status eq 'PAUSED'))}"/>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>活动详情</title>
-  <link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css">
+  <link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css?v=20261108">
+  <link rel="stylesheet" href="${ctx}/shopify/mobile/status.css?v=20261108">
   <style>
     .md-detail-back { display:inline-block; margin:8px 0 16px; color:#17644a; text-decoration:none; font-weight:650; }
     .md-detail-title { margin:0; overflow-wrap:anywhere; font-size:26px; line-height:1.3; }
@@ -32,32 +34,50 @@
     .md-detail-actions button:disabled { opacity:.55; cursor:wait; }
     .md-detail-actions label { display:flex; align-items:flex-start; gap:8px; margin:0 0 10px; font-size:14px; line-height:1.5; }
     .md-detail-actions input[type=checkbox] { flex:none; width:19px; height:19px; margin:1px 0 0; }
+    .md-detail-actions label.md-detail-field { display:grid; gap:6px; }
+    .md-detail-field input, .md-detail-field textarea { box-sizing:border-box; width:100%; min-height:44px; padding:10px; border:1px solid #9fb5a9; border-radius:8px; font:inherit; }
     .md-detail-list { margin:0; } .md-detail-list div { display:flex; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid #edf2ef; }
     .md-detail-list div:last-child { border-bottom:0; } .md-detail-list dt { color:#5a6e64; } .md-detail-list dd { margin:0; text-align:right; overflow-wrap:anywhere; }
     .md-detail-job { padding:12px 0; border-top:1px solid #edf2ef; overflow-wrap:anywhere; }
     .md-detail-job progress { display:block; width:100%; height:10px; margin:9px 0; accent-color:#17644a; }
     .md-detail-refresh { display:inline-block; padding:10px 0; color:#17644a; font-weight:700; }
+    .md-detail-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:12px 0; }
+    .md-detail-toolbar a { min-height:44px; padding:10px 12px; border:1px solid #bfd7c9; border-radius:9px; color:#17644a; font-size:14px; font-weight:700; }
+    .md-detail-section summary { padding:4px 0; cursor:pointer; font-weight:700; color:#17644a; }
+    .md-detail-list { font-size:13px; }
+    .md-detail-list dt { flex:0 0 64px; }
+    .md-detail-list dd { min-width:0; }
+    .md-detail-section details { border-top:1px solid #edf2ef; margin-top:8px; padding-top:8px; }
+    #md-actions-title { scroll-margin-top:16px; }
   </style>
 </head>
 <body>
   <%@ include file="fragments/header.jspf" %>
   <main class="mobile-main">
-    <a class="md-detail-back" href="<c:out value='${listUrl}'/>">← 返回活动列表</a>
+    <a class="md-detail-back" data-mobile-list-return href="<c:out value='${listUrl}'/>">← 返回活动列表</a>
     <p class="md-detail-eyebrow">营销活动 / 执行详情</p>
     <h1 class="md-detail-title"><c:out value="${campaignDetail.name}"/></h1>
-    <span class="md-detail-status"><c:choose>
+    <span class="md-detail-status" data-campaign-status="<c:out value='${campaignStatusDisplayName eq "已归档" ? "ARCHIVED" : campaignDetail.status}'/>"><c:choose>
+      <c:when test="${not empty campaignStatusDisplayName}"><c:out value="${campaignStatusDisplayName}"/></c:when>
       <c:when test="${campaignDetail.status eq 'DRAFT'}">草稿</c:when><c:when test="${campaignDetail.status eq 'PENDING_APPROVAL'}">待审批</c:when>
-      <c:when test="${campaignDetail.status eq 'APPROVED'}">已批准</c:when><c:when test="${campaignDetail.status eq 'PREPARING'}">准备发送</c:when>
-      <c:when test="${campaignDetail.status eq 'QUEUED'}">等待发送</c:when><c:when test="${campaignDetail.status eq 'RUNNING'}">发送中</c:when>
+      <c:when test="${campaignDetail.status eq 'APPROVED'}">已审批</c:when><c:when test="${campaignDetail.status eq 'PREPARING'}">准备中</c:when>
+      <c:when test="${campaignDetail.status eq 'QUEUED'}">已进入队列</c:when><c:when test="${campaignDetail.status eq 'RUNNING'}">发送中</c:when>
       <c:when test="${campaignDetail.status eq 'PAUSED'}">已暂停</c:when><c:when test="${campaignDetail.status eq 'COMPLETED'}">已完成</c:when>
       <c:when test="${campaignDetail.status eq 'CANCELLED'}">已取消</c:when><c:when test="${campaignDetail.status eq 'FAILED'}">失败</c:when>
-      <c:when test="${campaignDetail.status eq 'SCHEDULED'}">已定时</c:when><c:otherwise><c:out value="${campaignDetail.status}"/></c:otherwise>
+      <c:when test="${campaignDetail.status eq 'SCHEDULED'}">已计划</c:when>
+      <c:when test="${campaignDetail.status eq 'ARCHIVED'}">已归档</c:when>
+      <c:otherwise><c:out value="${campaignDetail.status}"/></c:otherwise>
     </c:choose></span>
+    <div class="md-detail-toolbar">
+      <a href="<c:out value='${detailUrl}'/>">↻ 刷新数据</a>
+      <c:if test="${hasMobileActions}"><a href="#md-actions-title">查看活动操作 ↓</a></c:if>
+    </div>
 
     <c:if test="${not empty successMessage}"><p role="status" class="md-detail-note"><c:out value="${successMessage}"/></p></c:if>
     <c:if test="${not empty errorMessage}"><p role="alert" class="md-detail-note md-detail-error"><c:out value="${errorMessage}"/></p></c:if>
     <c:if test="${campaignDetail.status eq 'APPROVED' and approvedSendState eq 'APPROVE_AND_SEND'}"><p class="md-detail-note">已批准，系统正在冻结受众；完成后自动提交发送。</p></c:if>
     <c:if test="${campaignDetail.status eq 'APPROVED' and approvedSendState eq 'APPROVE_AND_SEND_FAILED'}"><p role="alert" class="md-detail-note md-detail-error">自动发送未完成，请检查受众、额度和模板状态，刷新后确认是否需要手动发送。</p></c:if>
+    <c:if test="${campaignDetail.status eq 'SCHEDULED'}"><p class="md-detail-note">计划发送：<time data-mobile-scheduled-time data-scheduled-at="<c:out value='${campaignDetail.scheduledAt}'/>"><c:out value="${campaignDetail.scheduledAt}" default="时间未设置"/></time><c:if test="${not empty campaignDetail.scheduleErrorSummary}"><br><c:out value="${campaignDetail.scheduleErrorSummary}"/></c:if></p></c:if>
 
     <section class="md-detail-section" aria-labelledby="md-progress-title">
       <h2 id="md-progress-title">执行进度</h2>
@@ -66,10 +86,10 @@
         <article class="md-detail-metric"><span>发送处理</span><strong><c:out value="${campaignDetail.summary.progressPercent}" default="0"/>%</strong><small>接受 <c:out value="${campaignDetail.summary.accepted}"/> · 失败 <c:out value="${campaignDetail.summary.failed}"/> · 未知 <c:out value="${campaignDetail.summary.unknown}"/></small></article>
         <article class="md-detail-metric"><span>送达</span><strong><c:out value="${campaignDetail.summary.delivered}" default="0"/></strong><small>打开 <c:out value="${campaignDetail.summary.openedRecipients}"/> 人 · 点击 <c:out value="${campaignDetail.summary.clickedRecipients}"/> 人</small></article>
         <article class="md-detail-metric"><span>转化</span><strong><c:out value="${campaignDetail.summary.orders}" default="0"/> 单</strong><small>客户 <c:out value="${campaignDetail.summary.convertedRecipients}"/> · <c:out value="${campaignDetail.summary.netRevenue}"/></small></article>
+        <article class="md-detail-metric"><span>风险反馈</span><strong><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribed}"/></strong><small>退信 <c:out value="${campaignDetail.summary.bounced}"/> · 投诉 <c:out value="${campaignDetail.summary.complained}"/> · 退订 <c:out value="${campaignDetail.summary.unsubscribed}"/></small></article>
       </div>
       <c:if test="${campaignDetail.status eq 'APPROVED' and not campaignDetail.audienceReady}"><p class="md-detail-note">受众冻结中，完成前不能发送。请刷新查看进度。</p></c:if>
       <c:if test="${campaignDetail.audienceReady and campaignDetail.summary.audience eq 0}"><p class="md-detail-note">冻结受众为空，不能发送；请在电脑端检查分群并重新生成受众。</p></c:if>
-      <a class="md-detail-refresh" href="<c:out value='${detailUrl}'/>">↻ 刷新执行数据</a>
     </section>
 
     <section class="md-detail-section" aria-labelledby="md-config-title">
@@ -81,14 +101,27 @@
         <c:if test="${campaignDetail.hasExcludeTags}"><div><dt>排除标签</dt><dd><c:out value="${campaignDetail.excludeTagsDisplayName}"/></dd></div></c:if>
         <div><dt>邮件模板</dt><dd><c:out value="${campaignDetail.templateName}"/></dd></div>
         <div><dt>发送通道</dt><dd><c:forEach items="${campaignDetail.providers}" var="provider" varStatus="item"><c:if test="${not item.first}">、</c:if><c:out value="${providerAliases[provider]}" default="${provider}"/></c:forEach></dd></div>
-        <div><dt>重复发送间隔</dt><dd><c:choose><c:when test="${campaignDetail.repeatIntervalHours eq 0}">不限制</c:when><c:otherwise><c:out value="${campaignDetail.repeatIntervalHours}"/> 小时</c:otherwise></c:choose></dd></div>
       </dl>
+      <details><summary>更多活动设置</summary><dl class="md-detail-list">
+        <div><dt>重复发送间隔</dt><dd><c:choose><c:when test="${campaignDetail.repeatIntervalHours eq 0}">不限制</c:when><c:otherwise><c:out value="${campaignDetail.repeatIntervalHours}"/> 小时</c:otherwise></c:choose></dd></div>
+        <div><dt>数据保留</dt><dd><c:out value="${campaignDetail.hotRetentionDays}" default="—"/> 天</dd></div>
+        <div><dt>UTM 来源</dt><dd><c:out value="${campaignDetail.utmSource}" default="—"/></dd></div>
+        <div><dt>UTM 媒介</dt><dd><c:out value="${campaignDetail.utmMedium}" default="—"/></dd></div>
+        <div><dt>UTM 活动</dt><dd><c:out value="${campaignDetail.utmCampaign}" default="—"/></dd></div>
+        <div><dt>UTM 内容</dt><dd><c:out value="${campaignDetail.utmContentDisplayName}" default="—"/></dd></div>
+      </dl></details>
     </section>
-    <c:if test="${canManageCampaigns}">
+    <c:if test="${hasMobileActions}">
       <section class="md-detail-section" aria-labelledby="md-actions-title">
         <h2 id="md-actions-title">活动操作</h2>
         <p data-mobile-action-loading>操作组件加载中；如长时间未完成，请刷新页面。</p>
         <div class="md-detail-actions">
+          <c:if test="${canWithdrawCampaign}">
+            <form method="post" action="${ctx}/mobile/campaigns/action" data-mobile-campaign-action data-requires-guard="true" data-confirm-message="撤回后返回草稿并清除冻结受众，发送前需重新审批。确认撤回？">
+              <input type="hidden" name="shop" value="<c:out value='${campaignDetail.shopDomain}'/>"><input type="hidden" name="campaignId" value="<c:out value='${campaignDetail.campaignId}'/>"><input type="hidden" name="action" value="WITHDRAW"><button type="submit" class="secondary" disabled>撤回审批</button>
+            </form>
+          </c:if>
+          <c:if test="${canManageCampaigns}">
           <c:if test="${canManageCampaigns and (campaignDetail.status eq 'DRAFT' or campaignDetail.status eq 'PENDING_APPROVAL')}"><a class="md-detail-refresh" href="<c:out value='${testUrl}'/>">发送测试邮件 →</a></c:if>
           <c:if test="${campaignDetail.status eq 'DRAFT'}">
             <form method="post" action="${ctx}/mobile/campaigns/action" data-mobile-campaign-action data-requires-guard="true" data-confirm-message="确认提交此活动审批？">
@@ -102,6 +135,24 @@
             <form method="post" action="${ctx}/mobile/campaigns/action" data-mobile-campaign-action data-requires-guard="true" data-confirm-message="确认批准活动，并在受众冻结完成后自动提交发送？">
               <input type="hidden" name="shop" value="<c:out value='${campaignDetail.shopDomain}'/>"><input type="hidden" name="campaignId" value="<c:out value='${campaignDetail.campaignId}'/>"><input type="hidden" name="action" value="APPROVE_AND_SEND">
               <label><input type="checkbox" name="confirmNotSubscribed" value="true"><span>如有尚未明确订阅的客户，我确认向其发送</span></label><button type="submit" class="secondary" disabled>批准并发送</button>
+            </form>
+            <form method="post" action="${ctx}/mobile/campaigns/action" data-mobile-campaign-action data-requires-guard="true" data-reject-action="true" data-confirm-message="确认驳回？活动将返回草稿。">
+              <input type="hidden" name="shop" value="<c:out value='${campaignDetail.shopDomain}'/>"><input type="hidden" name="campaignId" value="<c:out value='${campaignDetail.campaignId}'/>"><input type="hidden" name="action" value="REJECT">
+              <label class="md-detail-field">驳回原因<textarea name="reason" required maxlength="500" rows="2" placeholder="请填写驳回原因"></textarea></label><button type="submit" class="danger" disabled>驳回活动</button>
+            </form>
+          </c:if>
+          <c:if test="${campaignDetail.sendable or campaignDetail.status eq 'SCHEDULED'}">
+            <form method="post" action="${ctx}/mobile/campaigns/action" data-mobile-campaign-action data-requires-guard="true" data-schedule-action="true" data-scheduled-at="<c:out value='${campaignDetail.scheduledAt}'/>" data-confirm-message="确认按所选时间发送当前冻结受众？">
+              <input type="hidden" name="shop" value="<c:out value='${campaignDetail.shopDomain}'/>"><input type="hidden" name="campaignId" value="<c:out value='${campaignDetail.campaignId}'/>"><input type="hidden" name="action" value="${campaignDetail.status eq 'SCHEDULED' ? 'RESCHEDULE' : 'SCHEDULE'}"><input type="hidden" name="scheduledAt" value="">
+              <label class="md-detail-field">发送日期和时间<input type="datetime-local" name="scheduleLocal" required step="60"></label>
+              <p data-mobile-schedule-timezone>按当前设备时区选择时间</p>
+              <c:if test="${campaignDetail.confirmationRequiredCount gt 0}"><label><input type="checkbox" name="confirmNotSubscribed" value="true" required><span>我确认向 <c:out value="${campaignDetail.confirmationRequiredCount}"/> 位尚未明确订阅的客户发送</span></label></c:if>
+              <button type="submit" class="secondary" disabled><c:choose><c:when test="${campaignDetail.status eq 'SCHEDULED'}">修改定时</c:when><c:otherwise>定时发送</c:otherwise></c:choose></button>
+            </form>
+          </c:if>
+          <c:if test="${campaignDetail.status eq 'SCHEDULED'}">
+            <form method="post" action="${ctx}/mobile/campaigns/action" data-mobile-campaign-action data-requires-guard="true" data-confirm-message="确认取消定时？活动将回到已批准状态，不会自动发送。">
+              <input type="hidden" name="shop" value="<c:out value='${campaignDetail.shopDomain}'/>"><input type="hidden" name="campaignId" value="<c:out value='${campaignDetail.campaignId}'/>"><input type="hidden" name="action" value="CANCEL_SCHEDULE"><button type="submit" class="danger" disabled>取消定时</button>
             </form>
           </c:if>
           <c:if test="${canManageCampaigns and campaignDetail.sendable}">
@@ -126,18 +177,27 @@
               <input type="hidden" name="shop" value="<c:out value='${campaignDetail.shopDomain}'/>"><input type="hidden" name="campaignId" value="<c:out value='${campaignDetail.campaignId}'/>"><input type="hidden" name="action" value="CANCEL"><button type="submit" class="danger" disabled>取消发送</button>
             </form>
           </c:if>
+          </c:if>
         </div>
       </section>
     </c:if>
 
-    <section class="md-detail-section" aria-labelledby="md-jobs-title">
-      <h2 id="md-jobs-title">发送任务</h2>
+    <details class="md-detail-section">
+      <summary>活动操作记录</summary>
+      <dl class="md-detail-list">
+        <div><dt>创建人</dt><dd><c:out value="${campaignActors.creator}" default="未记录"/><c:if test="${not empty campaignActors.createdAt}"><br><time data-browser-time="<c:out value='${campaignActors.createdAt}'/>" data-browser-time-format="date-time"><c:out value="${campaignActors.createdAt}"/></time></c:if></dd></div>
+        <div><dt>审批人</dt><dd><c:out value="${campaignActors.approver}" default="未记录"/><c:if test="${not empty campaignActors.approvedAt}"><br><time data-browser-time="<c:out value='${campaignActors.approvedAt}'/>" data-browser-time-format="date-time"><c:out value="${campaignActors.approvedAt}"/></time></c:if></dd></div>
+        <div><dt>执行人</dt><dd><c:out value="${campaignActors.executor}" default="未记录"/><c:if test="${not empty campaignActors.executedAt}"><br><time data-browser-time="<c:out value='${campaignActors.executedAt}'/>" data-browser-time-format="date-time"><c:out value="${campaignActors.executedAt}"/></time></c:if></dd></div>
+      </dl>
+    </details>
+    <details class="md-detail-section" <c:if test="${campaignDetail.status eq 'RUNNING' or campaignDetail.status eq 'QUEUED' or campaignDetail.status eq 'PAUSED'}">open</c:if>>
+      <summary id="md-jobs-title">发送任务明细</summary>
       <c:choose><c:when test="${empty campaignDetail.jobs}"><p>尚未创建发送任务。</p></c:when><c:otherwise>
         <c:forEach items="${campaignDetail.jobs}" var="job"><article class="md-detail-job"><strong><c:out value="${providerAliases[job.provider]}" default="${job.provider}"/> · <c:out value="${job.status}"/></strong><p><c:out value="${job.jobId}"/></p><progress max="100" value="<c:out value='${job.progressPercent}'/>"><c:out value="${job.progressPercent}"/>%</progress><small>已处理 <c:out value="${job.processed}"/> / <c:out value="${job.total}"/> · 失败 <c:out value="${job.failed}"/></small></article></c:forEach>
       </c:otherwise></c:choose>
-    </section>
+    </details>
   </main>
   <%@ include file="fragments/footer.jspf" %>
-  <script src="${ctx}/shopify/mobile/campaign-detail.js" defer></script>
+  <script src="${ctx}/shopify/mobile/campaign-detail.js?v=20261108-schedule" defer></script>
 </body>
 </html>

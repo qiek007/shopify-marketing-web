@@ -278,6 +278,7 @@
         </section>
 
         <%@ include file="fragments/manual-campaign-receipts.jspf" %>
+        <c:if test="${canManageHotCleanup}"><section class="content-section spaced-section" data-hot-cleanup data-base="${ctx}/campaigns/detail/hot-cleanup" data-shop="<c:out value="${campaignDetail.shopDomain}"/>" data-campaign="<c:out value="${campaignDetail.campaignId}"/>"><div class="section-heading"><div><h2>热数据清理</h2><p>核验不一致时，管理员可检查差异并决定是否清理。</p></div><button type="button" class="action-button" data-hot-cleanup-preview>检查并手动清理</button></div><p data-hot-cleanup-message aria-live="polite"></p></section></c:if>
 
         <section id="ga4-campaign-evaluation" class="content-section ga4-campaign-evaluation">
             <div class="section-heading">
@@ -843,5 +844,6 @@
 }());
 </script>
 <script src="${ctx}/shopify/js/manual-campaign-receipts.js?v=20261028-followup"></script>
+<script src="${ctx}/shopify/js/campaign-hot-cleanup.js?v=20261107-1"></script>
 </body>
 </html>

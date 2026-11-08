@@ -1,22 +1,46 @@
+<%@ page pageEncoding="UTF-8" %>
+<link rel="stylesheet" href="${ctx}/shopify/mobile/navigation.css?v=20261108-nav4">
 <header class="mobile-header">
     <div class="mobile-brand"><span class="mobile-brand-mark" aria-hidden="true">D</span><div><strong>滴答营销</strong><small>商户工作台</small></div></div>
     <c:choose>
         <c:when test="${not empty accessibleShops}">
-            <form class="mobile-shop" method="get" action="${ctx}/mobile/dashboard">
+            <c:set var="mobileShopPath" value="/mobile/dashboard"/>
+            <c:choose>
+                <c:when test="${mobilePage eq 'campaigns'}"><c:set var="mobileShopPath" value="/mobile/campaigns"/></c:when>
+                <c:when test="${mobilePage eq 'customers'}"><c:set var="mobileShopPath" value="/mobile/customers"/></c:when>
+                <c:when test="${mobilePage eq 'segments'}"><c:set var="mobileShopPath" value="/mobile/segments"/></c:when>
+                <c:when test="${mobilePage eq 'automations'}"><c:set var="mobileShopPath" value="/mobile/automations"/></c:when>
+            </c:choose>
+            <c:url var="mobileShopSwitchUrl" value="${mobileShopPath}"/>
+            <form class="mobile-shop" method="get" action="${mobileShopSwitchUrl}">
                 <label for="mobile-shop-select">当前店铺</label>
                 <div class="mobile-shop-row"><select id="mobile-shop-select" name="shop">
                     <c:forEach items="${accessibleShops}" var="shopItem"><option value="<c:out value='${shopItem.shopDomain}'/>" <c:if test="${shopItem.shopDomain eq selectedShop}">selected</c:if>><c:out value="${shopItem.displayName}" default="${shopItem.shopDomain}"/></option></c:forEach>
                 </select><button type="submit">切换</button></div>
+                <button class="mobile-shop-trigger" type="button" hidden aria-haspopup="dialog" aria-controls="mobile-shop-dialog"></button>
             </form>
         </c:when>
         <c:otherwise><p class="mobile-no-shop">暂无可用店铺</p></c:otherwise>
     </c:choose>
 </header>
+<dialog id="mobile-shop-dialog" class="mobile-shop-dialog" aria-labelledby="mobile-shop-heading">
+    <div class="mobile-shop-dialog-title"><h2 id="mobile-shop-heading">切换店铺</h2><button type="button" data-shop-close aria-label="关闭店铺选择">关闭</button></div>
+    <label for="mobile-shop-search">搜索店铺名称或域名</label>
+    <input id="mobile-shop-search" type="search" autocomplete="off" placeholder="输入店铺名称或域名">
+    <p data-shop-count role="status" aria-live="polite"></p>
+    <div data-shop-results class="mobile-shop-results"></div>
+</dialog>
 <nav class="mobile-nav" aria-label="营销工作台导航">
     <c:url var="mobileHomeUrl" value="/mobile/dashboard"><c:param name="shop" value="${selectedShop}"/></c:url>
     <c:url var="mobileCampaignUrl" value="/mobile/campaigns"><c:param name="shop" value="${selectedShop}"/></c:url>
     <a href="<c:out value='${mobileHomeUrl}'/>" <c:if test="${mobilePage eq 'dashboard'}">aria-current="page"</c:if>>数据总览</a>
-    <a href="<c:out value='${mobileCampaignUrl}'/>" <c:if test="${mobilePage eq 'campaigns'}">aria-current="page"</c:if>>营销活动</a>
+    <a href="<c:out value='${mobileCampaignUrl}'/>" data-mobile-list-return <c:if test="${mobilePage eq 'campaigns'}">aria-current="page"</c:if>>营销活动</a>
+    <c:url var="mobileAutomationsUrl" value="/mobile/automations"><c:param name="shop" value="${selectedShop}"/></c:url>
+    <a href="<c:out value='${mobileAutomationsUrl}'/>" <c:if test="${mobilePage eq 'automations'}">aria-current="page"</c:if>>自动营销</a>
+    <c:url var="mobileCustomerUrl" value="/mobile/customers"><c:param name="shop" value="${selectedShop}"/></c:url>
+    <a href="<c:out value='${mobileCustomerUrl}'/>" data-mobile-customer-return <c:if test="${mobilePage eq 'customers'}">aria-current="page"</c:if>>客户</a>
+    <c:url var="mobileSegmentsUrl" value="/mobile/segments"><c:param name="shop" value="${selectedShop}"/></c:url>
+    <a href="<c:out value='${mobileSegmentsUrl}'/>" <c:if test="${mobilePage eq 'segments'}">aria-current="page"</c:if>>客户分群</a>
 </nav>
 <script id="session-keepalive" src="${ctx}/shopify/js/session-keepalive.js" data-context-path="${ctx}" defer></script>
 <script src="${ctx}/shopify/js/browser-time.js" defer></script>

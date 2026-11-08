@@ -1,1 +1,8 @@
+<%@ page pageEncoding="UTF-8" %>
 <footer class="mobile-footer">滴答营销 · 商户工作台</footer>
+<dialog id="mobile-customer-preview" class="mobile-customer-dialog" aria-labelledby="mobile-customer-preview-title">
+    <div class="mobile-customer-dialog-heading"><h2 id="mobile-customer-preview-title">客户详情</h2><button type="button" data-customer-preview-close>关闭并返回</button></div>
+    <p data-customer-preview-loading role="status">正在读取客户详情…</p>
+    <div data-customer-preview-frame class="mobile-customer-frame"></div>
+</dialog>
+<script src="${ctx}/shopify/mobile/navigation.js?v=20261108-nav4" data-area="<c:out value='${mobilePage}'/>" data-context="<c:out value='${ctx}'/>" data-shop="<c:out value='${selectedShop}'/>" data-user="<c:out value='${logineduser.domainid}'/>:<c:out value='${logineduser.id}'/>" defer></script>

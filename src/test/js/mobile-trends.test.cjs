@@ -16,6 +16,38 @@ test('range summaries use the latest days and preserve zero values', () => {
     data.days = days().map(d => ({...d, emailSentCount: 0}));
     assert.equal(a.summarize(data, 7).sent, 0);
 });
+
+test('business-service LocalDate arrays produce the same summary as web ISO dates', () => {
+    const a = api();
+    const iso = {ready: true, shopifyOrdersAvailable: true, days: days()};
+    const arrays = {...iso, days: days().map(day => ({...day, date: day.date.split('-').map(Number)}))};
+    assert.equal(a.classify(arrays), 'ready');
+    assert.deepEqual(a.summarize(arrays, 7), a.summarize(iso, 7));
+    assert.deepEqual(arrays.days[0].date, [2026, 10, 1]);
+});
+
+test('invalid, duplicate and disordered calendar dates still reject incomplete data', () => {
+    const a = api();
+    for (const date of [[2026, 2, 30], [2026, 13, 1], [2026, 10], ['2026', 10, 30], '2026-02-30', '2026-10-32', null]) {
+        const data = {ready: true, days: days()};
+        data.days[29].date = date;
+        assert.equal(a.classify(data), 'incomplete');
+    }
+    const duplicate = {ready: true, days: days()};
+    duplicate.days[29].date = [2026, 10, 29];
+    assert.equal(a.classify(duplicate), 'incomplete');
+    const reversed = {ready: true, days: days().reverse().map(day => ({...day, date: day.date.split('-').map(Number)}))};
+    assert.equal(a.classify(reversed), 'incomplete');
+});
+
+test('mixed ISO and array dates across leap day stay on their calendar date', () => {
+    const a = api();
+    const leapDays = Array.from({length: 29}, (_, i) => ({date: [2024, 2, i + 1], emailSentCount: 0, emailDeliveredCount: 0}));
+    leapDays.push({date: '2024-03-01', emailSentCount: 0, emailDeliveredCount: 0});
+    const result = a.summarize({ready: true, days: leapDays}, 7);
+    assert.equal(result.days.at(-2).date, '2024-02-29');
+    assert.equal(result.days.at(-1).date, '2024-03-01');
+});
 test('missing counts and unavailable orders do not become zero', () => {
     const a = api();
     const data = {ready: true, shopifyOrdersAvailable: false, days: days()};

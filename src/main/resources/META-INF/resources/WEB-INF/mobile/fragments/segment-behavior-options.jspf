@@ -1,0 +1,11 @@
+<%@ page pageEncoding="UTF-8" %>
+<optgroup label="站内行为（可按次数）">
+<option value="BEHAVIOR_PRODUCT_VIEWED" ${rule.field eq 'BEHAVIOR_PRODUCT_VIEWED' ? 'selected' : ''}>有浏览记录</option>
+<option value="BEHAVIOR_PRODUCT_ADDED_TO_CART" ${rule.field eq 'BEHAVIOR_PRODUCT_ADDED_TO_CART' ? 'selected' : ''}>有加入购物车记录</option>
+<option value="BEHAVIOR_ORDER_COMPLETED" ${rule.field eq 'BEHAVIOR_ORDER_COMPLETED' ? 'selected' : ''}>有订单记录</option>
+</optgroup><optgroup label="邮件互动（可按次数）">
+<option value="BEHAVIOR_EMAIL_DELIVERED" ${rule.field eq 'BEHAVIOR_EMAIL_DELIVERED' ? 'selected' : ''}>已送达邮件</option>
+<option value="BEHAVIOR_EMAIL_OPENED" ${rule.field eq 'BEHAVIOR_EMAIL_OPENED' ? 'selected' : ''}>已打开邮件</option>
+<option value="BEHAVIOR_EMAIL_CLICKED" ${rule.field eq 'BEHAVIOR_EMAIL_CLICKED' ? 'selected' : ''}>已点击链接</option>
+<option value="BEHAVIOR_EMAIL_FAILED" ${rule.field eq 'BEHAVIOR_EMAIL_FAILED' ? 'selected' : ''}>发送失败／退信</option>
+</optgroup>

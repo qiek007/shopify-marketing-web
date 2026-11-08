@@ -32,7 +32,9 @@ class MobileMerchantControllerTest {
     }
 
     @Test void anonymousRequestsAreRejectedBeforeRpc() throws Exception {
-        mvc().perform(get("/mobile/campaigns")) .andExpect(status().isUnauthorized());
+        for (String path : java.util.List.of("/mobile/campaigns", "/mobile/segments", "/mobile/automations", "/mobile/customers")) {
+            mvc().perform(get(path)).andExpect(status().isUnauthorized());
+        }
         verifyNoInteractions(client);
     }
 
@@ -42,7 +44,10 @@ class MobileMerchantControllerTest {
                 {"/mobile/dashboard", "dashboard.load", "shopify/dashboard", "mobile/dashboard"},
                 {"/mobile/campaigns", "campaigns.page", "shopify/campaigns", "mobile/campaigns"},
                 {"/mobile/campaigns/editor", "campaigns.editor", "shopify/campaign-editor", "mobile/campaign-editor"},
-                {"/mobile/campaigns/detail", "campaigns.detail", "shopify/campaign-detail", "mobile/campaign-detail"}
+                {"/mobile/campaigns/detail", "campaigns.detail", "shopify/campaign-detail", "mobile/campaign-detail"},
+                {"/mobile/segments", "segments.page", "shopify/segments", "mobile/segments"},
+                {"/mobile/segments/editor", "segments.editor", "shopify/segment-editor", "mobile/segment-editor"},
+                {"/mobile/automations", "automations.page", "shopify/automations", "mobile/automations"}
         };
         MockMvc mvc = mvc();
         for (String[] route : routes) {
@@ -80,6 +85,34 @@ class MobileMerchantControllerTest {
         verifyNoInteractions(client);
     }
 
+    @Test void segmentPreviewPreservesSingleRuleArraysWithoutSaving() throws Exception {
+        when(client.exchange(eq("segments.preview-results"), any(), any(), any(), isNull()))
+                .thenReturn(MerchantWebProtocol.view("shopify/fragments/segment-preview-results", new JSONObject()));
+        mvc().perform(post("/mobile/segments/preview/results").session(session()).param("shop", "demo.myshopify.com")
+                        .param("groupIds", "g1").param("groupMatchModes", "ALL").param("ruleGroupIds", "g1")
+                        .param("fields", "EMAIL").param("operators", "CONTAINS").param("values", "@example.com"))
+                .andExpect(status().isOk()).andExpect(view().name("mobile/fragments/segment-preview-results"));
+        verify(client).exchange(eq("segments.preview-results"), any(), any(), argThat(p ->
+                p.getJSONArray("groupIds").size() == 1 && p.getJSONArray("fields").size() == 1
+                        && "@example.com".equals(p.getJSONArray("values").getString(0))), isNull());
+        verify(client, never()).exchange(eq("segments.save"), any(), any(), any(), any());
+    }
+
+    @Test void segmentAndAutomationWritesKeepTheirMobileRedirectsAndMessages() throws Exception {
+        String[][] routes = {
+                {"/mobile/segments", "segments.save", "/segments", "redirect:/mobile/segments"},
+                {"/mobile/automations", "automations.create", "/automations", "redirect:/mobile/automations"},
+                {"/mobile/automations/update", "automations.update", "/automations", "redirect:/mobile/automations"},
+                {"/mobile/automations/action", "automations.action", "/automations", "redirect:/mobile/automations"}
+        };
+        for (String[] route : routes) {
+            when(client.exchange(eq(route[1]), any(), any(), any(), isNull()))
+                    .thenReturn(MerchantWebProtocol.redirect(route[2], "已处理", null, new JSONObject(Map.of("shop", "a.example"))));
+            mvc().perform(post(route[0]).session(session()).param("shop", "a.example").param("status", "PAUSED"))
+                    .andExpect(view().name(route[3])).andExpect(flash().attribute("successMessage", "已处理"));
+        }
+    }
+
     @Test void actionRedirectRetainsParametersAndFlash() throws Exception {
         when(client.exchange(eq("campaigns.action"), any(), any(), any(), isNull()))
                 .thenReturn(MerchantWebProtocol.redirect("/campaigns/detail", "done", null,
@@ -114,5 +147,51 @@ class MobileMerchantControllerTest {
         when(client.exchange(eq("campaigns.page"), any(), any(), any(), isNull()))
                 .thenReturn(MerchantWebProtocol.error("FORBIDDEN", "Denied", 403));
         mvc().perform(get("/mobile/campaigns").session(session())).andExpect(status().isForbidden());
+    }
+
+    @Test void customerListCombinesTheAuthorizedShellWithTheRealResults() throws Exception {
+        when(client.exchange(eq("customers.page"), any(), eq("a.example"), any(), isNull()))
+                .thenReturn(MerchantWebProtocol.view("shopify/customers", new JSONObject(Map.of("selectedShop", "a.example"))));
+        var customers = new com.alibaba.fastjson.JSONArray();
+        customers.add(new JSONObject(Map.of("sourceId", "c1", "email", "demo@example.com")));
+        when(client.exchange(eq("customers.results"), any(), eq("a.example"), any(), isNull()))
+                .thenReturn(MerchantWebProtocol.view("shopify/fragments/customer-results", new JSONObject(Map.of("customers", customers))));
+        mvc().perform(get("/mobile/customers").session(session()).param("shop", "a.example").param("q", "demo").param("page", "2"))
+                .andExpect(status().isOk()).andExpect(view().name("mobile/customers"))
+                .andExpect(model().attribute("customers", customers));
+        verify(client).exchange(eq("customers.results"), any(), eq("a.example"),
+                argThat(p -> "demo".equals(p.getString("q")) && "2".equals(p.getString("page"))), isNull());
+    }
+
+    @Test void customerDetailUsesJsonShellAndIndependentTimelineDates() throws Exception {
+        when(client.exchange(eq("shell.load"), any(), eq("a.example"), any(), isNull()))
+                .thenReturn(MerchantWebProtocol.json(new JSONObject(Map.of("selectedShop", "a.example"))));
+        var summary = new JSONObject(Map.of("customer", new JSONObject(Map.of("sourceId", "c1"))));
+        when(client.exchange(eq("customers.summary"), any(), eq("a.example"), any(), isNull()))
+                .thenReturn(MerchantWebProtocol.json(summary));
+        var timeline = new JSONObject(Map.of("totalCount", 3));
+        when(client.exchange(eq("customers.timeline"), any(), eq("a.example"), any(), isNull()))
+                .thenReturn(MerchantWebProtocol.json(timeline));
+        mvc().perform(get("/mobile/customers/detail").session(session()).param("shop", "a.example").param("customerId", "c1")
+                        .param("fromDate", "2026-01-01").param("timelineFromDate", "2026-11-01").param("timelineToDate", "2026-11-08"))
+                .andExpect(status().isOk()).andExpect(view().name("mobile/customer-detail"))
+                .andExpect(model().attribute("timelineWindow", timeline));
+        verify(client).exchange(eq("customers.timeline"), any(), eq("a.example"),
+                argThat(p -> "2026-11-01".equals(p.getString("fromDate")) && "c1".equals(p.getString("customerId"))), isNull());
+    }
+
+    @Test void customerDetailLoadsThirtyDaysEvenWhenSummaryHasNoTimeline() throws Exception {
+        when(client.exchange(eq("shell.load"), any(), eq("a.example"), any(), isNull()))
+                .thenReturn(MerchantWebProtocol.json(new JSONObject(Map.of("selectedShop", "a.example"))));
+        when(client.exchange(eq("customers.summary"), any(), eq("a.example"), any(), isNull()))
+                .thenReturn(MerchantWebProtocol.json(new JSONObject(Map.of("customer", new JSONObject(Map.of("sourceId", "c1"))))));
+        var timeline = new JSONObject(Map.of("totalCount", 0));
+        when(client.exchange(eq("customers.timeline"), any(), eq("a.example"), any(), isNull()))
+                .thenReturn(MerchantWebProtocol.json(timeline));
+        mvc().perform(get("/mobile/customers/detail").session(session()).param("shop", "a.example").param("customerId", "c1"))
+                .andExpect(status().isOk()).andExpect(model().attribute("timelineWindow", timeline));
+        verify(client).exchange(eq("customers.timeline"), any(), eq("a.example"), argThat(p ->
+                java.time.temporal.ChronoUnit.DAYS.between(java.time.LocalDate.parse(p.getString("fromDate")),
+                        java.time.LocalDate.parse(p.getString("toDate"))) == 29), isNull());
     }
 }

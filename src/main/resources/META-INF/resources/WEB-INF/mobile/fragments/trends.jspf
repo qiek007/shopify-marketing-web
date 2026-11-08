@@ -1,3 +1,4 @@
+<%@ page pageEncoding="UTF-8" %>
 <style>
   .mobile-trends { margin:16px 0; padding:18px; border:1px solid #dce8e2; border-radius:12px; background:#fff; }
   .mobile-trends h2 { margin:0 0 4px; font-size:18px; }
@@ -30,4 +31,4 @@
     <details><summary>查看每日邮件明细</summary><div class="mobile-trends-rows" data-mobile-trend-rows></div></details>
   </div>
 </section>
-<script src="${ctx}/shopify/mobile/trends.js" defer></script>
+<script src="${ctx}/shopify/mobile/trends.js?v=20261108-dates" defer></script>

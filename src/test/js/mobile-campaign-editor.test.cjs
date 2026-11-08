@@ -19,6 +19,24 @@ test('requires explicit confirmation when no segment is selected', () => {
   assert.equal(editor.audienceAllowed('segment-1', false), true);
 });
 
+test('creation steps require content, audience confirmation and a channel before review', () => {
+  const values = {name: '周末活动', templateReady: true, segment: 'members', allCustomers: false, channelCount: 1};
+  assert.equal(editor.creationStepError(0, values), '');
+  assert.match(editor.creationStepError(0, {...values, name: ' '}), /名称/);
+  assert.match(editor.creationStepError(0, {...values, templateReady: false}), /模板/);
+  assert.match(editor.creationStepError(1, {...values, segment: ''}), /分群/);
+  assert.equal(editor.creationStepError(1, {...values, segment: '', allCustomers: true}), '');
+  assert.match(editor.creationStepError(2, {...values, channelCount: 0}), /通道/);
+  assert.equal(editor.creationStepError(2, values), '');
+});
+
+test('only custom variables referenced by the selected template are editable', () => {
+  assert.deepEqual(JSON.parse(JSON.stringify(editor.referencedCustomVariables({
+    customVariables: {campaignMessage: '', greeting: '欢迎'},
+    referencedVariables: ['greeting', 'email']
+  }))), {greeting: '欢迎'});
+});
+
 test('new activities use PC-equivalent equal weights for the selected channels', () => {
   assert.deepEqual(JSON.parse(editor.equalChannelWeights(['SENDGRID', 'MAILGUN'])), {SENDGRID: 1, MAILGUN: 1});
   assert.deepEqual(JSON.parse(editor.equalChannelWeights(['MAILGUN'])), {MAILGUN: 1});

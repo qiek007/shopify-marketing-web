@@ -1,0 +1,23 @@
+.mc-form,.mc-card,.mc-section { background:#fff; border:1px solid #dce8e1; border-radius:14px; padding:16px; margin:14px 0; }
+.mc-form label { display:grid; gap:6px; font-weight:600; margin:12px 0; }
+.mc-form input,.mc-form select { width:100%; min-width:0; min-height:44px; padding:9px 10px; box-sizing:border-box; border:1px solid #afc2b6; border-radius:8px; background:#fff; font:inherit; font-size:16px; }
+.mc-form .mc-checkbox { display:flex; align-items:center; gap:8px; }
+.mc-form .mc-checkbox input { width:20px; height:20px; min-height:0; }
+.mc-form summary,.mc-section summary { cursor:pointer; overflow-wrap:anywhere; font-weight:700; color:#19583f; padding:8px 0; }
+.mc-range { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.mc-hint,.mc-meta { color:#61746a; font-size:13px; line-height:1.55; }
+.mc-card { display:block; color:inherit; text-decoration:none; overflow-wrap:anywhere; }
+.mc-card h2,.mc-section h2 { font-size:17px; margin:0 0 8px; }
+.mc-card p,.mc-section p { margin:6px 0; }
+.mc-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.mc-tag { max-width:100%; overflow-wrap:anywhere; border-radius:20px; padding:3px 8px; background:#e8f4ed; color:#246146; font-size:12px; }
+.mc-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.mc-stat { background:#f3f8f4; border-radius:8px; padding:10px; overflow-wrap:anywhere; }
+.mc-stat strong,.mc-stat span { display:block; }
+.mc-stat span { color:#61746a; font-size:12px; }
+.mc-order,.mc-event { border-top:1px solid #e4ece6; padding:12px 0; overflow-wrap:anywhere; }
+.mc-actions { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:14px 0; }
+.mc-button { min-height:44px; padding:10px 14px; border:1px solid #176c4c; border-radius:8px; color:#176c4c; background:#fff; font:inherit; text-decoration:none; }
+.mc-button.primary { background:#176c4c; color:#fff; }
+.mc-alert { padding:12px; background:#fff3e4; border-radius:8px; line-height:1.5; }
+.mc-section details { margin:10px 0; }

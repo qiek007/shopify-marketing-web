@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>创建营销活动</title>
-    <link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css">
+    <link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css?v=20261108">
     <style>
         .mobile-editor-intro { margin: 0 0 20px; color: #536b64; line-height: 1.6; }
         .mobile-editor-card { margin: 0 0 14px; padding: 18px; border: 1px solid #d9e7df; border-radius: 14px; background: #fff; }
@@ -29,13 +29,28 @@
         .mobile-preview-frame { width: 100%; min-height: 320px; border: 1px solid #d9e7df; background: white; }
         .mobile-test-record { padding: 12px 0; border-top: 1px solid #d9e7df; overflow-wrap: anywhere; }
         .mobile-test-record p { margin: 5px 0; }
+        .mobile-editor-progress { margin: 0 0 14px; }
+        .mobile-editor-progress ol { display: flex; padding: 0; margin: 0 0 8px; list-style: none; gap: 6px; }
+        .mobile-editor-progress li { flex: 1; text-align: center; padding: 7px 0; border-bottom: 3px solid #d9e7df; color: #657970; font-size: 13px; }
+        .mobile-editor-progress li[aria-current=step] { border-color: #087453; color: #087453; font-weight: 700; }
+        .mobile-editor-progress p { margin: 0; color: #657970; font-size: 12px; }
+        .mobile-step-navigation { position: sticky; bottom: 0; display: flex; justify-content: space-between; gap: 10px; padding: 12px 0 max(12px, env(safe-area-inset-bottom)); background: #f3f7f4; z-index: 2; }
+        .mobile-step-navigation button { flex: 1; min-height: 46px; border: 1px solid #176c4c; border-radius: 9px; background: #fff; color: #176c4c; font: inherit; font-weight: 700; }
+        #mobile-editor-next, #mobile-save-campaign { background: #176c4c; color: #fff; }
+        .mobile-step-error { padding: 10px 12px; color: #962f25; background: #fff0ed; border-radius: 8px; }
+        .mobile-editor-review { margin: 0 0 16px; }
+        .mobile-editor-review div { padding: 10px 0; border-bottom: 1px solid #e7eee9; }
+        .mobile-editor-review dt { font-size: 12px; color: #657970; }
+        .mobile-editor-review dd { margin: 4px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+        [hidden] { display: none !important; }
     </style>
 </head>
 <body>
 <%@ include file="fragments/header.jspf" %>
 <main class="mobile-main">
-    <h1>创建营销活动</h1>
-    <p class="mobile-editor-intro">选择已发布模板和受众，保存草稿后可测试及提交审批。发送前需完成受众冻结。</p>
+    <a class="mobile-button" data-mobile-list-return href="<c:out value='${mobileCampaignListUrl}'/>">← 活动列表</a>
+    <h1><c:choose><c:when test="${editorCampaign.existing}">测试邮件</c:when><c:otherwise>创建营销活动</c:otherwise></c:choose></h1>
+    <p class="mobile-editor-intro">保存为草稿后，可在详情中测试邮件和提交审批。</p>
     <c:if test="${not empty successMessage}"><p class="mobile-notice" role="status"><c:out value="${successMessage}" /></p></c:if>
     <c:if test="${not empty errorMessage}"><p class="mobile-notice error" role="alert"><c:out value="${errorMessage}" /></p></c:if>
     <c:choose>
@@ -83,12 +98,17 @@
         </c:when>
         <c:otherwise>
             <form id="mobile-campaign-form" method="post" action="${ctx}/mobile/campaigns" data-context="<c:out value='${ctx}'/>">
+                <div class="mobile-editor-progress" id="mobile-editor-progress" hidden>
+                    <ol aria-label="创建步骤"><li>1 内容</li><li>2 受众</li><li>3 通道</li><li>4 确认</li></ol>
+                    <p id="mobile-editor-step-status" role="status" aria-live="polite"></p>
+                </div>
+                <p id="mobile-editor-step-error" class="mobile-step-error" role="alert" hidden></p>
                 <input type="hidden" name="shop" value="<c:out value='${selectedShop}'/>">
                 <input type="hidden" name="campaignVariables" value="{}">
                 <input type="hidden" name="channelWeightsJson" disabled>
-                <section class="mobile-editor-card">
+                <section class="mobile-editor-card" data-editor-step>
                     <h2>01 · 活动内容</h2>
-                    <label><span>活动名称</span><input type="text" name="name" maxlength="255" required></label>
+                    <label><span>活动名称</span><input type="text" name="name" maxlength="255" enterkeyhint="next" autocomplete="off" required></label>
                     <label><span>已发布邮件模板</span>
                         <select name="templateId" required>
                             <option value="">请选择模板</option>
@@ -106,7 +126,7 @@
                     </div>
                     <p class="mobile-note">商品、优惠券及复杂模板请在电脑端配置。</p>
                 </section>
-                <section class="mobile-editor-card">
+                <section class="mobile-editor-card" data-editor-step>
                     <h2>02 · 选择受众</h2>
                     <label><span>已有客户分群</span><select name="segmentId"><option value="">不使用客户分群</option>
                         <c:forEach items="${segments}" var="segment"><option value="<c:out value='${segment.segmentId}'/>"><c:out value="${segment.name}" /> · <c:out value="${segment.ruleSummary}" /></option></c:forEach>
@@ -114,7 +134,7 @@
                     <label class="mobile-check"><input type="checkbox" name="allCustomersConfirmed" value="true"><span>未选择分群时，我确认面向全部符合发送资格的客户。</span></label>
                     <p class="mobile-note">需要组合客户标签时，请在电脑端创建活动。</p>
                 </section>
-                <section class="mobile-editor-card">
+                <section class="mobile-editor-card" data-editor-step>
                     <h2>03 · 发送配置</h2>
                     <p class="mobile-note">请选择发送通道，按选中通道等权分配批次。重复发送间隔默认 24 小时，数据保留 14 天；归因来源为 auw、媒介为 email。</p>
                     <c:choose><c:when test="${empty senderSettings}"><p role="alert">当前店铺没有可用的发送通道，请先在电脑端配置。</p></c:when>
@@ -123,16 +143,21 @@
                             <span><strong><c:out value="${providerAliases[setting.provider]}" default="${setting.provider}" /></strong><br><c:out value="${setting.fromHeader}" /></span></label>
                     </c:forEach></c:otherwise></c:choose>
                 </section>
-                <section class="mobile-editor-card">
+                <section class="mobile-editor-card" data-editor-step>
                     <h2>04 · 保存草稿</h2>
+                    <dl id="mobile-editor-review" class="mobile-editor-review"></dl>
                     <p class="mobile-note">保存后可在活动详情中测试、提交审批并查看进度。</p>
-                    <div class="mobile-editor-actions"><a href="<c:out value='${mobileCampaignListUrl}'/>">取消</a><button type="submit" id="mobile-save-campaign" disabled>保存活动</button></div>
                 </section>
+                <div class="mobile-step-navigation">
+                    <button type="button" id="mobile-editor-previous" hidden>上一步</button>
+                    <button type="button" id="mobile-editor-next" hidden>下一步</button>
+                    <button type="submit" id="mobile-save-campaign" disabled>保存活动</button>
+                </div>
             </form>
         </c:otherwise>
     </c:choose>
 </main>
 <%@ include file="fragments/footer.jspf" %>
-<script src="${ctx}/shopify/mobile/campaign-editor.js" defer></script>
+<script src="${ctx}/shopify/mobile/campaign-editor.js?v=20261108-steps2" defer></script>
 </body>
 </html>

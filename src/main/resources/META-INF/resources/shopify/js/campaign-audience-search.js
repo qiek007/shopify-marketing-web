@@ -11,6 +11,17 @@
             }
         });
     }
+    var templateRoot = document.getElementById('campaign-template-picker');
+    var templateSelect = document.getElementById('campaign-template');
+    if (templateRoot && templateSelect && templateSelect.options.length && window.CampaignSearchPicker) {
+        window.CampaignSearchPicker.create(templateRoot, templateSelect, {
+            includeEmpty: true, delay: 80,
+            load: function () {},
+            match: function (option, query) {
+                return !query || option.textContent.toLocaleLowerCase().includes(query.toLocaleLowerCase());
+            }
+        });
+    }
     document.querySelectorAll('.campaign-audience-tags .customer-tag-select').forEach(function (picker) {
         var input = picker.querySelector('[data-tag-search]');
         var empty = picker.querySelector('[data-tag-search-empty]');
