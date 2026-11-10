@@ -13,6 +13,7 @@
   <title>活动详情</title>
   <link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css?v=20261108">
   <link rel="stylesheet" href="${ctx}/shopify/mobile/status.css?v=20261108">
+  <link rel="stylesheet" href="${ctx}/shopify/mobile/campaign-recipients.css?v=20261110-status">
   <style>
     .md-detail-back { display:inline-block; margin:8px 0 16px; color:#17644a; text-decoration:none; font-weight:650; }
     .md-detail-title { margin:0; overflow-wrap:anywhere; font-size:26px; line-height:1.3; }
@@ -196,8 +197,41 @@
         <c:forEach items="${campaignDetail.jobs}" var="job"><article class="md-detail-job"><strong><c:out value="${providerAliases[job.provider]}" default="${job.provider}"/> · <c:out value="${job.status}"/></strong><p><c:out value="${job.jobId}"/></p><progress max="100" value="<c:out value='${job.progressPercent}'/>"><c:out value="${job.progressPercent}"/>%</progress><small>已处理 <c:out value="${job.processed}"/> / <c:out value="${job.total}"/> · 失败 <c:out value="${job.failed}"/></small></article></c:forEach>
       </c:otherwise></c:choose>
     </details>
+    <section class="md-detail-section" id="md-recipient-section" data-mobile-recipients
+             data-url="${ctx}/campaigns/detail/recipients" data-context="<c:out value='${ctx}'/>"
+             data-shop="<c:out value='${campaignDetail.shopDomain}'/>" data-campaign="<c:out value='${campaignDetail.campaignId}'/>"
+             data-user="<c:out value='${logineduser.domainid}'/>:<c:out value='${logineduser.id}'/>">
+      <h2>收件人执行明细</h2>
+      <p class="mr-intro">发送、送达、打开、点击和下单状态按客户归并展示。每页 10 条，可打开客户查看资料、订单与行为。</p>
+      <form class="mr-filter" data-recipient-form method="get" action="${ctx}/mobile/campaigns/detail">
+        <input type="hidden" name="shop" value="<c:out value='${campaignDetail.shopDomain}'/>"><input type="hidden" name="campaignId" value="<c:out value='${campaignDetail.campaignId}'/>">
+        <label for="mr-search">搜索收件人<input id="mr-search" type="search" name="q" maxlength="255" value="<c:out value='${campaignFilter.search}'/>" placeholder="客户姓名、邮箱或 ID"></label>
+        <div class="mr-filter-row">
+          <label for="mr-provider">发送通道<select id="mr-provider" name="provider"><option value="ALL">全部通道</option><c:forEach items="${campaignDetail.providers}" var="provider"><option value="<c:out value='${provider}'/>" <c:if test="${campaignFilter.provider eq provider}">selected</c:if>><c:out value="${providerAliases[provider]}" default="${provider}"/></option></c:forEach></select></label>
+          <label for="mr-lifecycle">执行状态<select id="mr-lifecycle" name="lifecycle">
+            <option value="ALL">全部状态</option>
+            <option value="PENDING" <c:if test="${campaignFilter.lifecycle eq 'PENDING'}">selected</c:if>>待处理</option>
+            <option value="ACCEPTED" <c:if test="${campaignFilter.lifecycle eq 'ACCEPTED'}">selected</c:if>>已接受</option>
+            <c:if test="${canFilterCampaignNoFeedback}"><option value="NO_FEEDBACK" <c:if test="${campaignFilter.lifecycle eq 'NO_FEEDBACK'}">selected</c:if>>无回执</option></c:if>
+            <option value="DELIVERED" <c:if test="${campaignFilter.lifecycle eq 'DELIVERED'}">selected</c:if>>已送达</option>
+            <option value="OPENED" <c:if test="${campaignFilter.lifecycle eq 'OPENED'}">selected</c:if>>已打开</option>
+            <option value="CLICKED" <c:if test="${campaignFilter.lifecycle eq 'CLICKED'}">selected</c:if>>已点击</option>
+            <option value="CONVERTED" <c:if test="${campaignFilter.lifecycle eq 'CONVERTED'}">selected</c:if>>已下单</option>
+            <option value="FAILED" <c:if test="${campaignFilter.lifecycle eq 'FAILED'}">selected</c:if>>失败</option>
+            <option value="UNKNOWN" <c:if test="${campaignFilter.lifecycle eq 'UNKNOWN'}">selected</c:if>>结果未知</option>
+            <option value="BOUNCED" <c:if test="${campaignFilter.lifecycle eq 'BOUNCED'}">selected</c:if>>退信</option>
+            <option value="UNSUBSCRIBED" <c:if test="${campaignFilter.lifecycle eq 'UNSUBSCRIBED'}">selected</c:if>>退订</option>
+            <option value="COMPLAINT" <c:if test="${campaignFilter.lifecycle eq 'COMPLAINT'}">selected</c:if>>投诉</option>
+          </select></label>
+        </div>
+        <div class="mr-filter-actions"><button type="submit">查询</button><button type="button" data-recipient-clear>清除筛选</button></div>
+      </form>
+      <p class="mr-state" data-recipient-state role="status" aria-live="polite">收件人明细加载中…</p>
+      <div data-recipient-results></div>
+    </section>
   </main>
   <%@ include file="fragments/footer.jspf" %>
   <script src="${ctx}/shopify/mobile/campaign-detail.js?v=20261108-schedule" defer></script>
+  <script src="${ctx}/shopify/mobile/campaign-recipients.js?v=20261110-3" defer></script>
 </body>
 </html>

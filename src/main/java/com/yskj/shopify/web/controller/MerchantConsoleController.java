@@ -91,6 +91,12 @@ public class MerchantConsoleController {
         return body("dashboard.trends", params, session, null);
     }
 
+    @GetMapping(value = "/dashboard/trends/hourly", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> hourlyTrends(@RequestParam MultiValueMap<String, String> params,
+                                          HttpSession session) {
+        return body("dashboard.trends.hourly", params, session, null);
+    }
+
     @GetMapping("/dashboard/trends/export.xlsx")
     public ResponseEntity<?> exportTrends(
             @RequestParam MultiValueMap<String, String> params, HttpSession session) {

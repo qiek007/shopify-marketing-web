@@ -7,8 +7,13 @@
 
     function matchingShops(shops, query) {
         var search = String(query || '').trim().toLocaleLowerCase();
+        var collator = new Intl.Collator('zh-CN', {numeric:true, sensitivity:'base', ignorePunctuation:true});
         return shops.filter(function (shop) {
             return (shop.name + ' ' + shop.id).toLocaleLowerCase().includes(search);
+        }).sort(function (left, right) {
+            var leftName = (left.name || '').trim() || left.id;
+            var rightName = (right.name || '').trim() || right.id;
+            return collator.compare(leftName, rightName) || collator.compare(left.id, right.id);
         });
     }
 
@@ -53,7 +58,7 @@
         var currentFrame = null;
         document.addEventListener('click', function (event) {
             if (event.defaultPrevented || event.button > 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-            var link = event.target.closest('.ms-result a[href], .ma-journey a[href]');
+            var link = event.target.closest('.ms-result a[href], .ma-journey a[href], .md-recipient-card a[data-recipient-customer]');
             if (!link) return;
             var url = customerPreviewUrl(link.href, win.location.origin, context, shop);
             if (!url) return;
@@ -78,6 +83,57 @@
                 trigger.scrollIntoView({block: 'center'});
             }
         });
+    }
+
+    function initShopMemory(win, script) {
+        var context = (script.dataset.context || '').replace(/\/$/, '');
+        var user = (script.dataset.user || '').trim();
+        if (!user || /^:*$/.test(user)) return false;
+        var form = win.document.querySelector('.mobile-shop');
+        var select = form && form.querySelector('select[name=shop]');
+        if (!select) return false;
+        var shops = Array.prototype.map.call(select.options, function (option) { return option.value; });
+        var key = 'mobile-last-shop:' + JSON.stringify([context, user]);
+        var saved;
+        try { saved = win.localStorage.getItem(key); } catch (error) { saved = null; }
+        var available = shops.find(function (shop) { return saved && shop.toLowerCase() === saved.toLowerCase(); });
+        if (saved && !available) {
+            try { win.localStorage.removeItem(key); } catch (error) { /* Storage can be disabled in embedded browsers. */ }
+        }
+        var entry = false;
+        try {
+            var current = new URL(win.location.href);
+            var pages = ['', '/', '/dashboard', '/campaigns', '/automations', '/customers', '/segments'];
+            entry = current.origin === win.location.origin && pages.some(function (page) {
+                return current.pathname === context + '/mobile' + page;
+            }) && !current.hash && Array.from(current.searchParams.keys()).every(function (name) { return name === 'shop'; });
+            var referrer = win.document.referrer && new URL(win.document.referrer);
+            if (referrer && referrer.origin === current.origin && (referrer.pathname === context + '/mobile'
+                    || referrer.pathname.indexOf(context + '/mobile/') === 0)) entry = false;
+            var navigation = win.performance && win.performance.getEntriesByType
+                ? win.performance.getEntriesByType('navigation')[0] : null;
+            if (navigation && (navigation.type === 'reload' || navigation.type === 'back_forward')) entry = false;
+            if (entry && available && available !== select.value) {
+                var destination = new URL(form.action, current.origin);
+                if (destination.origin === current.origin && pages.some(function (page) {
+                    return destination.pathname === context + '/mobile' + page;
+                })) {
+                    destination.search = '';
+                    destination.hash = '';
+                    destination.searchParams.set('shop', available);
+                    win.location.replace(destination.pathname + destination.search);
+                    return true;
+                }
+            }
+        } catch (error) { /* Keep the current authorized shop if entry detection is unavailable. */ }
+        function rememberSelection() {
+            if (shops.indexOf(select.value) < 0) return;
+            try { win.localStorage.setItem(key, select.value); } catch (error) { /* Shop switching still works without storage. */ }
+        }
+        rememberSelection();
+        form.addEventListener('submit', rememberSelection);
+        win.addEventListener('pageshow', rememberSelection);
+        return false;
     }
 
     function initShopPicker(win) {
@@ -121,6 +177,7 @@
         }
 
         trigger.textContent = select.options[select.selectedIndex].text.trim() + ' ▾';
+        trigger.setAttribute('aria-label', '切换店铺：' + select.options[select.selectedIndex].text.trim());
         trigger.title = select.value;
         trigger.hidden = false;
         form.querySelector('.mobile-shop-row').hidden = true;
@@ -136,12 +193,14 @@
         win.addEventListener('pageshow', function () {
             trigger.disabled = false;
             trigger.textContent = select.options[select.selectedIndex].text.trim() + ' ▾';
+            trigger.setAttribute('aria-label', '切换店铺：' + select.options[select.selectedIndex].text.trim());
         });
     }
 
     function init(win, script) {
         if (!script) return;
         var document = win.document;
+        if (initShopMemory(win, script)) return;
         initShopPicker(win);
         var context = script.dataset.context || '';
         var shop = script.dataset.shop || '';
@@ -196,5 +255,5 @@
     }
 
     return {matchingShops: matchingShops, listReturnUrl: listReturnUrl, dateRangeValid: dateRangeValid,
-        customerPreviewUrl: customerPreviewUrl, init: init};
+        customerPreviewUrl: customerPreviewUrl, initShopMemory: initShopMemory, init: init};
 }));

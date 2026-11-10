@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/><c:set var="mobilePage" value="segments"/>
 <c:url var="listUrl" value="/mobile/segments"><c:param name="shop" value="${selectedShop}"/><c:param name="q" value="${param.q}"/><c:param name="page" value="${param.page}"/></c:url>
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>分群规则 · 滴答营销</title><link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css"><link rel="stylesheet" href="${ctx}/shopify/mobile/segments.css?v=20261108-segments1"></head><body>
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>分群规则 · 滴答营销</title><link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css"><link rel="stylesheet" href="${ctx}/shopify/mobile/segments.css?v=20261110-borderless"></head><body>
 <%@ include file="fragments/header.jspf" %><main class="mobile-main">
 <p><a class="ms-button" href="<c:out value='${listUrl}'/>">← 返回分群列表</a></p><section class="mobile-page-title"><p class="mobile-eyebrow">SEGMENT / 客户分群</p><h1><c:choose><c:when test="${editorSegment.existing}">查看 / 编辑分群</c:when><c:otherwise>新建分群</c:otherwise></c:choose></h1><p>组内、组间均可选择全部满足或任一满足，最多 20 条条件。</p></section>
 <c:if test="${not empty errorMessage}"><p class="mobile-notice error" role="alert"><c:out value="${errorMessage}"/></p></c:if>

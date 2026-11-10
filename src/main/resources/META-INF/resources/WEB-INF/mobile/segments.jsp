@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/><c:set var="mobilePage" value="segments"/>
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>客户分群 · 滴答营销</title><link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css"><link rel="stylesheet" href="${ctx}/shopify/mobile/segments.css?v=20261108-segments1"></head><body>
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>客户分群 · 滴答营销</title><link rel="stylesheet" href="${ctx}/shopify/mobile/mobile.css"><link rel="stylesheet" href="${ctx}/shopify/mobile/segments.css?v=20261110-borderless"></head><body>
 <%@ include file="fragments/header.jspf" %><main class="mobile-main">
 <section class="mobile-page-title"><p class="mobile-eyebrow">SEGMENTS / 客户分群</p><h1>客户分群</h1><p>查看规则与受众，已冻结的活动受众不受分群修改影响。</p></section>
 <c:if test="${not empty successMessage}"><p class="mobile-notice" role="status"><c:out value="${successMessage}"/></p></c:if><c:if test="${not empty errorMessage}"><p class="mobile-notice error" role="alert"><c:out value="${errorMessage}"/></p></c:if>

@@ -3,7 +3,7 @@
   .mobile-trends { margin:16px 0; padding:18px; border:1px solid #dce8e2; border-radius:12px; background:#fff; }
   .mobile-trends h2 { margin:0 0 4px; font-size:18px; }
   .mobile-trends-intro,.mobile-trends-meta,.mobile-trends-period { color:#526b60; font-size:13px; line-height:1.55; }
-  .mobile-trends-range { display:flex; gap:8px; margin:12px 0; }
+  .mobile-trends-range { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
   .mobile-trends-range button { min-height:40px; padding:7px 14px; border:1px solid #b7d0c2; border-radius:20px; background:#fff; color:#17644a; font:inherit; }
   .mobile-trends-range button[aria-pressed=true] { border-color:#17644a; background:#17644a; color:#fff; }
   .mobile-trends-totals { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
@@ -11,24 +11,34 @@
   .mobile-trends-totals span,.mobile-trends-totals strong { display:block; overflow-wrap:anywhere; }
   .mobile-trends-totals span { color:#526b60; font-size:12px; }
   .mobile-trends-totals strong { margin-top:6px; color:#123e31; font-size:17px; }
-  .mobile-trends details { margin-top:14px; }
-  .mobile-trends summary { color:#17644a; font-weight:700; cursor:pointer; }
-  .mobile-trends-rows div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px 12px; padding:9px 0; border-bottom:1px solid #edf2ef; font-size:13px; }
-  .mobile-trends-rows span { color:#526b60; }
+  .mobile-trends-legend { display:flex; flex-wrap:wrap; gap:16px; margin:14px 0 4px; font-size:13px; color:#526b60; }
+  .mobile-trends-legend span { display:flex; align-items:center; gap:6px; }
+  .mobile-trends-legend i { width:18px; height:3px; background:#087453; border-radius:2px; }
+  .mobile-trends-legend span:last-child i { background:#247ea2; }
+  .mobile-trend-chart { position:relative; margin-top:8px; overflow:hidden; }
+  .mobile-trend-chart svg { display:block; width:100%; height:auto; touch-action:pan-y; user-select:none; -webkit-user-select:none; }
+  .mobile-trend-chart svg:focus-visible { outline:2px solid #087453; outline-offset:-2px; }
+  .mobile-trends-tooltip { position:absolute; min-width:135px; padding:9px 12px; border:1px solid #c8ddd1; border-radius:9px; background:rgba(255,255,255,.97); box-shadow:0 4px 16px rgba(18,62,49,.14); color:#183d2f; white-space:pre-line; font-size:12px; line-height:1.6; pointer-events:none; }
+  .mobile-trend-selection { padding:10px 12px; margin:6px 0; border-radius:8px; background:#f2f7f4; color:#244f3c; font-size:13px; line-height:1.6; min-height:42px; }
+  .mobile-trend-help { margin:6px 0 0; color:#657b70; font-size:12px; }
 </style>
-<section class="mobile-trends" data-mobile-trends data-shop="<c:out value='${selectedShop}'/>" data-trend-url="${ctx}/dashboard/trends" aria-labelledby="mobile-trends-heading">
-  <h2 id="mobile-trends-heading">每日趋势</h2>
+<section class="mobile-trends" data-mobile-trends data-shop="<c:out value='${selectedShop}'/>" data-trend-url="${ctx}/dashboard/trends" data-hourly-url="${ctx}/dashboard/trends/hourly" aria-labelledby="mobile-trends-heading">
+  <h2 id="mobile-trends-heading">邮件发送</h2>
   <p class="mobile-trends-intro">查看当前店铺的邮件与订单表现</p>
   <p data-mobile-trend-state role="status" aria-live="polite">正在读取每日汇总…</p>
   <div data-mobile-trend-content hidden>
     <div class="mobile-trends-range" role="group" aria-label="选择统计范围">
-      <button type="button" data-mobile-range="7" aria-pressed="true">近 7 天</button>
+      <button type="button" data-mobile-range="1" aria-pressed="true">今天</button>
+      <button type="button" data-mobile-range="7" aria-pressed="false">近 7 天</button>
       <button type="button" data-mobile-range="30" aria-pressed="false">近 30 天</button>
     </div>
     <p class="mobile-trends-period" data-mobile-trend-period></p>
     <div class="mobile-trends-totals" data-mobile-trend-totals></div>
     <p class="mobile-trends-meta" data-mobile-trend-meta></p>
-    <details><summary>查看每日邮件明细</summary><div class="mobile-trends-rows" data-mobile-trend-rows></div></details>
+    <div class="mobile-trends-legend" aria-label="图例"><span><i aria-hidden="true"></i>发送</span><span><i aria-hidden="true"></i>送达</span></div>
+    <div class="mobile-trend-chart" data-mobile-trend-chart></div>
+    <p class="mobile-trend-selection" data-mobile-trend-selection role="status" aria-live="polite"></p>
+    <p class="mobile-trend-help" data-mobile-trend-help>点击或左右滑动曲线，查看对应日期明细</p>
   </div>
 </section>
-<script src="${ctx}/shopify/mobile/trends.js?v=20261108-dates" defer></script>
+<script src="${ctx}/shopify/mobile/trends.js?v=20261109-hourly-today-default" defer></script>

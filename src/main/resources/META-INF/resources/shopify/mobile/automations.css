@@ -1,5 +1,8 @@
 .ma-eyebrow { margin:8px 0 4px; color:#598272; font-size:12px; font-weight:700; letter-spacing:.08em; }
 .mobile-main h1 { margin:0; font-size:26px; }.ma-subtitle { color:#5a7065; font-size:14px; }
+.ma-page-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.ma-page-heading h1 { min-width:0; overflow-wrap:anywhere; }
+.ma-page-heading .ma-primary { flex-shrink:0; }
 .ma-panel,.ma-card { margin:14px 0; padding:16px; border:1px solid #dce8e2; border-radius:12px; background:#fff; }
 .ma-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }.ma-heading h2 { margin:0; font-size:17px; overflow-wrap:anywhere; }
 .ma-card p { margin:9px 0; color:#566e62; font-size:13px; overflow-wrap:anywhere; }.ma-status { flex:none; padding:4px 9px; border-radius:20px; background:#edf2ef; color:#566e62; font-size:12px; font-weight:700; }.ma-status[data-status=ACTIVE] { background:#dcfce7; color:#166534; }

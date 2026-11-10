@@ -640,6 +640,7 @@
         }
 
 
+        <c:if test="${alternativeLoginSupported}">
         .alternative-login-divider {
             display: flex;
             align-items: center;
@@ -814,6 +815,8 @@
             color: var(--ink);
         }
 
+
+        </c:if>
 
         .agreement-row {
             display: flex;
@@ -1614,10 +1617,11 @@
             <h2>欢迎回来</h2>
 
             <form class="form-panel" id="userPanel" novalidate action="<%=request.getContextPath()%>/org/login/login"
-                  method="post" data-app-id="${appid}" data-client-type="${clienttypeid}"
-                  data-ws-url="${ws}" data-wss-url="${wss}"
+                  method="post"<c:if test="${alternativeLoginSupported}">
+                  data-app-id="<c:out value='${appid}'/>" data-client-type="<c:out value='${clienttypeid}'/>"
+                  data-ws-url="<c:out value='${ws}'/>" data-wss-url="<c:out value='${wss}'/>"
                   data-scan-config-url="<%=request.getContextPath()%>/org/login/scan-config"
-                  data-scan-complete-url="<%=request.getContextPath()%>/org/login/scan-complete">
+                  data-scan-complete-url="<%=request.getContextPath()%>/org/login/scan-complete"</c:if>>
                 <script type="text/javascript" src="baseui/lib/endecrypt/crypto-js.min.js"></script>
                 <script type="text/javascript" src="baseui/lib/jquery/3.6.1/jquery.min.js"></script>
                 <select id="domain" name="domain" onchange="domain_change();" style="height: 30px;display:none">
@@ -1626,7 +1630,9 @@
                     </c:forEach>
                 </select>
                 <input type="hidden" name="logintype" id="logintype" value="0">
+                <c:if test="${alternativeLoginSupported}">
                 <input type="hidden" id="FacePic" name="FacePic" value="">
+                </c:if>
                 <div class="field">
                     <div class="field-head"><label for="user">账号</label></div>
                     <div class="field-wrap">
@@ -1700,6 +1706,7 @@
                 <button class="submit-button" type="submit">
                     <span>登录</span>
                 </button>
+                <c:if test="${alternativeLoginSupported}">
                 <div class="alternative-login-divider"><span>其他登录方式</span></div>
                 <div class="alternative-login-actions">
                     <button class="alternative-login-button" id="faceLoginButton" type="button" disabled>
@@ -1712,6 +1719,7 @@
                     </button>
                 </div>
                 <p class="alternative-login-message" id="alternativeLoginMessage" aria-live="polite"></p>
+                </c:if>
                 <p class="form-message" aria-live="polite"></p>
             </form>
 
@@ -1904,6 +1912,7 @@
     </div>
 </dialog>
 
+<c:if test="${alternativeLoginSupported}">
 <dialog class="auth-login-dialog" id="faceLoginDialog" aria-labelledby="faceLoginDialogTitle">
     <div class="auth-login-dialog-shell">
         <header class="auth-login-dialog-header">
@@ -1935,6 +1944,8 @@
         </footer>
     </div>
 </dialog>
+
+</c:if>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
@@ -2208,11 +2219,13 @@
         drawSignal();
     })();
 </script>
+<c:if test="${alternativeLoginSupported}">
 <script src="baseui/lib/qrcode/qrcode.min.js"></script>
 <script src="baseui/lib/mediapipe/face_mesh/face_mesh.js"></script>
 <script src="baseui/lib/mediapipe/face_mesh/camera_utils.js"></script>
 <script src="baseui/lib/mediapipe/face_mesh/drawing_utils.js"></script>
 <script src="baseui/js/face-login-mediapipe.js"></script>
 <script src="shopify/js/merchant-alternative-login.js?v=20261106"></script>
+</c:if>
 </body>
 </html>

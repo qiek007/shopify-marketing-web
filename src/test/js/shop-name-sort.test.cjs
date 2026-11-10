@@ -9,16 +9,28 @@ function harness(module){
  const form={querySelector:s=>s==='[data-shop-switcher-select]'?select:s==='[data-shop-search-empty]'?empty:null,getAttribute:()=> 'shop-test'};
  const document={currentScript:{getAttribute:()=>'/app'},getElementById:()=>null,querySelector:s=>s==='[data-shop-switcher]'?form:s==='[data-shop-switcher-select]'?select:null,querySelectorAll:()=>[],addEventListener:(event,handler)=>{events[event]=handler;}};
  const window={fetch(){},DOMParser:function(){},AbortController,location:{href:'http://localhost/app/dashboard?shop=selected',origin:'http://localhost',pathname:'/app/dashboard',assign:url=>navigations.push(url)},localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},addEventListener(){}};
- const source=fs.readFileSync(path.resolve(__dirname,'../../main/resources/META-INF/resources/shopify/js/console-navigation.js'),'utf8');
- vm.runInNewContext(source,{window,document,URL,Intl,AbortController,Array,Promise});return {select,events,input,empty,navigations};
+ const source=fs.readFileSync(path.resolve(__dirname,'../../..','src/main/resources/META-INF/resources/shopify/js/console-navigation.js'),'utf8');
+ vm.runInNewContext(source,{window,document,URL,Intl,AbortController,Array,Promise});return {select,events,input,empty,navigations,sourceShops:values.map(([name,id])=>({name:name||'Zebra',id}))};
 }
-{ const module='public';
+for(const module of ['public']){
  test(`${module}: shop options use Chinese name collation and natural numbers without switching shops`,()=>{
   const h=harness(module),collator=new Intl.Collator('zh-CN',{numeric:true,sensitivity:'base',ignorePunctuation:true});
   const labels=h.select.options.map(o=>o.getAttribute('data-shop-name')||o.textContent);
   assert.deepEqual(labels,[...labels].sort(collator.compare));
   const ids=h.select.options.map(o=>o.value);assert.ok(ids.indexOf('two')<ids.indexOf('ten'));
   assert.ok(ids.indexOf('a-domain')<ids.indexOf('z-domain'));
+  assert.equal(h.select.value,'selected');assert.equal(h.navigations.length,0);
+ });
+ test(`${module}: mobile shop results match the actual PC order without mutating source options`,()=>{
+  const h=harness(module);
+  const mobile=require(path.resolve(__dirname,'../../..','src/main/resources/META-INF/resources/shopify/mobile/navigation.js'));
+  const before=JSON.stringify(h.sourceShops);
+  const sorted=mobile.matchingShops(h.sourceShops,'');
+  assert.deepEqual(sorted.map(s=>s.id),h.select.options.map(o=>o.value));
+  assert.equal(JSON.stringify(h.sourceShops),before);
+  const filtered=mobile.matchingShops(h.sourceShops,'店铺');
+  assert.deepEqual(filtered.map(s=>s.id),sorted.filter(s=>(s.name+' '+s.id).includes('店铺')).map(s=>s.id));
+  assert.deepEqual(mobile.matchingShops(h.sourceShops,'').map(s=>s.id),sorted.map(s=>s.id));
   assert.equal(h.select.value,'selected');assert.equal(h.navigations.length,0);
  });
  test(`${module}: search and clearing search retain the name order and current selection`,()=>{

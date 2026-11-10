@@ -5,4 +5,4 @@
     <p data-customer-preview-loading role="status">正在读取客户详情…</p>
     <div data-customer-preview-frame class="mobile-customer-frame"></div>
 </dialog>
-<script src="${ctx}/shopify/mobile/navigation.js?v=20261108-nav4" data-area="<c:out value='${mobilePage}'/>" data-context="<c:out value='${ctx}'/>" data-shop="<c:out value='${selectedShop}'/>" data-user="<c:out value='${logineduser.domainid}'/>:<c:out value='${logineduser.id}'/>" defer></script>
+<script src="${ctx}/shopify/mobile/navigation.js?v=20261110-shop-sort" data-area="<c:out value='${mobilePage}'/>" data-context="<c:out value='${ctx}'/>" data-shop="<c:out value='${selectedShop}'/>" data-user="<c:out value='${logineduser.domainid}'/>:<c:out value='${logineduser.id}'/>" defer></script>

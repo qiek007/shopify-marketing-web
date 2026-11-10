@@ -93,7 +93,13 @@ class ShopifyMarketingWebBoundaryTest {
                 "static-cache-seconds: 0");
         assertThat(runConfiguration).contains(
                 "-Dspring.profiles.active=local",
-                "<option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />");
+                "<option name=\"MAIN_CLASS_NAME\" value=\"com.yskj.shopify.web.ShopifyMarketingWebApplication\" />");
+        var workingDirectory = java.util.regex.Pattern.compile(
+                "<option name=\"WORKING_DIRECTORY\" value=\"([^\"]+)\"").matcher(runConfiguration);
+        assertThat(workingDirectory.find()).isTrue();
+        Path moduleRoot = Path.of("").toAbsolutePath().normalize();
+        assertThat(Path.of(workingDirectory.group(1).replace("$PROJECT_DIR$", moduleRoot.toString())).normalize())
+                .isEqualTo(moduleRoot);
     }
 
     private void assertMinaServiceEndpointIsEmpty(String path) {

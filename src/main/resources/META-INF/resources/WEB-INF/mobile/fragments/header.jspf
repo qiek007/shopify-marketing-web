@@ -13,8 +13,7 @@
             </c:choose>
             <c:url var="mobileShopSwitchUrl" value="${mobileShopPath}"/>
             <form class="mobile-shop" method="get" action="${mobileShopSwitchUrl}">
-                <label for="mobile-shop-select">当前店铺</label>
-                <div class="mobile-shop-row"><select id="mobile-shop-select" name="shop">
+                <div class="mobile-shop-row"><select id="mobile-shop-select" name="shop" aria-label="选择店铺">
                     <c:forEach items="${accessibleShops}" var="shopItem"><option value="<c:out value='${shopItem.shopDomain}'/>" <c:if test="${shopItem.shopDomain eq selectedShop}">selected</c:if>><c:out value="${shopItem.displayName}" default="${shopItem.shopDomain}"/></option></c:forEach>
                 </select><button type="submit">切换</button></div>
                 <button class="mobile-shop-trigger" type="button" hidden aria-haspopup="dialog" aria-controls="mobile-shop-dialog"></button>

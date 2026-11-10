@@ -12,5 +12,5 @@
         <article class="mobile-metric"><span>平台订单</span><strong><c:out value="${overview.orders}" default="—"/></strong></article>
         <article class="mobile-metric"><span>商品数</span><strong><c:out value="${overview.products}" default="—"/></strong></article>
         <article class="mobile-metric"><span>营销活动</span><strong><c:out value="${overview.activeCampaigns}" default="—"/></strong></article>
-    </div></section><section class="mobile-quick"><div><p class="mobile-eyebrow">CAMPAIGNS</p><h2>营销活动</h2><p>查看进度，处理待审批活动。</p></div><a href="<c:out value='${mobileCampaignUrl}'/>">查看活动 <span aria-hidden="true">→</span></a></section><%@ include file="fragments/trends.jspf" %></c:otherwise></c:choose>
+    </div></section><%@ include file="fragments/trends.jspf" %></c:otherwise></c:choose>
 </main><%@ include file="fragments/footer.jspf" %></body></html>

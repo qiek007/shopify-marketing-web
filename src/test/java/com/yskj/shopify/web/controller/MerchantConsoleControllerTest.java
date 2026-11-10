@@ -29,6 +29,17 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 
 class MerchantConsoleControllerTest {
+    @Test void hourlyTrendRouteForwardsOnlyToTheHourlyReadOperation() {
+        var expected = new JSONObject(Map.of("date","2026-11-09","hours",new JSONArray()));
+        when(client.exchange(eq("dashboard.trends.hourly"),any(),eq("demo.myshopify.com"),any(),eq(null)))
+                .thenReturn(MerchantWebProtocol.json(expected));
+        var params = new LinkedMultiValueMap<String,String>();params.add("shop","demo.myshopify.com");
+        assertThat(controller.hourlyTrends(params,session()).getBody()).isEqualTo(expected);
+        verify(client).exchange(eq("dashboard.trends.hourly"),any(),eq("demo.myshopify.com"),any(),eq(null));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> controller.hourlyTrends(params,new MockHttpSession()))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+    }
+
     @Test void auwStoresLoadIndependentReadonlySyncStatusIntoThePageModel() {
         var connections=mock(com.yskj.shopify.web.service.CustomStoreConnectionClient.class);controller.setSourceConnections(connections);
         String shop="custom.example";

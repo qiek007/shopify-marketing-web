@@ -50,7 +50,11 @@ class MobileOverviewRenderingTest {
                         "completeGroups", List.of(Map.of("title", "浏览行为", "count", 1, "collapsed", false,
                                 "activities", List.of(Map.of("title", "查看商品", "description", "示例商品", "type", "VIEWED")))));
                 req.setAttribute("customerDetail", Map.of("customer", customer, "orders", List.of(), "timelineWindow", timeline));
-                req.setAttribute("timelineWindow", timeline);
+                var displayTimeline = new HashMap<String,Object>(timeline);
+                displayTimeline.put("synchronizing",true);
+                if ("timeline-empty".equals(req.getParameter("mode"))) displayTimeline.put("completeGroups",List.of());
+                if ("timeline-unavailable".equals(req.getParameter("mode"))) displayTimeline.put("unavailable",true);
+                req.setAttribute("timelineWindow", displayTimeline);
                 req.setAttribute("segmentSearch", "");
                 req.setAttribute("segmentPage", Map.of("total", 1, "page", 1, "totalPages", 1));
                 req.setAttribute("segments", List.of(Map.of("shopDomain", "a.myshopify.com", "segmentId", "s1", "name", "示例分群", "ruleSummary", "邮箱包含 example", "status", "ACTIVE")));
@@ -67,8 +71,29 @@ class MobileOverviewRenderingTest {
                     scheduled.put("scheduledAt", "2026-12-01T02:00:00Z");
                     req.setAttribute("campaignDetail", scheduled);
                 }
+                req.setAttribute("shopDomain", "a.myshopify.com");
+                req.setAttribute("campaignId", "c-1");
+                req.setAttribute("campaignFilter", Map.of("search","demo","provider","TEST","lifecycle","OPENED","page",1));
+                req.setAttribute("canViewCustomers", !"restricted".equals(req.getParameter("mode")));
+                var recipient = new HashMap<String,Object>();
+                recipient.putAll(Map.ofEntries(Map.entry("customerName","收件示例 <script>alert(1)</script>"),Map.entry("customerSourceId","c&1"),
+                        Map.entry("email","recipient@example.com"),Map.entry("provider","TEST"),Map.entry("sendStatus","SENT"),
+                        Map.entry("openCount",5),Map.entry("clickCount",2),Map.entry("orderCount",1),Map.entry("netRevenue",123),
+                        Map.entry("machineOpenCount",2),Map.entry("attemptCount",1),Map.entry("deliveredAt","2026-11-01T01:00:00Z")));
+                if ("no-id".equals(req.getParameter("mode"))) recipient.remove("customerSourceId");
+                boolean partial = "partial".equals(req.getParameter("mode"));
+                boolean syncing = "syncing".equals(req.getParameter("mode"));
+                req.setAttribute("recipientReadState", syncing ? "SYNCHRONIZING" : partial ? "PARTIAL" : "CURRENT");
+                req.setAttribute("recipientReadReason", "HOT_DATA_INCOMPLETE");
+                req.setAttribute("recipientPage", Map.of("items", partial || syncing ? List.of() : List.of(recipient), "page",1,
+                        "total",21,"totalPages",3,"hasPrevious",false,"hasNext",true));
                 var page = req.getParameter("page");
-                if (!List.of("campaigns", "campaign-detail", "campaign-editor", "customers", "customer-detail", "segments", "segment-editor", "fragments/segment-preview-results", "automations").contains(page == null ? "" : page)) page = "dashboard";
+                if (!List.of("campaigns", "campaign-detail", "campaign-editor", "customers", "customer-detail", "segments", "segment-editor", "fragments/segment-preview-results", "fragments/campaign-recipient-results", "automations").contains(page == null ? "" : page)) page = "dashboard";
+                if ("fragments/campaign-recipient-results".equals(page) && req.getParameter("view") != null) {
+                    var theme = "shopify-theme2".equals(req.getParameter("theme")) ? "shopify-theme2" : "shopify";
+                    req.getRequestDispatcher("/WEB-INF/" + theme + "/fragments/campaign-recipient-results.jsp").forward(req,res);
+                    return;
+                }
                 req.getRequestDispatcher("/WEB-INF/mobile/" + page + ".jsp").forward(req, res);
             }
         });
@@ -80,8 +105,9 @@ class MobileOverviewRenderingTest {
             var dashboard = client.send(HttpRequest.newBuilder(URI.create(root)).timeout(Duration.ofSeconds(15)).build(), HttpResponse.BodyHandlers.ofString());
             assertThat(dashboard.statusCode()).as(dashboard.body()).isEqualTo(200);
             var home = Jsoup.parse(dashboard.body());
-            assertThat(home.select(".mobile-header").text()).contains("滴答营销", "当前店铺", "切换");
-            assertThat(home.select("#mobile-trends-heading").text()).isEqualTo("每日趋势");
+            assertThat(home.select(".mobile-header").text()).contains("滴答营销", "切换").doesNotContain("当前店铺");
+            assertThat(home.select("#mobile-shop-select").attr("aria-label")).isEqualTo("选择店铺");
+            assertThat(home.select("#mobile-trends-heading").text()).isEqualTo("邮件发送");
             assertThat(home.text()).contains("示例店", "总客户", "25", "营销活动");
             assertThat(home.select("form.mobile-shop select[name=shop] option")).hasSize(2);
             assertThat(home.select("form.mobile-shop").attr("action")).startsWith("/web/mobile/dashboard");
@@ -96,6 +122,34 @@ class MobileOverviewRenderingTest {
             var detail = Jsoup.parse(detailResult.body());
             assertThat(detail.text()).contains("测试活动", "发送中", "60%", "暂停发送", "取消发送");
             assertThat(detail.select("form[action='/web/mobile/campaigns/action'] input[name=action][value=PAUSE]")).hasSize(1);
+            assertThat(detail.select("[data-mobile-recipients] form [name=lifecycle] option[value=OPENED]")).hasSize(1);
+            assertThat(detail.select("[data-mobile-recipients] form [name=campaignId]").val()).isEqualTo("c-1");
+            var recipientResult = client.send(HttpRequest.newBuilder(URI.create(root + "?page=fragments/campaign-recipient-results")).build(), HttpResponse.BodyHandlers.ofString());
+            assertThat(recipientResult.statusCode()).as(recipientResult.body()).isEqualTo(200);
+            var recipients = Jsoup.parse(recipientResult.body());
+            assertThat(recipients.select("[data-mobile-recipient-results] .mr-card")).hasSize(1);
+            assertThat(recipients.text()).contains("recipient@example.com", "已下单", "供应商标记的机器行为", "123");
+            assertThat(recipients.select(".mr-card script")).isEmpty();
+            assertThat(recipients.select(".mr-badge").attr("data-status")).isEqualTo("CONVERTED");
+            assertThat(recipients.select("a[data-recipient-customer]").attr("href")).contains("/web/mobile/customers/detail", "customerId=c%261");
+            assertThat(recipients.select("button[data-recipient-page=2]")).hasSize(1);
+            for (String layout : List.of("mobile", "pc")) {
+                for (String theme : List.of("shopify", "shopify-theme2")) {
+                    var layoutResponse = client.send(HttpRequest.newBuilder(URI.create(root + "?page=fragments/campaign-recipient-results&view=" + layout + "&theme=" + theme)).build(), HttpResponse.BodyHandlers.ofString());
+                    assertThat(layoutResponse.statusCode()).as(layoutResponse.body()).isEqualTo(200);
+                    var layoutDocument = Jsoup.parse(layoutResponse.body());
+                    if (layout.equals("mobile")) assertThat(layoutDocument.select("[data-mobile-recipient-results] .mr-card")).hasSize(1);
+                    else { assertThat(layoutDocument.select(".campaign-recipient-table")).hasSize(1);assertThat(layoutDocument.select(".mr-card")).isEmpty(); }
+                }
+            }
+            for (String mode : List.of("restricted", "no-id", "partial", "syncing")) {
+                var response = client.send(HttpRequest.newBuilder(URI.create(root + "?page=fragments/campaign-recipient-results&mode=" + mode)).build(), HttpResponse.BodyHandlers.ofString());
+                assertThat(response.statusCode()).as(response.body()).isEqualTo(200);
+                var fragment = Jsoup.parse(response.body());
+                assertThat(fragment.select("a[data-recipient-customer]")).isEmpty();
+                if (mode.equals("partial")) assertThat(fragment.text()).contains("当前明细完整性尚未确认", "不能据此认定活动没有收件人");
+                if (mode.equals("syncing")) assertThat(fragment.text()).contains("历史明细暂未就绪").doesNotContain("当前筛选没有匹配的收件人");
+            }
             var editorResult = client.send(HttpRequest.newBuilder(URI.create(root + "?page=campaign-editor")).timeout(Duration.ofSeconds(15)).build(), HttpResponse.BodyHandlers.ofString());
             assertThat(editorResult.statusCode()).as(editorResult.body()).isEqualTo(200);
             var editor = Jsoup.parse(editorResult.body());
@@ -117,6 +171,19 @@ class MobileOverviewRenderingTest {
                 var customerResult = client.send(HttpRequest.newBuilder(URI.create(root + "?page=" + page)).build(), HttpResponse.BodyHandlers.ofString());
                 assertThat(customerResult.statusCode()).as(customerResult.body()).isEqualTo(200);
                 assertThat(Jsoup.parse(customerResult.body()).text()).contains("示例客户", "demo@example.com", "123");
+                if (page.equals("customer-detail")) {
+                    var customerDocument=Jsoup.parse(customerResult.body());
+                    assertThat(customerDocument.select(".mobile-page-title > p").last().text()).isEqualTo("demo@example.com");
+                    assertThat(customerDocument.select("input[name=customerId]").val()).isEqualTo("c1");
+                    assertThat(customerDocument.text()).doesNotContain("数据同步中，最新事件可能稍后出现。");
+                }
+            }
+            for (String mode : List.of("timeline-empty", "timeline-unavailable")) {
+                var timelineResponse=client.send(HttpRequest.newBuilder(URI.create(root+"?page=customer-detail&mode="+mode)).build(),HttpResponse.BodyHandlers.ofString());
+                assertThat(timelineResponse.statusCode()).as(timelineResponse.body()).isEqualTo(200);
+                var timelineDocument=Jsoup.parse(timelineResponse.body());
+                if (mode.equals("timeline-empty")) assertThat(timelineDocument.text()).contains("当前尚无已同步的行为记录").doesNotContain("所选时间内暂无行为记录");
+                else assertThat(timelineDocument.select("[role=alert]").text()).contains("时间线暂不可用");
             }
             for (String page : List.of("segments", "segment-editor", "fragments/segment-preview-results", "automations")) {
                 var featureResult = client.send(HttpRequest.newBuilder(URI.create(root + "?page=" + page)).build(), HttpResponse.BodyHandlers.ofString());
