@@ -1,5 +1,5 @@
 <%@ page pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
-<script src="${ctx}/shopify/mobile/entry.js?v=20261108-entry3" data-context-path="${ctx}"></script>
+<script src="${ctx}/shopify/mobile/entry.js?v=20261110-customer-query" data-context-path="${ctx}"></script>
 <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/account-password.css?v=20260924-native-password">
 <script src="${ctx}/baseui/lib/jquery/3.6.1/jquery.min.js"></script>
 <script src="${ctx}/baseui/lib/layer/2.4/layer.js"></script>

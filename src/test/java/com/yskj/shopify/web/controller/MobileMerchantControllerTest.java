@@ -149,6 +149,18 @@ class MobileMerchantControllerTest {
         mvc().perform(get("/mobile/campaigns").session(session())).andExpect(status().isForbidden());
     }
 
+    @Test void customerMenuEntryNeverLoadsResultsUntilQueryIsExplicit() throws Exception {
+        when(client.exchange(eq("customers.page"),any(),eq("a.example"),any(),isNull()))
+                .thenReturn(MerchantWebProtocol.view("shopify/customers",new JSONObject(Map.of("selectedShop","a.example"))));
+        for (String flag : java.util.List.of("", "0", "true")) {
+            var request=get("/mobile/customers").session(session()).param("shop","a.example").param("q","demo");
+            if (!flag.isEmpty()) request.param("query",flag);
+            mvc().perform(request).andExpect(status().isOk()).andExpect(view().name("mobile/customers"))
+                    .andExpect(model().attribute("customerResultsLoaded",false));
+        }
+        verify(client,never()).exchange(eq("customers.results"),any(),any(),any(),any());
+    }
+
     @Test void customerListCombinesTheAuthorizedShellWithTheRealResults() throws Exception {
         when(client.exchange(eq("customers.page"), any(), eq("a.example"), any(), isNull()))
                 .thenReturn(MerchantWebProtocol.view("shopify/customers", new JSONObject(Map.of("selectedShop", "a.example"))));
@@ -156,7 +168,7 @@ class MobileMerchantControllerTest {
         customers.add(new JSONObject(Map.of("sourceId", "c1", "email", "demo@example.com")));
         when(client.exchange(eq("customers.results"), any(), eq("a.example"), any(), isNull()))
                 .thenReturn(MerchantWebProtocol.view("shopify/fragments/customer-results", new JSONObject(Map.of("customers", customers))));
-        mvc().perform(get("/mobile/customers").session(session()).param("shop", "a.example").param("q", "demo").param("page", "2"))
+        mvc().perform(get("/mobile/customers").session(session()).param("shop", "a.example").param("q", "demo").param("page", "2").param("query", "1"))
                 .andExpect(status().isOk()).andExpect(view().name("mobile/customers"))
                 .andExpect(model().attribute("customers", customers));
         verify(client).exchange(eq("customers.results"), any(), eq("a.example"),

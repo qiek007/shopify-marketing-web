@@ -72,14 +72,16 @@ public class MobileMerchantController {
     public String customers(@RequestParam MultiValueMap<String, String> params,
                             HttpSession session, Model model, RedirectAttributes redirect) {
         String page = view("customers.page", params, session, model, redirect);
+        model.addAttribute("customerResultsLoaded", false);
         Object shop = model.asMap().get("selectedShop");
-        if (shop != null && !shop.toString().isBlank()) {
+        if ("1".equals(params.getFirst("query")) && shop != null && !shop.toString().isBlank()) {
             var selected = new org.springframework.util.LinkedMultiValueMap<String, String>(params);
             selected.set("shop", shop.toString());
             String result = support.applyView(request("customers.results", selected, session), model, redirect);
             if (!"shopify/fragments/customer-results".equals(result)) {
                 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Unexpected customer results");
             }
+            model.addAttribute("customerResultsLoaded", true);
         }
         return page;
     }

@@ -30,3 +30,11 @@ test('automation entry retains its rule filters', () => {
     assert.equal(result.searchParams.get('triggerEvent'), 'PAGE_VIEWED');
     assert.equal(result.searchParams.get('page'), '2');
 });
+
+
+test('mobile customer entry retains explicit query intent for paged results',()=>{
+  const entry=require('../../main/resources/META-INF/resources/shopify/mobile/entry.js');
+  const url=new URL(entry('https://example.test/web/customers?shop=a.example&query=1&page=2','Android','/web'));
+  assert.equal(url.pathname,'/web/mobile/customers');
+  assert.equal(url.searchParams.get('query'),'1');assert.equal(url.searchParams.get('page'),'2');
+});

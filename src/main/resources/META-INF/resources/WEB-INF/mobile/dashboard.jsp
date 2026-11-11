@@ -13,4 +13,5 @@
         <article class="mobile-metric"><span>商品数</span><strong><c:out value="${overview.products}" default="—"/></strong></article>
         <article class="mobile-metric"><span>营销活动</span><strong><c:out value="${overview.activeCampaigns}" default="—"/></strong></article>
     </div></section><%@ include file="fragments/trends.jspf" %></c:otherwise></c:choose>
+    <c:if test="${not empty selectedShop}"><%@ include file="fragments/quota.jspf" %></c:if>
 </main><%@ include file="fragments/footer.jspf" %></body></html>

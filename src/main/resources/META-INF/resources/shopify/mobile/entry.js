@@ -29,7 +29,7 @@
         var destination = new URL(context + route, url.origin);
         var parameters = {
             campaigns: ['campaignId', 'q', 'status', 'page', 'size', 'fromDate', 'toDate'],
-            customers: ['customerId', 'q', 'activity', 'tag', 'page', 'fromDate', 'toDate', 'minSpent', 'maxSpent',
+            customers: ['customerId', 'query', 'q', 'activity', 'tag', 'page', 'fromDate', 'toDate', 'minSpent', 'maxSpent',
                 'minBehaviorCount', 'maxBehaviorCount', 'minUniqueBehaviorCount', 'maxUniqueBehaviorCount', 'timelineFromDate', 'timelineToDate'],
             segments: ['segmentId', 'q', 'page'],
             automations: ['name', 'status', 'triggerEvent', 'page', 'size']

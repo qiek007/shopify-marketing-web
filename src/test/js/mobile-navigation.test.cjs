@@ -34,6 +34,11 @@ test('date filters allow an open range but reject reversed dates', () => {
   assert.equal(navigation.dateRangeValid('', '2026-11-01'), true);
 });
 
+test('returning to queried customers keeps the explicit query marker without unrelated parameters', () => {
+  assert.equal(navigation.listReturnUrl('/web/mobile/customers?shop=a.example&query=1&q=demo&page=3&token=secret',
+    'http://localhost','/web','a.example','customers'),'/web/mobile/customers?shop=a.example&query=1&q=demo&page=3');
+});
+
 test('customer previews retain only the current shop and customer on the customer detail route', () => {
   assert.equal(navigation.customerPreviewUrl('/web/mobile/customers/detail?shop=a.example&customerId=c%26x&token=secret',
     'http://localhost', '/web', 'a.example'), '/web/mobile/customers/detail?shop=a.example&customerId=c%26x');

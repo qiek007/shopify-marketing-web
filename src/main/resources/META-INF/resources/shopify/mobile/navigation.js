@@ -25,7 +25,7 @@
                     || source.searchParams.get('shop') !== shop) return null;
             var result = new URL(source.pathname, origin);
             var keys = customerList
-                ? ['shop', 'q', 'activity', 'tag', 'fromDate', 'toDate', 'minSpent', 'maxSpent', 'minBehaviorCount', 'maxBehaviorCount', 'minUniqueBehaviorCount', 'maxUniqueBehaviorCount', 'page']
+                ? ['shop', 'query', 'q', 'activity', 'tag', 'fromDate', 'toDate', 'minSpent', 'maxSpent', 'minBehaviorCount', 'maxBehaviorCount', 'minUniqueBehaviorCount', 'maxUniqueBehaviorCount', 'page']
                 : ['shop', 'q', 'status', 'fromDate', 'toDate', 'page', 'size'];
             keys.forEach(function (key) {
                 source.searchParams.getAll(key).forEach(function (value) { result.searchParams.append(key, value); });

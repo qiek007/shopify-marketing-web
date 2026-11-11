@@ -29,6 +29,13 @@ class MobileOverviewRenderingTest {
                 req.setAttribute("selectedShop", "a.myshopify.com");
                 req.setAttribute("selectedShopDisplayName", "示例店");
                 req.setAttribute("accessibleShops", List.of(Map.of("shopDomain", "a.myshopify.com", "displayName", "示例店"), Map.of("shopDomain", "b.myshopify.com", "displayName", "第二店")));
+                req.setAttribute("storeEmailQuotaAvailable", !"quota-unavailable".equals(req.getParameter("mode")));
+                boolean quotaZero="quota-zero".equals(req.getParameter("mode"));
+                req.setAttribute("storeEmailQuota", Map.ofEntries(Map.entry("shopDomain","a.myshopify.com"),
+                        Map.entry("balanceCount",quotaZero?0:1200),Map.entry("reservedCount",quotaZero?0:200),
+                        Map.entry("availableCount",quotaZero?0:1000),Map.entry("consumedCount",300),
+                        Map.entry("expiryEnabled",true),Map.entry("pendingCount",quotaZero?0:150),Map.entry("unsubmittedReservedCount",quotaZero?0:50),
+                        Map.entry("expiredCount",20),Map.entry("pendingExpiryCount",10)));
                 req.setAttribute("overview", Map.of("available", true, "products", 10, "customers", 25, "orders", 4, "activeCampaigns", 3));
                 req.setAttribute("campaignPage", Map.of("total", 1, "pageSize", 20, "page", 1, "totalPages", 1, "hasPrevious", false, "hasNext", false));
                 req.setAttribute("campaigns", List.of(Map.of("shopDomain", "a.myshopify.com", "campaignId", "c-1", "name", "测试活动", "status", "COMPLETED", "statusDisplayName", "已完成", "templateName", "欢迎模板", "audienceCount", 25, "updatedAt", "2026-11-01")));
@@ -43,6 +50,7 @@ class MobileOverviewRenderingTest {
                 req.setAttribute("senderSettings", List.of(Map.of("provider", "TEST", "fromHeader", "demo@example.com")));
                 var customer = Map.of("sourceId", "c1", "displayName", "示例客户", "email", "demo@example.com", "tags", List.of("会员"), "orderCount", 2, "totalSpent", 123, "currency", "USD");
                 req.setAttribute("customers", List.of(customer));
+                req.setAttribute("customerResultsLoaded", "1".equals(req.getParameter("query")));
                 req.setAttribute("customerPage", Map.of("total", 1, "totalExact", true, "page", 1, "totalPages", 1));
                 req.setAttribute("customerFilter", Map.of("search", "demo", "tags", List.of()));
                 req.setAttribute("behaviorFilterAvailable", true);
@@ -87,6 +95,11 @@ class MobileOverviewRenderingTest {
                 req.setAttribute("recipientReadReason", "HOT_DATA_INCOMPLETE");
                 req.setAttribute("recipientPage", Map.of("items", partial || syncing ? List.of() : List.of(recipient), "page",1,
                         "total",21,"totalPages",3,"hasPrevious",false,"hasNext",true));
+                if (req.getParameter("quotaView") != null) {
+                    var theme="shopify-theme2".equals(req.getParameter("theme"))?"shopify-theme2":"shopify";
+                    req.getRequestDispatcher("/WEB-INF/"+theme+"/stores.jsp").forward(req,res);
+                    return;
+                }
                 var page = req.getParameter("page");
                 if (!List.of("campaigns", "campaign-detail", "campaign-editor", "customers", "customer-detail", "segments", "segment-editor", "fragments/segment-preview-results", "fragments/campaign-recipient-results", "automations").contains(page == null ? "" : page)) page = "dashboard";
                 if ("fragments/campaign-recipient-results".equals(page) && req.getParameter("view") != null) {
@@ -111,6 +124,26 @@ class MobileOverviewRenderingTest {
             assertThat(home.text()).contains("示例店", "总客户", "25", "营销活动");
             assertThat(home.select("form.mobile-shop select[name=shop] option")).hasSize(2);
             assertThat(home.select("form.mobile-shop").attr("action")).startsWith("/web/mobile/dashboard");
+            assertThat(home.select("[data-mobile-quota]").attr("data-shop")).isEqualTo("a.myshopify.com");
+            for (String theme : List.of("shopify","shopify-theme2")) {
+                for (String mode : List.of("quota-normal","quota-zero","quota-unavailable")) {
+                    var quotaResponse=client.send(HttpRequest.newBuilder(URI.create(root+"?quotaView=1&view=mobile-quota&theme="+theme+"&mode="+mode)).build(),HttpResponse.BodyHandlers.ofString());
+                    assertThat(quotaResponse.statusCode()).as(quotaResponse.body()).isEqualTo(200);
+                    var quotaDocument=Jsoup.parse(quotaResponse.body());
+                    assertThat(quotaDocument.select("[data-mobile-quota-result]")).hasSize(1);
+                    assertThat(quotaDocument.select("[data-mobile-quota-result]").attr("data-shop")).isEqualTo("a.myshopify.com");
+                    if (mode.equals("quota-unavailable")) {
+                        assertThat(quotaDocument.select("[data-quota-count]")).isEmpty();
+                        assertThat(quotaDocument.text()).contains("暂时无法读取");
+                    } else {
+                        assertThat(quotaDocument.select("[data-quota-count=available]").text()).isEqualTo(mode.equals("quota-zero")?"0":"1,000");
+                        assertThat(quotaDocument.text()).contains("活动预留","累计已核销","未提交预扣","已提交待核销","累计到期回收");
+                    }
+                }
+                var defaultStore=client.send(HttpRequest.newBuilder(URI.create(root+"?quotaView=1&theme="+theme)).build(),HttpResponse.BodyHandlers.ofString());
+                assertThat(defaultStore.statusCode()).as(defaultStore.body()).isEqualTo(200);
+                assertThat(Jsoup.parse(defaultStore.body()).select("[data-mobile-quota-result]")).isEmpty();
+            }
             var result = client.send(HttpRequest.newBuilder(URI.create(root + "?page=campaigns")).timeout(Duration.ofSeconds(15)).build(), HttpResponse.BodyHandlers.ofString());
             assertThat(result.statusCode()).as(result.body()).isEqualTo(200);
             var list = Jsoup.parse(result.body());
@@ -167,10 +200,22 @@ class MobileOverviewRenderingTest {
             var scheduled = Jsoup.parse(scheduledResult.body());
             assertThat(scheduled.select("input[name=action][value=RESCHEDULE]")).hasSize(1);
             assertThat(scheduled.select("input[name=action][value=CANCEL_SCHEDULE]")).hasSize(1);
+            var initialCustomers=client.send(HttpRequest.newBuilder(URI.create(root+"?page=customers")).build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(initialCustomers.statusCode()).as(initialCustomers.body()).isEqualTo(200);
+            var initialCustomerDocument=Jsoup.parse(initialCustomers.body());
+            assertThat(initialCustomerDocument.select("[data-customer-query-prompt]")).hasSize(1);
+            assertThat(initialCustomerDocument.select(".mc-card")).isEmpty();
+            assertThat(initialCustomerDocument.text()).doesNotContain("没有找到客户");
+            assertThat(initialCustomerDocument.select("#mobile-customer-filter input[name=query]").val()).isEqualTo("1");
             for (String page : List.of("customers", "customer-detail")) {
-                var customerResult = client.send(HttpRequest.newBuilder(URI.create(root + "?page=" + page)).build(), HttpResponse.BodyHandlers.ofString());
+                var customerResult = client.send(HttpRequest.newBuilder(URI.create(root + "?page=" + page + (page.equals("customers") ? "&query=1" : ""))).build(), HttpResponse.BodyHandlers.ofString());
                 assertThat(customerResult.statusCode()).as(customerResult.body()).isEqualTo(200);
                 assertThat(Jsoup.parse(customerResult.body()).text()).contains("示例客户", "demo@example.com", "123");
+                if (page.equals("customers")) {
+                    var queriedCustomerDocument=Jsoup.parse(customerResult.body());
+                    assertThat(queriedCustomerDocument.select("[data-customer-query-prompt]")).isEmpty();
+                    assertThat(queriedCustomerDocument.select(".mc-card").attr("href")).contains("query=1");
+                }
                 if (page.equals("customer-detail")) {
                     var customerDocument=Jsoup.parse(customerResult.body());
                     assertThat(customerDocument.select(".mobile-page-title > p").last().text()).isEqualTo("demo@example.com");

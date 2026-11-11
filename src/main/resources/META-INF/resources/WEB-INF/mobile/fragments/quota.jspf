@@ -1,0 +1,9 @@
+<%@ page pageEncoding="UTF-8" %>
+<link rel="stylesheet" href="${ctx}/shopify/mobile/quota.css?v=20261110">
+<section class="mobile-quota" data-mobile-quota data-shop="<c:out value='${selectedShop}'/>" data-url="${ctx}/stores" aria-labelledby="mobile-quota-heading">
+  <div class="mq-head"><h2 id="mobile-quota-heading">店铺发送额度</h2><button type="button" data-quota-refresh hidden>刷新额度</button></div>
+  <p class="mq-intro">用于当前店铺的营销活动和自动营销</p>
+  <p class="mq-state" data-quota-state role="status" aria-live="polite">正在读取店铺发送额度…</p>
+  <div data-quota-content></div>
+</section>
+<script src="${ctx}/shopify/mobile/quota.js?v=20261110" defer></script>
