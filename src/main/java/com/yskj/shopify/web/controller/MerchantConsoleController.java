@@ -42,7 +42,7 @@ public class MerchantConsoleController {
 
     private static final Set<String> ARRAY_PARAMETERS = Set.of(
             "fields", "operators", "values",
-            "groupIds", "groupMatchModes", "ruleGroupIds");
+            "groupIds", "groupMatchModes", "ruleGroupIds", "segmentIds");
 
     private final MerchantWebFacadeClient client;
     private final RemotePageSupport support;
@@ -279,6 +279,30 @@ public class MerchantConsoleController {
         return body("customer-tags.remove", params, session, null);
     }
 
+    @PostMapping(value = "/customers/detail/suppression", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> changeCustomerSuppression(@RequestParam String shop, @RequestBody JSONObject command,
+                                                        HttpSession session) {
+        return support.applyBody(client.exchange("customers.suppression", requireUser(session),
+                shop, new JSONObject(), command));
+    }
+
+    @PostMapping(value = "/customers/detail/subscription", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> changeCustomerSubscription(@RequestParam String shop, @RequestBody JSONObject command,
+                                                         HttpSession session) {
+        return support.applyBody(client.exchange("customers.subscription", requireUser(session),
+                shop, new JSONObject(), command));
+    }
+
+    @PostMapping(value = "/customers/detail/tags", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> changeCustomerTag(@RequestParam String shop, @RequestBody JSONObject command,
+                                               HttpSession session) {
+        return support.applyBody(client.exchange("customer-tags.change-one", requireUser(session),
+                shop, new JSONObject(), command));
+    }
+
     @PostMapping(value = "/customers/delete", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> deleteCustomers(@RequestParam MultiValueMap<String, String> params,
                                              HttpSession session) {
@@ -466,6 +490,7 @@ public class MerchantConsoleController {
         applyShell(params, session, model, redirect, "customers");
         JSONObject body = responseBody("customers.summary", params, session);
         model.addAttribute("customerDetail", body);
+        model.addAttribute("canEditCustomerTags", body.getBooleanValue("canEditCustomerTags"));
         model.addAttribute("timelineWindow", body.get("timelineWindow"));
         model.addAttribute("timelineEarlierKnown", true);
         return "shopify/customer-detail";
@@ -683,7 +708,9 @@ public class MerchantConsoleController {
     public String campaignCustomer(@RequestParam MultiValueMap<String, String> params,
                                    HttpSession session, Model model) {
         model.addAttribute("selectedShop", params.getFirst("shop"));
-        model.addAttribute("customerDetail", responseBody("customers.summary", params, session));
+        JSONObject detail = responseBody("customers.summary", params, session);
+        model.addAttribute("customerDetail", detail);
+        model.addAttribute("canEditCustomerTags", detail.getBooleanValue("canEditCustomerTags"));
         return "shopify/fragments/campaign-customer-detail";
     }
 
@@ -704,8 +731,17 @@ public class MerchantConsoleController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> campaignAudiencePreview(
             @RequestParam MultiValueMap<String, String> params, HttpSession session) {
+        return audiencePreviewBody("campaigns.audience-preview",params,session);
+    }
+
+    @PostMapping(value = "/campaigns/editor/audience-preview", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> draftAudiencePreview(@RequestParam MultiValueMap<String,String> params,HttpSession session) {
+        return audiencePreviewBody("campaigns.draft-audience-preview",params,session);
+    }
+
+    private ResponseEntity<?> audiencePreviewBody(String operation, MultiValueMap<String,String> params,HttpSession session) {
         try {
-            ResponseEntity<?> response = body("campaigns.audience-preview", params, session, null);
+            ResponseEntity<?> response = body(operation, params, session, null);
             return ResponseEntity.status(response.getStatusCode())
                     .headers(response.getHeaders())
                     .cacheControl(org.springframework.http.CacheControl.noStore())

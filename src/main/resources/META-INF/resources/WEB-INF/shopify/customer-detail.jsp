@@ -34,7 +34,7 @@
                 <h1><c:out value="${customerDetail.customer.displayName}"/></h1>
                 <p><c:out value="${customerDetail.customer.email}"/> · <c:out value="${customerDetail.customer.sourceId}"/></p>
             </div>
-            <span class="status-pill"><c:out value="${customerDetail.customer.consentState}"/></span>
+            <span class="status-pill" data-customer-subscription-badge><c:out value="${customerDetail.customer.consentState}"/></span>
         </section>
 
         <section class="detail-grid">
@@ -52,6 +52,9 @@
                 <div class="detail-stat"><span>购买频次</span><strong><c:out value="${customerDetail.frequency}" default="0"/></strong></div>
                 <div class="detail-stat"><span>RFM 消费额</span><strong><c:out value="${customerDetail.monetary}"/></strong></div>
             </div>
+            <div class="detail-stat"><span>订阅状态</span><%@ include file="/WEB-INF/shared/customer-detail-subscription.jspf" %></div>
+            <div class="detail-stat"><span>抑制名单</span><%@ include file="/WEB-INF/shared/customer-detail-suppression.jspf" %></div>
+            <%@ include file="/WEB-INF/shared/customer-detail-tags.jspf" %>
         </section>
 
         <details class="content-section spaced-section customer-orders-section">

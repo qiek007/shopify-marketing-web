@@ -101,7 +101,8 @@ class ThemeResourceParityTest {
         assertThat(page).contains(
                 "id=\"campaign-delivery-rate\"",
                 "campaignDetail.summary.accepted gt 0 ? campaignDetail.summary.delivered * 100.0 / campaignDetail.summary.accepted : 0",
-                "id=\"campaign-risk-note\">退信 <c:out value=\"${campaignDetail.summary.bounced}\"/>",
+                "id=\"campaign-risk-note\"><c:choose><c:when test=\"${legacySavedRisk}\">",
+                "campaignDetail.summary.outcomeStatisticsAvailable}\"><c:out value=\"${campaignDetail.summary.bounced}\"/>",
                 "function deliveryRate(delivered, accepted)",
                 "setText('campaign-delivery-rate', '送达率 ' + deliveryRate(summary.delivered, summary.accepted)",
                 "setText('campaign-risk-note', '退信 ' + summary.bounced + ' / 投诉 '");

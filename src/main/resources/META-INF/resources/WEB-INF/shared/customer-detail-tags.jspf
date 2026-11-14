@@ -1,0 +1,58 @@
+<%@ page pageEncoding="UTF-8" %>
+<c:url var="customerTagChangeUrl" value="/customers/detail/tags">
+    <c:param name="shop" value="${customerDetail.customer.shopDomain}"/>
+</c:url>
+<c:url var="customerTagOptionsUrl" value="/customers/tags/options">
+    <c:param name="shop" value="${customerDetail.customer.shopDomain}"/>
+</c:url>
+<div class="customer-detail-tags" data-customer-detail-tags data-options-url="<c:out value='${customerTagOptionsUrl}'/>"
+     data-url="<c:out value='${customerTagChangeUrl}'/>"
+     data-customer-id="<c:out value='${customerDetail.customer.sourceId}'/>"
+     data-editable="${canEditCustomerTags eq true}">
+    <style>
+        .customer-detail-tags{padding:12px 16px;border:1px solid #e0e6ec;border-top:0}
+        .customer-detail-tags h4{margin:0 0 8px;font-size:13px;font-weight:600}
+        .customer-detail-tags-list,.customer-detail-tag-form{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+        .customer-detail-tags-list .status-pill{display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow-wrap:anywhere}
+        .customer-detail-tag-remove{border:0;background:transparent;color:inherit;font:inherit;font-size:15px;cursor:pointer;padding:0 3px}
+        .customer-detail-tag-form{margin-top:10px}
+        .customer-detail-tag-picker{position:relative;width:min(100%,260px)}
+        .customer-detail-tag-form input{width:100%;min-height:34px;box-sizing:border-box;padding:5px 8px;border:1px solid #bac8d4;border-radius:4px}
+        .customer-detail-tag-options{position:absolute;z-index:2;top:calc(100% + 4px);left:0;right:0;margin:0;padding:4px;background:#fff;border:1px solid #bac8d4;border-radius:4px;max-height:144px;overflow:auto;list-style:none}
+        .customer-detail-tag-options li{padding:5px 8px;overflow-wrap:anywhere}
+        .customer-detail-tag-options li[role="option"]{cursor:pointer}
+        .customer-detail-tag-options li[role="option"]:hover,.customer-detail-tag-options li[aria-selected="true"]{background:#eef5f5}
+        .customer-subscription-editor summary{cursor:pointer;color:#245774;font-weight:400}
+        .customer-subscription-editor form{margin-top:6px;font-weight:400}
+        .customer-subscription-editor select{max-width:100%;min-height:34px;box-sizing:border-box;padding:4px 6px}
+        .customer-subscription-editor [data-subscription-confirmation]:not([hidden]){display:block;margin-top:5px}
+        .customer-suppression-editor{margin-top:6px;font-weight:400}
+        .customer-subscription-editor [data-error],.customer-suppression-editor [data-error]{color:#a02020}
+        .customer-detail-tag-status:empty{display:none}
+        .customer-detail-tag-status{margin:6px 0 0;font-size:12px}
+        .customer-detail-tag-status[data-error]{color:#a02020}
+    </style>
+    <h4>客户标签</h4>
+    <div class="customer-detail-tags-list" data-customer-tag-list>
+        <c:choose>
+            <c:when test="${empty customerDetail.customer.tags}"><span class="muted-text">暂无标签</span></c:when>
+            <c:otherwise>
+                <c:forEach items="${customerDetail.customer.tags}" var="customerTag">
+                    <span class="status-pill neutral"><span><c:out value="${customerTag}"/></span><c:if test="${canEditCustomerTags}"><button type="button" class="customer-detail-tag-remove" data-remove-customer-tag="<c:out value='${customerTag}'/>" aria-label="移除标签 <c:out value='${customerTag}'/>">×</button></c:if></span>
+                </c:forEach>
+            </c:otherwise>
+        </c:choose>
+    </div>
+    <c:if test="${canEditCustomerTags}">
+        <form class="customer-detail-tag-form" data-customer-tag-add>
+            <div class="customer-detail-tag-picker">
+                <input name="tag" type="text" maxlength="100" required autocomplete="off" placeholder="输入新标签或搜索已有标签"
+                       aria-label="标签名称" aria-expanded="false" aria-autocomplete="list" role="combobox"
+                       data-customer-tag-search>
+                <ul class="customer-detail-tag-options" data-customer-tag-options role="listbox" aria-label="本店已有标签" hidden></ul>
+            </div>
+            <button type="submit" class="action-button">添加标签</button>
+        </form>
+        <p class="customer-detail-tag-status" data-customer-tag-status role="status" aria-live="polite"></p>
+    </c:if>
+</div>

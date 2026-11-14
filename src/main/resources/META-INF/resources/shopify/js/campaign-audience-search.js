@@ -22,7 +22,7 @@
             }
         });
     }
-    document.querySelectorAll('.campaign-audience-tags .customer-tag-select').forEach(function (picker) {
+    document.querySelectorAll('.campaign-audience-tags .customer-tag-select:not(#campaign-segment-multi)').forEach(function (picker) {
         var input = picker.querySelector('[data-tag-search]');
         var empty = picker.querySelector('[data-tag-search-empty]');
         var labels = Array.prototype.slice.call(picker.querySelectorAll('.customer-tag-options > label'));

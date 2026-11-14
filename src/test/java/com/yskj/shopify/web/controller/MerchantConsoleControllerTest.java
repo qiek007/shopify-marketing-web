@@ -195,6 +195,25 @@ class MerchantConsoleControllerTest {
     }
 
     @Test
+    void passesCurrentDraftAudienceSelectionsAsArraysAndReturnsNoStore() {
+        JSONObject result = new JSONObject(Map.of("total",0,"page",1,"pageSize",20));
+        when(client.exchange(eq("campaigns.draft-audience-preview"), any(), eq("demo.myshopify.com"), any(),eq(null)))
+                .thenReturn(MerchantWebProtocol.json(result));
+        var params=new LinkedMultiValueMap<String,String>();
+        params.add("shop","demo.myshopify.com");
+        params.add("segmentIds","seg-a");
+        params.add("segmentIds","seg-b");
+        params.add("includeTags","VIP");
+        params.add("segmentTagRelation","AND");
+        var response=controller.draftAudiencePreview(params,session());
+        assertThat(response.getHeaders().getCacheControl()).contains("no-store");
+        assertThat(response.getBody()).isEqualTo(result);
+        verify(client).exchange(eq("campaigns.draft-audience-preview"),any(),eq("demo.myshopify.com"),
+                org.mockito.ArgumentMatchers.argThat(p -> p.getJSONArray("segmentIds").toJavaList(String.class).equals(java.util.List.of("seg-a","seg-b"))
+                    && "VIP".equals(p.getString("includeTags"))),eq(null));
+    }
+
+    @Test
     void campaignAudiencePreviewReturnsTheSafeConflictReasonWithoutCachingIt() {
         when(client.exchange(eq("campaigns.audience-preview"), any(),
                 eq("demo.myshopify.com"), any(), eq(null)))

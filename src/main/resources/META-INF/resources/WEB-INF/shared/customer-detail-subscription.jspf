@@ -1,0 +1,24 @@
+<%@ page pageEncoding="UTF-8" %>
+<span data-customer-subscription-value><c:out value="${customerDetail.customer.consentState}"/></span>
+<c:if test="${canEditCustomerTags}">
+    <c:url var="customerSubscriptionUrl" value="/customers/detail/subscription">
+        <c:param name="shop" value="${customerDetail.customer.shopDomain}"/>
+    </c:url>
+    <details class="customer-subscription-editor">
+        <summary>修改订阅状态</summary>
+        <form data-customer-subscription-form data-url="<c:out value='${customerSubscriptionUrl}'/>"
+              data-customer-id="<c:out value='${customerDetail.customer.sourceId}'/>">
+            <select name="state" aria-label="订阅状态" required>
+                <c:if test="${customerDetail.customer.consentState ne 'SUBSCRIBED' and customerDetail.customer.consentState ne 'NOT_SUBSCRIBED' and customerDetail.customer.consentState ne 'UNSUBSCRIBED'}">
+                    <option value="" selected disabled>选择订阅状态</option>
+                </c:if>
+                <option value="SUBSCRIBED" ${customerDetail.customer.consentState eq 'SUBSCRIBED' ? 'selected' : ''}>已订阅</option>
+                <option value="NOT_SUBSCRIBED" ${customerDetail.customer.consentState eq 'NOT_SUBSCRIBED' ? 'selected' : ''}>未订阅</option>
+                <option value="UNSUBSCRIBED" ${customerDetail.customer.consentState eq 'UNSUBSCRIBED' ? 'selected' : ''}>已退订</option>
+            </select>
+            <button type="submit" class="action-button">保存</button>
+            <label data-subscription-confirmation hidden><input type="checkbox" name="confirmed"> 客户已明确同意接收营销邮件</label>
+            <div data-subscription-status role="status" aria-live="polite"></div>
+        </form>
+    </details>
+</c:if>

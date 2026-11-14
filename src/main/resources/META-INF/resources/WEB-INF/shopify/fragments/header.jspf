@@ -10,6 +10,7 @@
 <script id="console-navigation" src="${ctx}/shopify/js/console-navigation.js?v=20261020-shop-search-name-sort-20261104"
         data-context-path="${ctx}" defer></script>
 <script src="${ctx}/shopify/js/browser-time.js" defer></script>
+<script src="${ctx}/shopify/js/customer-detail-tags.js?v=suppression-confirm" defer></script>
 <header class="console-header">
     <div class="brand-block">
         <img src="${ctx}${uiAssetBase}/img/auwlog-1.png" style="width: 100px">

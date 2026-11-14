@@ -1,0 +1,28 @@
+<%@ page pageEncoding="UTF-8" %>
+<c:url var="draftAudiencePreviewUrl" value="/campaigns/editor/audience-preview"/>
+<section id="campaign-draft-audience-preview" class="draft-audience-preview" hidden data-draft-audience-preview="<c:out value='${draftAudiencePreviewUrl}'/>" aria-label="受众预览">
+    <style>
+        .draft-audience-preview{margin-top:10px;padding:10px 12px;border:1px solid #d6dee6;border-radius:5px;background:#fff}
+        .draft-preview-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+        .draft-preview-status{margin:7px 0 0;font-size:13px;color:#4e6773}
+        .draft-preview-scroll{overflow:auto;margin-top:10px}
+        .draft-preview-table{width:100%;border-collapse:collapse;font-size:13px}
+        .draft-preview-table th,.draft-preview-table td{text-align:left;padding:7px 10px;border-bottom:1px solid #e2eaee;overflow-wrap:anywhere}
+        .draft-preview-table th{background:#f5f8f8;color:#355362}
+        .draft-preview-nav{justify-content:flex-end;margin-top:9px}
+    </style>
+    <p class="draft-preview-status" role="status" aria-live="polite" data-draft-preview-status hidden></p>
+    <div data-draft-preview-result hidden>
+        <div class="draft-preview-scroll">
+            <table class="draft-preview-table" aria-label="符合条件的客户">
+                <thead><tr><th scope="col">客户</th><th scope="col">邮箱</th><th scope="col">订阅状态</th><th scope="col">来源</th></tr></thead>
+                <tbody data-draft-preview-rows></tbody>
+            </table>
+        </div>
+        <div class="draft-preview-nav">
+            <button type="button" class="action-button" data-draft-preview-prev>上一页</button>
+            <span data-draft-preview-page></span>
+            <button type="button" class="action-button" data-draft-preview-next>下一页</button>
+        </div>
+    </div>
+</section>

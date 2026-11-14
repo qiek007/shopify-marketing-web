@@ -1,0 +1,26 @@
+<%@ page pageEncoding="UTF-8" %>
+<span data-customer-suppression-value><c:choose><c:when test="${customerDetail.customer.suppressed}">是</c:when><c:otherwise>否</c:otherwise></c:choose></span>
+<c:if test="${canEditCustomerTags}">
+    <c:url var="customerSuppressionUrl" value="/customers/detail/suppression">
+        <c:param name="shop" value="${customerDetail.customer.shopDomain}"/>
+    </c:url>
+    <form class="customer-suppression-editor" data-customer-suppression-form
+          data-url="<c:out value='${customerSuppressionUrl}'/>"
+          data-customer-id="<c:out value='${customerDetail.customer.sourceId}'/>"
+          data-suppressed="${customerDetail.customer.suppressed eq true}">
+        <button type="submit" class="action-button"><c:choose><c:when test="${customerDetail.customer.suppressed}">解除手动抑制</c:when><c:otherwise>加入抑制名单</c:otherwise></c:choose></button>
+        <div data-suppression-status role="status" aria-live="polite"></div>
+    </form>
+    <dialog class="campaign-send-dialog customer-suppression-confirmation" data-suppression-confirm-dialog
+            aria-label="确认修改抑制名单">
+        <div class="campaign-send-dialog-icon" aria-hidden="true"><i class="fa fa-ban"></i></div>
+        <div>
+            <h2 data-suppression-confirm-title></h2>
+            <p data-suppression-confirm-description></p>
+        </div>
+        <form method="dialog" class="campaign-send-dialog-actions">
+            <button type="submit" class="action-button" value="cancel" autofocus>取消</button>
+            <button type="submit" class="primary-button" value="confirm" data-suppression-confirm-action>确认</button>
+        </form>
+    </dialog>
+</c:if>

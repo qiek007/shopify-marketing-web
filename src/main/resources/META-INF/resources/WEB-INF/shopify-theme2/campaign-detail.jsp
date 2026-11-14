@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ page language="java" pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -7,9 +8,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>营销活动 - Shopify 邮件营销</title>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<c:url var="campaignListReturnUrl" value="/campaigns">
+    <c:param name="shop" value="${campaignDetail.shopDomain}"/>
+    <c:param name="page" value="${empty param.listPage ? 1 : param.listPage}"/>
+    <c:param name="size" value="${empty param.listSize ? 10 : param.listSize}"/>
+    <c:param name="q" value="${param.listQ}"/>
+    <c:param name="status" value="${param.listStatus}"/>
+    <c:param name="fromDate" value="${param.listFromDate}"/>
+    <c:param name="toDate" value="${param.listToDate}"/>
+</c:url>
 <c:url var="campaignRefreshUrl" value="/campaigns/detail">
     <c:param name="shop" value="${campaignDetail.shopDomain}"/>
     <c:param name="campaignId" value="${campaignDetail.campaignId}"/>
+    <c:param name="listPage" value="${empty param.listPage ? 1 : param.listPage}"/>
+    <c:param name="listSize" value="${empty param.listSize ? 10 : param.listSize}"/>
+    <c:param name="listQ" value="${param.listQ}"/>
+    <c:param name="listStatus" value="${param.listStatus}"/>
+    <c:param name="listFromDate" value="${param.listFromDate}"/>
+    <c:param name="listToDate" value="${param.listToDate}"/>
 </c:url>
 <c:url var="campaignProgressUrl" value="/campaigns/detail/progress">
     <c:param name="shop" value="${campaignDetail.shopDomain}"/>
@@ -46,7 +62,7 @@
 <div class="console-layout">
     <%@ include file="fragments/navigation.jspf" %>
     <main class="console-main">
-        <a class="back-link" href="${ctx}/campaigns?shop=${campaignDetail.shopDomain}">
+        <a class="back-link" href="<c:out value='${campaignListReturnUrl}'/>">
             <i class="fa fa-arrow-left"></i> 返回活动列表
         </a>
         <section class="page-heading campaign-detail-heading">
@@ -269,12 +285,18 @@
             <div class="system-notice campaign-zero-audience"><i class="fa fa-exclamation-triangle"></i><div><strong>冻结受众为空，不能发送</strong><span>当前分群或客户资格已经变化时，可重新生成受众；新受众生成后需要再次审批。</span></div></div>
         </c:if>
 
+        <c:set var="statisticsMissingLabel" value="${campaignDetail.summary.statisticsPartial or campaignDetail.summary.statisticsStatus eq 'ARCHIVE_PENDING' ? '历史未记录' : '待核验'}"/>
+        <c:if test="${campaignDetail.summary.statisticsStatus eq 'FROZEN_PARTIAL' and not campaignDetail.summary.statisticsReady}"><c:set var="savedLegacyEvents" value="${campaignDetail.summary.savedLegacyEvents}"/></c:if>
+        <c:set var="legacySavedDelivery" value="${not campaignDetail.summary.outcomeStatisticsAvailable and savedLegacyEvents.delivered ne null}"/>
+        <c:set var="legacySavedConversion" value="${not campaignDetail.summary.financialStatisticsAvailable and savedLegacyEvents.converted ne null}"/>
+        <c:set var="legacySavedRisk" value="${not campaignDetail.summary.outcomeStatisticsAvailable and campaignDetail.summary.eventStatisticsAvailable and savedLegacyEvents.bounced ne null}"/>
+        <p id="campaign-statistics-state" class="system-notice" role="status" aria-live="polite"<c:if test="${empty campaignDetail.summary.statisticsStatus or campaignDetail.summary.statisticsReady}"> hidden</c:if>><c:choose><c:when test="${not empty savedLegacyEvents}">已显示历史保留统计，缺失字段标为历史未记录。</c:when><c:when test="${campaignDetail.summary.statisticsStatus eq 'FROZEN_PARTIAL'}">已显示原固化统计，缺失字段标为历史未记录。</c:when><c:when test="${campaignDetail.summary.statisticsStatus eq 'ARCHIVE_PENDING'}">未找到完整历史固化统计，已有最终任务计数仍可查看。</c:when><c:otherwise>统计正在后台准备，请稍后刷新。</c:otherwise></c:choose><c:if test="${campaignDetail.summary.preservedEventStatistics}">（含历史保留的累计事件计数）</c:if></p>
         <section class="campaign-kpi-grid">
             <article><span>冻结受众</span><strong id="campaign-audience"><c:out value="${campaignDetail.summary.audience}"/></strong><small id="campaign-audience-note"><c:choose><c:when test="${campaignDetail.audienceReady}">审批后已固化</c:when><c:otherwise>已检查 <c:out value="${campaignDetail.snapshotProcessedCount}"/> 条候选记录</c:otherwise></c:choose></small></article>
-            <article><span>发送处理</span><strong id="campaign-send-progress"><c:out value="${campaignDetail.summary.progressPercent}"/>%</strong><small id="campaign-send-note"><c:out value="${campaignDetail.summary.accepted}"/> 接受 / <c:out value="${campaignDetail.summary.failed}"/> 失败 / <c:out value="${campaignDetail.summary.unknown}"/> 结果未知</small></article>
-            <article><span>送达</span><strong id="campaign-delivered"><c:out value="${campaignDetail.summary.delivered}"/></strong><small id="campaign-delivery-note">打开 <c:choose><c:when test="${campaignDetail.summary.openedRecipients eq null}">待核验</c:when><c:otherwise><c:out value="${campaignDetail.summary.openedRecipients}"/> 人</c:otherwise></c:choose> / <c:out value="${campaignDetail.summary.opened}"/> 次 · 点击 <c:choose><c:when test="${campaignDetail.summary.clickedRecipients eq null}">待核验</c:when><c:otherwise><c:out value="${campaignDetail.summary.clickedRecipients}"/> 人</c:otherwise></c:choose> / <c:out value="${campaignDetail.summary.clicked}"/> 次</small></article>
-            <article><span>转化</span><strong id="campaign-orders"><c:out value="${campaignDetail.summary.orders}"/> 单</strong><small id="campaign-conversion-note"><c:out value="${campaignDetail.summary.convertedRecipients}"/> 位客户 · <c:out value="${campaignDetail.summary.netRevenue}"/></small></article>
-            <article><span>风险反馈</span><strong id="campaign-risk"><c:choose><c:when test="${not empty campaignDetail.summary.unsubscribedRecipients}"><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribedRecipients}"/></c:when><c:otherwise><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribed}"/></c:otherwise></c:choose></strong><small id="campaign-risk-note">退信 <c:out value="${campaignDetail.summary.bounced}"/> / 投诉 <c:out value="${campaignDetail.summary.complained}"/> / 退订人数 <c:out value="${campaignDetail.summary.unsubscribedRecipients}" default="待核验"/><c:if test="${empty campaignDetail.summary.unsubscribedRecipients}">（退订事件 <c:out value="${campaignDetail.summary.unsubscribed}"/>）</c:if></small></article>
+            <c:choose><c:when test="${not empty campaignDetail.legacySendingProgress}"><article><span>发送处理</span><strong id="campaign-send-progress"><c:out value="${campaignDetail.legacySendingProgress.progressPercent}"/>%</strong><small id="campaign-send-note">原最终任务计数：已处理 <c:out value="${campaignDetail.legacySendingProgress.processed}"/> / <c:out value="${campaignDetail.legacySendingProgress.total}"/> · 接受 <c:out value="${campaignDetail.legacySendingProgress.accepted}"/></small></article></c:when><c:when test="${not empty campaignDetail.summary.statisticsStatus and not campaignDetail.summary.statisticsReady and campaignDetail.summary.statisticsStatus ne 'INITIALIZING' and not campaignDetail.summary.sendingStatisticsAvailable}"><article><span>发送处理</span><strong id="campaign-send-progress">—</strong><small id="campaign-send-note">历史发送统计未记录</small></article></c:when><c:otherwise><article><span>发送处理</span><strong id="campaign-send-progress"><c:out value="${campaignDetail.summary.progressPercent}"/>%</strong><small id="campaign-send-note"><c:out value="${campaignDetail.summary.accepted}"/> 接受 / <c:out value="${campaignDetail.summary.failed}"/> 失败 / <c:out value="${campaignDetail.summary.unknown}"/> 结果未知</small></article></c:otherwise></c:choose>
+                        <article><span id="campaign-delivered-label"><c:choose><c:when test="${legacySavedDelivery}">送达累计记录</c:when><c:otherwise>送达</c:otherwise></c:choose></span><strong id="campaign-delivered"><c:choose><c:when test="${legacySavedDelivery}"><c:out value="${savedLegacyEvents.delivered}"/> 次</c:when><c:when test="${empty campaignDetail.summary.statisticsStatus or campaignDetail.summary.statisticsReady or campaignDetail.summary.outcomeStatisticsAvailable}"><c:out value="${campaignDetail.summary.delivered}"/></c:when><c:otherwise><span data-statistics-pending>—</span></c:otherwise></c:choose></strong><small id="campaign-delivery-rate"><c:choose><c:when test="${legacySavedDelivery}">历史事件口径 · 去重送达人数历史未记录</c:when><c:when test="${empty campaignDetail.summary.statisticsStatus or campaignDetail.summary.statisticsReady or (campaignDetail.summary.outcomeStatisticsAvailable and campaignDetail.summary.sendingStatisticsAvailable)}">送达率 <fmt:formatNumber value="${campaignDetail.summary.accepted gt 0 ? campaignDetail.summary.delivered * 100.0 / campaignDetail.summary.accepted : 0}" minFractionDigits="1" maxFractionDigits="1"/>% · <c:out value="${campaignDetail.summary.delivered}"/> / <c:out value="${campaignDetail.summary.accepted}"/></c:when><c:when test="${campaignDetail.summary.outcomeStatisticsAvailable and not empty campaignDetail.legacySendingProgress and campaignDetail.legacySendingProgress.accepted ge campaignDetail.summary.delivered}">送达率 <fmt:formatNumber value="${campaignDetail.legacySendingProgress.accepted gt 0 ? campaignDetail.summary.delivered * 100.0 / campaignDetail.legacySendingProgress.accepted : 0}" minFractionDigits="1" maxFractionDigits="1"/>% · <c:out value="${campaignDetail.summary.delivered}"/> / <c:out value="${campaignDetail.legacySendingProgress.accepted}"/>（原最终任务计数）</c:when><c:when test="${not empty campaignDetail.legacySendingProgress}">原最终任务已接受 <c:out value="${campaignDetail.legacySendingProgress.accepted}"/>（历史送达口径待核验）</c:when><c:otherwise>历史发送基数未记录</c:otherwise></c:choose></small><small id="campaign-delivery-note"><c:choose><c:when test="${empty campaignDetail.summary.statisticsStatus or campaignDetail.summary.statisticsReady or campaignDetail.summary.eventStatisticsAvailable}">打开 <c:choose><c:when test="${campaignDetail.summary.openedRecipients eq null}"><c:out value="${statisticsMissingLabel}"/></c:when><c:otherwise><c:out value="${campaignDetail.summary.openedRecipients}"/> 人</c:otherwise></c:choose> / <c:out value="${campaignDetail.summary.opened}"/> 次 · 点击 <c:choose><c:when test="${campaignDetail.summary.clickedRecipients eq null}"><c:out value="${statisticsMissingLabel}"/></c:when><c:otherwise><c:out value="${campaignDetail.summary.clickedRecipients}"/> 人</c:otherwise></c:choose> / <c:out value="${campaignDetail.summary.clicked}"/> 次</c:when><c:otherwise>打开、点击统计<c:out value="${statisticsMissingLabel}"/></c:otherwise></c:choose></small></article>
+            <article><span id="campaign-conversion-label"><c:choose><c:when test="${legacySavedConversion}">转化累计记录</c:when><c:otherwise>转化</c:otherwise></c:choose></span><strong id="campaign-orders"><c:choose><c:when test="${legacySavedConversion}"><c:out value="${savedLegacyEvents.converted}"/> 次</c:when><c:when test="${empty campaignDetail.summary.statisticsStatus or campaignDetail.summary.statisticsReady or campaignDetail.summary.financialStatisticsAvailable}"><c:out value="${campaignDetail.summary.orders}"/> 单</c:when><c:otherwise><span data-statistics-pending>—</span></c:otherwise></c:choose></strong><small id="campaign-conversion-note"><c:choose><c:when test="${legacySavedConversion}">原转化记录（历史事件口径）；订单、客户及金额历史未记录</c:when><c:when test="${empty campaignDetail.summary.statisticsStatus or campaignDetail.summary.statisticsReady or campaignDetail.summary.financialStatisticsAvailable}"><c:out value="${campaignDetail.summary.convertedRecipients}"/> 位客户 · <c:out value="${campaignDetail.summary.netRevenue}"/></c:when><c:otherwise>转化统计<c:out value="${statisticsMissingLabel}"/></c:otherwise></c:choose></small></article>
+            <article><span id="campaign-risk-label">风险反馈<c:if test="${legacySavedRisk or (campaignDetail.summary.statisticsStatus eq 'FROZEN_PARTIAL' and campaignDetail.summary.outcomeStatisticsAvailable and campaignDetail.summary.eventStatisticsAvailable and campaignDetail.summary.unsubscribedRecipients eq null)}">（历史事件口径）</c:if></span><strong id="campaign-risk"><c:choose><c:when test="${legacySavedRisk}"><c:out value="${savedLegacyEvents.bounced + campaignDetail.summary.complained + campaignDetail.summary.unsubscribed}"/> 次</c:when><c:when test="${empty campaignDetail.summary.statisticsStatus or campaignDetail.summary.statisticsReady or campaignDetail.summary.riskTotalAvailable or (campaignDetail.summary.statisticsStatus eq 'FROZEN_PARTIAL' and campaignDetail.summary.outcomeStatisticsAvailable and campaignDetail.summary.eventStatisticsAvailable and campaignDetail.summary.unsubscribedRecipients eq null)}"><c:out value="${campaignDetail.summary.bounced + campaignDetail.summary.complained + (campaignDetail.summary.unsubscribedRecipients eq null ? campaignDetail.summary.unsubscribed : campaignDetail.summary.unsubscribedRecipients)}"/></c:when><c:otherwise><span data-statistics-pending>—</span></c:otherwise></c:choose></strong><small id="campaign-risk-note"><c:choose><c:when test="${legacySavedRisk}">原退信记录 <c:out value="${savedLegacyEvents.bounced}"/> 次 / 投诉 <c:out value="${campaignDetail.summary.complained}"/> 次 / 退订事件 <c:out value="${campaignDetail.summary.unsubscribed}"/> 次（退订去重人数历史未记录）</c:when><c:otherwise>退信 <c:choose><c:when test="${empty campaignDetail.summary.statisticsStatus or campaignDetail.summary.statisticsReady or campaignDetail.summary.outcomeStatisticsAvailable}"><c:out value="${campaignDetail.summary.bounced}"/></c:when><c:otherwise><c:out value="${statisticsMissingLabel}"/></c:otherwise></c:choose> / 投诉 <c:choose><c:when test="${empty campaignDetail.summary.statisticsStatus or campaignDetail.summary.statisticsReady or campaignDetail.summary.eventStatisticsAvailable}"><c:out value="${campaignDetail.summary.complained}"/></c:when><c:otherwise><c:out value="${statisticsMissingLabel}"/></c:otherwise></c:choose> / <c:choose><c:when test="${campaignDetail.summary.unsubscribedRecipients ne null}">退订人数 <c:out value="${campaignDetail.summary.unsubscribedRecipients}"/></c:when><c:when test="${campaignDetail.summary.statisticsStatus eq 'FROZEN_PARTIAL' and campaignDetail.summary.outcomeStatisticsAvailable and campaignDetail.summary.eventStatisticsAvailable and campaignDetail.summary.unsubscribedRecipients eq null}">退订事件 <c:out value="${campaignDetail.summary.unsubscribed}"/>（历史未记录去重人数）</c:when><c:otherwise>退订人数 <c:out value="${statisticsMissingLabel}"/><c:if test="${empty campaignDetail.summary.statisticsStatus or campaignDetail.summary.statisticsReady or campaignDetail.summary.eventStatisticsAvailable}">（退订事件 <c:out value="${campaignDetail.summary.unsubscribed}"/>）</c:if></c:otherwise></c:choose></c:otherwise></c:choose></small></article>
         </section>
 
         <%@ include file="fragments/manual-campaign-receipts.jspf" %>
@@ -489,7 +511,8 @@
 
         var refreshLink = document.getElementById('campaign-detail-refresh');
         var campaignSnapshotRefresh = document.getElementById('campaign-snapshot-refresh');
-        var autoRefresh = ${campaignDetail.snapshotBuilding
+        var autoRefresh = ${campaignDetail.summary.statisticsStatus eq 'INITIALIZING'
+                || campaignDetail.snapshotBuilding
                 || campaignDetail.status eq 'PREPARING'
                 || campaignDetail.status eq 'SCHEDULED'
                 || campaignDetail.status eq 'QUEUED'
@@ -602,6 +625,74 @@
 
         function engagementPeople(value) { return value == null ? '待核验' : value + ' 人'; }
 
+        function applyStatisticsState(summary) {
+            var ready = !summary.statisticsStatus || summary.statisticsReady === true;
+            var partial = summary.statisticsStatus === 'FROZEN_PARTIAL';
+            var archived = summary.statisticsStatus === 'ARCHIVE_PENDING';
+            var historical = partial || archived;
+            var missing = historical ? '历史未记录' : '待核验';
+            var message = partial ? '已显示原固化统计，缺失字段标为历史未记录。' : archived ? '未找到完整历史固化统计，已有最终任务计数仍可查看。' : '统计正在后台准备，请稍后刷新。';
+            if (partial && summary.savedLegacyEvents) message = '已显示历史保留统计，缺失字段标为历史未记录。';
+            if (partial && (summary.preservedEventStatistics === true || (summary.statisticsAvailability && summary.statisticsAvailability.preservedEvents === true))) message += '（含历史保留的累计事件计数）';
+            var notice = document.getElementById('campaign-statistics-state');
+            if (notice) { notice.hidden = ready; notice.textContent = ready ? '' : message; }
+            if (ready) return;
+            function available(group, field) {
+                if (summary.statisticsAvailability && Object.prototype.hasOwnProperty.call(summary.statisticsAvailability, group)) return summary.statisticsAvailability[group] === true;
+                return summary[field] === true || (group === 'sending' && summary.statisticsStatus === 'INITIALIZING');
+            }
+            var sending = available('sending', 'sendingStatisticsAvailable');
+            var outcomes = available('outcomes', 'outcomeStatisticsAvailable');
+            var events = available('events', 'eventStatisticsAvailable');
+            var finance = available('finance', 'financialStatisticsAvailable');
+            if (!sending) { setText('campaign-send-progress', '—'); setText('campaign-send-note', historical ? '历史发送统计未记录' : message); }
+            if (!outcomes) setText('campaign-delivered', '—');
+            if (!sending || !outcomes) setText('campaign-delivery-rate', historical ? '历史发送基数未记录' : message);
+            if (!events) setText('campaign-delivery-note', historical ? '打开、点击统计历史未记录' : message);
+            else if (partial) setText('campaign-delivery-note', '打开 ' + (summary.openedRecipients == null ? missing : summary.openedRecipients + ' 人') + ' / ' + summary.opened + ' 次 · 点击 ' + (summary.clickedRecipients == null ? missing : summary.clickedRecipients + ' 人') + ' / ' + summary.clicked + ' 次');
+            if (!finance) { setText('campaign-orders', '—'); setText('campaign-conversion-note', historical ? '转化统计历史未记录' : message); }
+            var legacyRisk = partial && outcomes && events && summary.unsubscribedRecipients == null;
+            if (outcomes && events && (summary.unsubscribedRecipients != null || legacyRisk)) {
+                setText('campaign-risk', summary.bounced + summary.complained + (summary.unsubscribedRecipients == null ? summary.unsubscribed : summary.unsubscribedRecipients));
+            } else setText('campaign-risk', '—');
+            if (legacyRisk) setText('campaign-risk-label', '风险反馈（历史事件口径）');
+            var unsubscribe = summary.unsubscribedRecipients != null ? '退订人数 ' + summary.unsubscribedRecipients
+                    : legacyRisk ? '退订事件 ' + summary.unsubscribed + '（历史未记录去重人数）'
+                    : '退订人数 ' + missing + (events ? '（退订事件 ' + summary.unsubscribed + '）' : '');
+            setText('campaign-risk-note', '退信 ' + (outcomes ? summary.bounced : missing) + ' / 投诉 ' + (events ? summary.complained : missing) + ' / ' + unsubscribe);
+            var saved = partial && summary.savedLegacyEvents ? summary.savedLegacyEvents : {};
+            function savedCount(value) { return Number.isSafeInteger(value) && value >= 0; }
+            if (!outcomes && savedCount(saved.delivered)) {
+                setText('campaign-delivered-label', '送达累计记录');
+                setText('campaign-delivered', saved.delivered + ' 次');
+                setText('campaign-delivery-rate', '历史事件口径 · 去重送达人数历史未记录');
+            }
+            if (!finance && savedCount(saved.converted)) {
+                setText('campaign-conversion-label', '转化累计记录');
+                setText('campaign-orders', saved.converted + ' 次');
+                setText('campaign-conversion-note', '原转化记录（历史事件口径）；订单、客户及金额历史未记录');
+            }
+            if (!outcomes && events && savedCount(saved.bounced)) {
+                setText('campaign-risk-label', '风险反馈（历史事件口径）');
+                setText('campaign-risk', (saved.bounced + summary.complained + summary.unsubscribed) + ' 次');
+                setText('campaign-risk-note', '原退信记录 ' + saved.bounced + ' 次 / 投诉 ' + summary.complained + ' 次 / 退订事件 ' + summary.unsubscribed + ' 次（退订去重人数历史未记录）');
+            }
+        }
+
+        function applyLegacySendingProgress(legacy, summary) {
+            if (!legacy || !summary || !['FROZEN_PARTIAL','ARCHIVE_PENDING'].includes(summary.statisticsStatus)
+                    || summary.sendingStatisticsAvailable === true || (summary.statisticsAvailability && summary.statisticsAvailability.sending === true)) return;
+            var total = Number(legacy.total), processed = Number(legacy.processed), accepted = Number(legacy.accepted);
+            if (![total,processed,accepted].every(function(value){return Number.isSafeInteger(value) && value >= 0;}) || processed > total || accepted > processed) return;
+            setText('campaign-send-progress', (total === 0 ? 0 : Math.round(processed * 100 / total)) + '%');
+            setText('campaign-send-note', '原最终任务计数：已处理 ' + processed + ' / ' + total + ' · 接受 ' + accepted);
+            var outcomes = summary.outcomeStatisticsAvailable === true || (summary.statisticsAvailability && summary.statisticsAvailability.outcomes === true);
+            if (!outcomes && summary.savedLegacyEvents && Number.isSafeInteger(summary.savedLegacyEvents.delivered) && summary.savedLegacyEvents.delivered >= 0) return;
+            if (!outcomes) setText('campaign-delivery-rate', '原最终任务已接受 ' + accepted + '（送达数历史未记录）');
+            else if (accepted >= summary.delivered && (accepted > 0 || summary.delivered === 0)) setText('campaign-delivery-rate', '送达率 ' + (accepted === 0 ? '0.0' : (summary.delivered * 100 / accepted).toFixed(1)) + '% · ' + summary.delivered + ' / ' + accepted + '（原最终任务计数）');
+            else setText('campaign-delivery-rate', '原最终任务已接受 ' + accepted + '（历史送达口径待核验）');
+        }
+
         function scheduleRefresh() {
             clearTimeout(refreshTimer);
             if (autoRefresh) refreshTimer = setTimeout(refreshProgress, 10000);
@@ -624,16 +715,21 @@
             setText('campaign-send-progress', summary.progressPercent + '%');
             setText('campaign-send-note', summary.accepted + ' 接受 / ' + summary.failed
                     + ' 失败 / ' + summary.unknown + ' 结果未知');
+            setText('campaign-delivered-label', '送达');
+            setText('campaign-conversion-label', '转化');
             setText('campaign-delivered', summary.delivered);
             setText('campaign-delivery-note', '打开 ' + engagementPeople(summary.openedRecipients) + ' / ' + summary.opened + ' 次 · 点击 ' + engagementPeople(summary.clickedRecipients) + ' / ' + summary.clicked + ' 次');
             setText('campaign-orders', summary.orders + ' 单');
             setText('campaign-conversion-note', summary.convertedRecipients + ' 位客户 · ' + summary.netRevenue);
             setText('campaign-risk', summary.bounced + summary.complained + (summary.unsubscribedRecipients == null ? summary.unsubscribed : summary.unsubscribedRecipients));
             setText('campaign-risk-note', '退信 ' + summary.bounced + ' / 投诉 ' + summary.complained + ' / 退订人数 ' + (summary.unsubscribedRecipients == null ? '待核验（退订事件 ' + summary.unsubscribed + '）' : summary.unsubscribedRecipients));
+            setText('campaign-risk-label', '风险反馈');
+            applyStatisticsState(summary);
+            applyLegacySendingProgress(progress.legacySendingProgress, summary);
             renderJobs(progress.jobs);
             applySendGate(progress);
             applyScheduleGate(progress);
-            autoRefresh = ['PREPARING', 'SCHEDULED', 'QUEUED', 'RUNNING'].includes(progress.status)
+            autoRefresh = summary.statisticsStatus === 'INITIALIZING' || ['PREPARING', 'SCHEDULED', 'QUEUED', 'RUNNING'].includes(progress.status)
                     || ['BUILDING', 'PROCESSING'].includes(progress.snapshotStatus);
         }
 

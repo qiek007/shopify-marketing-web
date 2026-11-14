@@ -62,8 +62,19 @@
                 <c:otherwise>
                     <c:set var="snapshotBuilding" value="false"/>
                     <div class="table-wrap campaign-list-table-wrap"><table class="status-table"><thead><tr><th>活动</th><th>状态</th><th>模板</th><th>用户数</th><th class="campaign-time-column">执行时间</th><th class="campaign-time-column">有效截止时间</th><th class="campaign-time-column">更新时间</th><th>操作</th></tr></thead><tbody>
-                    <c:forEach items="${campaigns}" var="campaign"><tr>
-                        <td><a class="table-primary-link" href="${ctx}/campaigns/detail?shop=${campaign.shopDomain}&amp;campaignId=${campaign.campaignId}"><strong><c:out value="${campaign.name}"/></strong></a></td>
+<c:forEach items="${campaigns}" var="campaign">
+                    <c:url var="campaignDetailUrl" value="/campaigns/detail">
+                        <c:param name="shop" value="${campaign.shopDomain}"/>
+                        <c:param name="campaignId" value="${campaign.campaignId}"/>
+                        <c:param name="listPage" value="${campaignPage.page}"/>
+                        <c:param name="listSize" value="${campaignPage.pageSize}"/>
+                        <c:param name="listQ" value="${campaignSearch}"/>
+                        <c:param name="listStatus" value="${campaignStatus}"/>
+                        <c:param name="listFromDate" value="${campaignFromDate}"/>
+                        <c:param name="listToDate" value="${campaignToDate}"/>
+                    </c:url>
+                    <tr>
+                        <td><a class="table-primary-link" href="<c:out value='${campaignDetailUrl}'/>"><strong><c:out value="${campaign.name}"/></strong></a></td>
                         <td>
                             <span class="status-pill campaign-status" data-campaign-status="<c:out value='${empty campaign.displayStatus ? campaign.status : campaign.displayStatus}'/>"><c:out value="${campaign.statusDisplayName}"/></span>
                             <c:if test="${campaign.archiveAuditMismatch}">
@@ -83,7 +94,7 @@
                         <td class="campaign-time-column"><c:choose><c:when test="${not empty campaign.validUntil}"><time data-browser-time="<c:out value='${campaign.validUntil}'/>" data-browser-time-format="date-time" datetime="<c:out value='${campaign.validUntil}'/>"><c:out value="${campaign.validUntil}"/></time></c:when><c:otherwise><span class="cell-note">执行后确定</span></c:otherwise></c:choose></td>
                         <td class="campaign-time-column"><time data-browser-time="<c:out value='${campaign.updatedAt}'/>" data-browser-time-format="date-time" datetime="<c:out value='${campaign.updatedAt}'/>"><c:out value="${campaign.updatedAt}"/></time></td>
                         <td><div class="table-actions">
-                            <a class="action-button" href="${ctx}/campaigns/detail?shop=${campaign.shopDomain}&amp;campaignId=${campaign.campaignId}"><i class="fa fa-eye"></i>${campaign.status eq 'PENDING_APPROVAL' ? '查看并审批' : '查看明细'}</a>
+                            <a class="action-button" href="<c:out value='${campaignDetailUrl}'/>"><i class="fa fa-eye"></i>${campaign.status eq 'PENDING_APPROVAL' ? '查看并审批' : '查看明细'}</a>
                             <c:if test="${canManageCampaigns and (campaign.status eq 'DRAFT' or campaign.status eq 'PENDING_APPROVAL')}"><a class="action-button" href="${ctx}/campaigns/editor?shop=${campaign.shopDomain}&amp;campaignId=${campaign.campaignId}"><i class="fa fa-pencil"></i>编辑</a></c:if>
                             <c:if test="${canManageCampaigns and campaign.status eq 'DRAFT'}"><form method="post" action="${ctx}/campaigns/action"><input type="hidden" name="shop" value="${campaign.shopDomain}"><input type="hidden" name="campaignId" value="${campaign.campaignId}"><input type="hidden" name="action" value="SUBMIT"><button class="action-button" type="submit"><i class="fa fa-check"></i>提交审批</button></form></c:if>
                             <c:if test="${canManageCampaigns and campaignWithdrawPermissions[campaign.campaignId]}"><form method="post" action="${ctx}/campaigns/action" data-merchant-action-form data-confirm-message="撤回后返回草稿并清除冻结受众，发送前需重新审批" data-pending-label="撤回中…"><input type="hidden" name="shop" value="${campaign.shopDomain}"><input type="hidden" name="campaignId" value="${campaign.campaignId}"><input type="hidden" name="action" value="WITHDRAW"><button class="action-button" type="submit"><i class="fa fa-undo"></i>撤回审批</button></form></c:if>

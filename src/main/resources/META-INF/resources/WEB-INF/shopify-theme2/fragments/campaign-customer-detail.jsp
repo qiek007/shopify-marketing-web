@@ -6,7 +6,7 @@
         <h3><c:out value="${customerDetail.customer.displayName}"/></h3>
         <p><c:out value="${customerDetail.customer.email}"/> · <c:out value="${customerDetail.customer.sourceId}"/></p>
     </div>
-    <span class="status-pill"><c:out value="${customerDetail.customer.consentState}"/></span>
+    <span class="status-pill" data-customer-subscription-badge><c:out value="${customerDetail.customer.consentState}"/></span>
 </section>
 
 <section class="detail-grid campaign-customer-stats">
@@ -20,12 +20,13 @@
     <div class="section-heading"><div><h3>客户信息</h3><p>当前店铺中的身份、营销资格和价值信息</p></div></div>
     <dl class="campaign-customer-facts">
         <div><dt>账号状态</dt><dd><c:out value="${customerDetail.stateLabel}" default="-"/></dd></div>
-        <div><dt>营销同意</dt><dd><c:out value="${customerDetail.customer.consentState}"/></dd></div>
-        <div><dt>抑制名单</dt><dd><c:choose><c:when test="${customerDetail.customer.suppressed}">是</c:when><c:otherwise>否</c:otherwise></c:choose></dd></div>
+        <div><dt>订阅状态</dt><dd><%@ include file="/WEB-INF/shared/customer-detail-subscription.jspf" %></dd></div>
+        <div><dt>抑制名单</dt><dd><%@ include file="/WEB-INF/shared/customer-detail-suppression.jspf" %></dd></div>
         <div><dt>地区语言</dt><dd><c:out value="${customerDetail.locale}" default="-"/></dd></div>
         <div><dt>客户来源</dt><dd><c:choose><c:when test="${customerDetail.customer.sourceType eq 'IMPORTED'}">文件导入</c:when><c:otherwise>Shopify</c:otherwise></c:choose></dd></div>
         <div><dt>购买频次</dt><dd><c:out value="${customerDetail.frequency}" default="0"/></dd></div>
     </dl>
+    <%@ include file="/WEB-INF/shared/customer-detail-tags.jspf" %>
 </section>
 
 <section class="campaign-customer-section">

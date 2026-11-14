@@ -112,6 +112,7 @@
                 form.dataset.resultsBound = 'true';
                 var activeRequest;
                 var lastSuccessfulQuery;
+                var lastSuccessfulPage = 1;
                 var lastSuccessfulTotal;
                 var deletePending = false;
                 form.querySelectorAll('input[name="tag"]').forEach(function (input) {
@@ -389,6 +390,7 @@
                             resultCount.textContent = total.dataset.customerTotalExact === 'true'
                                 ? '共 ' + total.dataset.customerTotal + ' 位' : '匹配结果';
                         }
+                        lastSuccessfulPage = params.get('page') || '1';
                         lastSuccessfulQuery = new URLSearchParams(params);
                         lastSuccessfulQuery.delete('page');
                         lastSuccessfulTotal = total && total.dataset.customerTotalExact === 'true' ? total.dataset.customerTotal : null;
@@ -451,6 +453,12 @@
                     customerListDialog.addEventListener('click', function (event) {
                         if (event.target === customerListDialog) customerListDialog.close();
                     });
+                    function refreshAfterCustomerChange() {
+                        if (lastSuccessfulQuery) load(lastSuccessfulPage);
+                    }
+                    customerListDialog.addEventListener('customer-tags-changed', refreshAfterCustomerChange);
+                    customerListDialog.addEventListener('customer-subscription-changed', refreshAfterCustomerChange);
+                    customerListDialog.addEventListener('customer-suppression-changed', refreshAfterCustomerChange);
                     customerListDialog.addEventListener('close', function () {
                         var returnFocus = customerListDialogTrigger;
                         var scrollX = customerListDialogScrollX;
