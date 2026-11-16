@@ -8,6 +8,8 @@
 .mc-hint,.mc-meta { color:#61746a; font-size:13px; line-height:1.55; }
 .mc-card { display:block; color:inherit; text-decoration:none; overflow-wrap:anywhere; }
 .mc-card h2,.mc-section h2 { font-size:17px; margin:0 0 8px; }
+.mc-card h2 { display:flex; align-items:flex-start; gap:7px; }
+.mc-result-count { text-align:right; }
 .mc-card p,.mc-section p { margin:6px 0; }
 .mc-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .mc-tag { max-width:100%; overflow-wrap:anywhere; border-radius:20px; padding:3px 8px; background:#e8f4ed; color:#246146; font-size:12px; }

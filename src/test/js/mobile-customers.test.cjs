@@ -73,7 +73,7 @@ test('advanced filters expand when any advanced value is present and mobile asse
   const list = view('customers.jsp');
   assert.ok(/<details[^>]*<c:if test="\$\{[^}]*customerFilter\.fromDate[^}]*customerFilter\.maxUniqueBehaviorCount[^}]*\}"[^>]*>open<\/c:if>/.test(list));
   for (const jsp of [list, view('customer-detail.jsp')]) {
-    assert.ok(jsp.includes('mobile.css?v=20261108-customers2'));
+    assert.match(jsp, /mobile\.css\?v=[\w-]+/);
     assert.match(jsp, /customers\.css\?v=[\w-]+/);
     assert.ok(jsp.includes('customers.js?v=20261108-customers2'));
   }

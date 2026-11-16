@@ -26,7 +26,7 @@
             details.querySelectorAll('.customer-tag-options input[type="checkbox"]:checked'),
             function (checkbox) {
                 var label = checkbox.closest('label');
-                var text = label && label.querySelector('span');
+                var text = label && (label.querySelector('.campaign-segment-option-text strong') || label.querySelector('span'));
                 return text ? text.textContent.trim() : checkbox.value;
             });
     }
@@ -41,9 +41,13 @@
             summary.removeAttribute('title');
             return;
         }
-        summary.textContent = labels.length <= 2
-            ? labels.join('、')
-            : labels.slice(0, 2).join('、') + ' 等 ' + labels.length + ' 个';
+        var names = document.createElement('span');
+        names.className = 'campaign-segment-summary-names';
+        names.textContent = labels.join('、');
+        var count = document.createElement('span');
+        count.className = 'campaign-segment-summary-count';
+        count.textContent = '已选 ' + labels.length + ' 个';
+        summary.replaceChildren(count, names);
         summary.title = labels.join('、');
     }
 

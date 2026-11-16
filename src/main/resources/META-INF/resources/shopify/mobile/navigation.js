@@ -70,7 +70,20 @@
             currentFrame = frame;
             frame.title = '客户资料、订单和行为时间线';
             frame.src = url;
-            frame.addEventListener('load', function () { if (frame === currentFrame) loading.hidden = true; });
+            var fromCampaign = link.hasAttribute('data-recipient-customer');
+            frame.addEventListener('load', function () {
+                if (frame !== currentFrame) return;
+                loading.hidden = true;
+                if (!fromCampaign || !frame.contentDocument) return;
+                var back = frame.contentDocument.querySelector('main a[data-mobile-customer-return]');
+                if (!back) return;
+                back.textContent = '← 返回活动';
+                back.href = win.location.href;
+                back.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    dialog.close();
+                });
+            });
             host.appendChild(frame);
             dialog.showModal();
         });

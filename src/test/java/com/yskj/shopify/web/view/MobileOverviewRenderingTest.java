@@ -87,7 +87,9 @@ class MobileOverviewRenderingTest {
                 recipient.putAll(Map.ofEntries(Map.entry("customerName","收件示例 <script>alert(1)</script>"),Map.entry("customerSourceId","c&1"),
                         Map.entry("email","recipient@example.com"),Map.entry("provider","TEST"),Map.entry("sendStatus","SENT"),
                         Map.entry("openCount",5),Map.entry("clickCount",2),Map.entry("orderCount",1),Map.entry("netRevenue",123),
-                        Map.entry("machineOpenCount",2),Map.entry("attemptCount",1),Map.entry("deliveredAt","2026-11-01T01:00:00Z")));
+                        Map.entry("machineOpenCount",2),Map.entry("attemptCount",1),Map.entry("deliveredAt","2026-11-01T01:00:00Z"),
+                        Map.entry("openedAt","2026-11-01T02:00:00Z"),Map.entry("clickedAt","2026-11-01T03:00:00Z"),
+                        Map.entry("lastOrderAt","2026-11-01T04:00:00Z")));
                 if ("no-id".equals(req.getParameter("mode"))) recipient.remove("customerSourceId");
                 boolean partial = "partial".equals(req.getParameter("mode"));
                 boolean syncing = "syncing".equals(req.getParameter("mode"));
@@ -163,6 +165,19 @@ class MobileOverviewRenderingTest {
             assertThat(recipients.select("[data-mobile-recipient-results] .mr-card")).hasSize(1);
             assertThat(recipients.text()).contains("recipient@example.com", "已下单", "供应商标记的机器行为", "123");
             assertThat(recipients.select(".mr-card script")).isEmpty();
+            assertThat(recipients.select(".mr-customer-name > .mr-customer-icon[aria-hidden=true]")).hasSize(1);
+            assertThat(recipients.select(".mr-card details, .mr-card .mr-stats")).isEmpty();
+            var rows = recipients.select(".mr-execution > div");
+            assertThat(rows.select("dt").eachText()).containsExactly("通道", "发送", "送达", "打开", "点击", "转化");
+            assertThat(rows.select(".mr-execution-time dt").eachText()).containsExactly("发送", "送达");
+            assertThat(rows.select(".mr-execution-activity dt").eachText()).containsExactly("打开", "点击", "转化");
+            assertThat(rows.get(0).select("dd").text()).contains("TEST", "尝试 1 次");
+            assertThat(rows.get(3).select("dd strong").text()).isEqualTo("5 次");
+            assertThat(rows.get(3).select("time").attr("data-browser-time")).isEqualTo("2026-11-01T02:00:00Z");
+            assertThat(rows.get(4).select("dd strong").text()).isEqualTo("2 次");
+            assertThat(rows.get(4).select("time").attr("data-browser-time")).isEqualTo("2026-11-01T03:00:00Z");
+            assertThat(rows.get(5).select("dd").text()).contains("1 单", "归因金额 123");
+            assertThat(rows.get(5).select("time").attr("data-browser-time")).isEqualTo("2026-11-01T04:00:00Z");
             assertThat(recipients.select(".mr-badge").attr("data-status")).isEqualTo("CONVERTED");
             assertThat(recipients.select("a[data-recipient-customer]").attr("href")).contains("/web/mobile/customers/detail", "customerId=c%261");
             assertThat(recipients.select("button[data-recipient-page=2]")).hasSize(1);

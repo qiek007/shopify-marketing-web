@@ -12,7 +12,8 @@
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261004-store-quota">
     <link rel="stylesheet" href="${ctx}/shopify/css/store-domain-verification.css?v=20261028-dialog-layout">
-    <style>.cell-note.store-sync-note { max-width:none; white-space:nowrap; margin:10px 18px 14px; overflow-x:auto; text-overflow:clip; }</style>
+    <style>.cell-note.store-sync-note { max-width:none; white-space:nowrap; margin:10px 18px 14px; overflow-x:auto; text-overflow:clip; }
+    .store-sync-timing .cell-note { max-width:none; overflow-wrap:anywhere; }</style>
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -43,14 +44,47 @@
                     <div class="empty-state"><i class="fa fa-chain-broken"></i><strong>尚未获得店铺授权</strong><span>请联系平台管理员完成店铺连接和成员授权。</span></div>
                 </c:when>
                 <c:otherwise>
+                    <c:set var="auwStore" value="${sourceProfile.connectorKey eq 'AUW_V2'}"/>
+                    <c:set var="lastStoreSync" value="${currentStore.lastSyncedAt}"/>
+                    <c:if test="${auwStore}"><c:set var="lastStoreSync" value="${customSync.syncState eq 'COMPLETED' and not empty customSync.lastCompletedAt ? customSync.lastCompletedAt : customAutomation.lastSuccessAt}"/></c:if>
                     <div class="table-wrap"><table class="status-table wide-table"><thead><tr><th>店铺</th><th>连接</th><th>商品</th><th>客户</th><th>订单</th><th>安装时间</th><th>最近同步</th></tr></thead><tbody><tr>
                         <td><strong><c:out value="${currentStore.shopDomain}"/></strong><span class="cell-note">来源类型：<c:out value="${sourceProfile.sourceLabel}" default="暂不可用"/> · 连接器：<c:out value="${sourceProfile.connectorLabel}" default="未确认"/></span><c:if test="${shopifyStore}"><span class="cell-note"><c:out value="${currentStore.grantedScopes}" default="未记录授权范围"/></span></c:if></td>
                         <td><span class="status-pill"><c:out value="${currentStore.status}"/></span></td>
-                        <td><span class="sync-state"><c:out value="${currentStore.productsStatus}" default="未同步"/></span></td>
-                        <td><span class="sync-state"><c:out value="${currentStore.customersStatus}" default="未同步"/></span></td>
-                        <td><span class="sync-state"><c:out value="${currentStore.ordersStatus}" default="未同步"/></span></td>
+                        <c:choose><c:when test="${auwStore}">
+                            <c:forTokens items="PRODUCT,CUSTOMER,ORDER" delims="," var="type">
+                                <c:set var="resourceState" value=""/>
+                                <c:forEach items="${customSync.resources}" var="resource"><c:if test="${resource.resource eq type}"><c:set var="resourceState" value="${resource.status}"/></c:if></c:forEach>
+                                <td><span class="sync-state"><c:choose>
+                                    <c:when test="${not customSync.available}">状态暂不可用</c:when>
+                                    <c:when test="${resourceState eq 'FAILED' or resourceState eq 'DEGRADED'}">同步异常</c:when>
+                                    <c:when test="${resourceState eq 'ACTIVE' or resourceState eq 'RUNNING'}">同步中</c:when>
+                                    <c:when test="${resourceState eq 'COMPLETED' or resourceState eq 'READY' or customAutomation.baselineReady}">已同步</c:when>
+                                    <c:otherwise>尚未完成首次同步</c:otherwise>
+                                </c:choose></span></td>
+                            </c:forTokens>
+                        </c:when><c:otherwise>
+                            <td><span class="sync-state"><c:out value="${currentStore.productsStatus}" default="未同步"/></span></td>
+                            <td><span class="sync-state"><c:out value="${currentStore.customersStatus}" default="未同步"/></span></td>
+                            <td><span class="sync-state"><c:out value="${currentStore.ordersStatus}" default="未同步"/></span></td>
+                        </c:otherwise></c:choose>
                         <td><time data-browser-time="<c:out value='${currentStore.installedAt}'/>" datetime="<c:out value='${currentStore.installedAt}'/>"><c:out value="${currentStore.installedAt}" default="-"/></time></td>
-                        <td><div class="store-sync-cell"><time data-browser-time="<c:out value='${currentStore.lastSyncedAt}'/>" datetime="<c:out value='${currentStore.lastSyncedAt}'/>"><c:out value="${currentStore.lastSyncedAt}" default="尚未同步"/></time><c:if test="${canConfigureSender && shopifyStore}"><form method="post" action="${ctx}/stores/sync" onsubmit="var b=this.querySelector('button');b.disabled=true;b.innerHTML='<i class=&quot;fa fa-spinner fa-spin&quot;></i><span>同步中</span>';"><input type="hidden" name="shop" value="${selectedShop}"><button class="action-button" type="submit"><i class="fa fa-refresh"></i><span>立即同步</span></button></form></c:if></div></td>
+                        <td><div class="store-sync-cell">
+                            <div class="store-sync-timing"><time data-browser-time="<c:out value='${lastStoreSync}'/>" datetime="<c:out value='${lastStoreSync}'/>"><c:out value="${lastStoreSync}" default="${auwStore and not customSync.available ? '状态暂不可用' : '尚未同步'}"/></time>
+                                <c:if test="${auwStore and customAutomation.available and customAutomation.featureEnabled}"><span class="cell-note"><c:choose><c:when test="${customAutomation.awaitingBaseline}">自动增量已配置，等待首次同步完成。</c:when><c:when test="${customAutomation.pollEnabled}">自动增量同步已开启，每 <c:out value="${customAutomation.pollIntervalSeconds}"/> 秒查询一次。</c:when><c:otherwise>自动增量同步未开启。</c:otherwise></c:choose></span></c:if>
+                            </div>
+                            <c:if test="${canConfigureSender && shopifyStore}"><form method="post" action="${ctx}/stores/sync" onsubmit="var b=this.querySelector('button');b.disabled=true;b.innerHTML='<i class=&quot;fa fa-spinner fa-spin&quot;></i><span>同步中</span>';"><input type="hidden" name="shop" value="${selectedShop}"><button class="action-button" type="submit"><i class="fa fa-refresh"></i><span>立即同步</span></button></form></c:if>
+                            <c:if test="${auwStore and customSync.canStartIncremental}">
+                                <form method="post" action="${ctx}/stores/custom-connection/sync-incremental"
+                                      onsubmit="var b=this.querySelector('button');b.disabled=true;b.innerHTML='<i class=&quot;fa fa-spinner fa-spin&quot;></i><span>提交中</span>';">
+                                    <input type="hidden" name="shop" value="<c:out value='${selectedShop}'/>">
+                                    <input type="hidden" name="expectedVersion" value="<c:out value='${customSync.configVersion}'/>">
+                                    <input type="hidden" name="expectedBatchId" value="<c:out value='${customSync.batchId}'/>">
+                                    <input type="hidden" name="_connectionCsrf" value="<c:out value='${customConnectionCsrf}'/>">
+                                    <button class="action-button" type="submit"><i class="fa fa-refresh"></i><span>立即同步</span></button>
+                                </form>
+                            </c:if>
+                            <c:if test="${auwStore and customSync.syncState eq 'ACTIVE'}"><span class="cell-note" role="status">同步中</span></c:if>
+                        </div></td>
                     </tr></tbody></table></div>
                     <c:if test="${shopifyStore && currentStore.status eq 'ACTIVE'}"><p class="cell-note store-sync-note">每日自动同步（距上次成功同步满 24 小时），无需保持页面打开；也可点击“立即同步”提前执行。</p></c:if>
                     <c:if test="${not shopifyStore}"><%@ include file="fragments/store-connection-readonly.jspf" %></c:if>
@@ -60,15 +94,22 @@
         </section>
         <c:if test="${not empty selectedShop}">
             <c:url var="quotaHistoryUrl" value="/stores/quota/history"><c:param name="shop" value="${selectedShop}"/></c:url>
+            <c:url var="transactionalEmailUrl" value="/stores/transactional-email"><c:param name="shop" value="${selectedShop}"/></c:url>
+            <section class="content-section spaced-section store-transactional-section" aria-labelledby="store-transactional-heading">
+                <div class="section-heading" style="flex-wrap:wrap;gap:12px;border-bottom:0">
+                    <div><h2 id="store-transactional-heading">事务邮件</h2><p>配置邮箱验证码和验证链接邮件，查看发送记录、送达状态与用量。</p></div>
+                    <a class="primary-button compact" data-transactional-email-entry href="<c:out value='${transactionalEmailUrl}'/>"><i class="fa fa-envelope-o" aria-hidden="true"></i><span>事务邮件设置与用量</span><i class="fa fa-angle-right" aria-hidden="true"></i></a>
+                </div>
+            </section>
             <section class="content-section spaced-section store-quota-section">
 <details class="store-panel-details store-quota-details" data-store-panel="quota">
 <summary class="section-heading" id="store-quota-summary"><div><h2>邮件发送额度</h2><p>发送前预扣，按既有发送计费口径核销；到期回收和释放均留有记录</p></div><div class="section-heading-actions"><c:choose><c:when test="${storeEmailQuotaAvailable}"><span class="section-count">可用 <c:out value="${storeEmailQuota.availableCount}"/> 条</span></c:when><c:otherwise><span class="status-pill blocked">暂不可读</span></c:otherwise></c:choose><c:if test="${storeEmailQuota.expiryEnabled}"><c:url var="quotaLotsUrl" value="/stores/quota/lots"><c:param name="shop" value="${selectedShop}"/></c:url><a class="action-button" href="${quotaLotsUrl}"><i class="fa fa-calendar"></i><span>查看期限批次</span></a></c:if><a class="action-button" href="${quotaHistoryUrl}"><i class="fa fa-history"></i><span>查看变更记录</span></a><span class="store-panel-toggle" aria-hidden="true"><i class="fa fa-chevron-down"></i></span></div></summary>
 <div class="store-panel-content">
                 <c:choose><c:when test="${!storeEmailQuotaAvailable}"><div class="empty-state compact"><i class="fa fa-clock-o"></i><strong>暂时无法读取邮件额度</strong><span>请稍后刷新页面，其他店铺功能不受影响。</span></div></c:when><c:otherwise>
                     <div class="store-quota-grid" aria-label="邮件发送额度概览">
-                        <article class="store-quota-metric available"><span>可发送数量</span><strong><c:out value="${storeEmailQuota.availableCount}"/></strong><small>当前可用于营销活动和自动营销</small></article>
+                        <article class="store-quota-metric available"><span>可发送数量</span><strong><c:out value="${storeEmailQuota.availableCount}"/></strong><small>可用于营销活动、自动营销和事务邮件</small></article>
                         <article class="store-quota-metric balance"><span>额度总量</span><strong><c:out value="${storeEmailQuota.balanceCount}"/></strong><small>当前剩余余额，含预扣和待核销占用</small></article>
-                        <article class="store-quota-metric reserved"><span>活动预留</span><strong><c:out value="${storeEmailQuota.reservedCount}"/></strong><small>已进入发送流程、尚未完成核销</small></article>
+                        <article class="store-quota-metric reserved"><span>发送占用</span><strong><c:out value="${storeEmailQuota.reservedCount}"/></strong><small>已进入发送流程、尚未完成核销</small></article>
                         <article class="store-quota-metric consumed"><span>累计已核销</span><strong><c:out value="${storeEmailQuota.consumedCount}"/></strong><small>活动按提交量、自动营销按通道接受量核销</small></article>
                         <c:if test="${storeEmailQuota.expiryEnabled}"><article class="store-quota-metric reserved"><span>未提交预扣</span><strong><c:out value="${storeEmailQuota.unsubmittedReservedCount}"/></strong><small>尚未提交，不能延长原额度有效期</small></article><article class="store-quota-metric balance"><span>已提交待核销</span><strong><c:out value="${storeEmailQuota.pendingCount}"/></strong><small>沿用提交时的原额度批次</small></article><article class="store-quota-metric consumed"><span>累计到期回收</span><strong><c:out value="${storeEmailQuota.expiredCount}"/></strong><small>包含到期回收及过期预扣释放</small></article><article class="store-quota-metric reserved"><span>已过期待回收</span><strong><c:out value="${storeEmailQuota.pendingExpiryCount}"/></strong><small>已经失效，等待后台逐笔记账回收</small></article></c:if>
                     </div>

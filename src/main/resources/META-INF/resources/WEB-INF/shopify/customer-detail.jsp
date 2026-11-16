@@ -41,7 +41,8 @@
             <div class="detail-stat"><span>成交订单</span><strong><c:out value="${customerDetail.customer.orderCount}"/></strong></div>
             <div class="detail-stat"><span>累计消费</span><strong><c:out value="${customerDetail.customer.currency}"/> <c:out value="${customerDetail.customer.totalSpent}"/></strong></div>
             <div class="detail-stat"><span>最近成交</span><strong><time data-browser-time="<c:out value='${customerDetail.customer.lastOrderAt}'/>" datetime="<c:out value='${customerDetail.customer.lastOrderAt}'/>"><c:out value="${customerDetail.customer.lastOrderAt}" default="-"/></time></strong></div>
-            <div class="detail-stat"><span>最近活跃</span><strong><time data-browser-time="<c:out value='${customerDetail.lastActivityAt}'/>" datetime="<c:out value='${customerDetail.lastActivityAt}'/>"><c:out value="${customerDetail.lastActivityAt}" default="-"/></time></strong></div>
+            <c:set var="customerLastActivityAt" value="${empty customerDetail.lastActivityAt ? customerDetail.customer.lastOrderAt : customerDetail.lastActivityAt}"/>
+            <div class="detail-stat"><span title="取最近有效订单、邮件打开或点击、商品浏览或加购中的最新时间">最近活跃</span><strong><time data-browser-time="<c:out value='${customerLastActivityAt}'/>" datetime="<c:out value='${customerLastActivityAt}'/>"><c:out value="${customerLastActivityAt}" default="-"/></time></strong></div>
         </section>
 
         <section class="content-section spaced-section">

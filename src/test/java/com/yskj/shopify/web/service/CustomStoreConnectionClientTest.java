@@ -19,4 +19,24 @@ class CustomStoreConnectionClientTest {
 
  @Test void malformedProfileFlagsAndConnectorStatusFailClosed(){var remote=mock(ICustomStoreConnectionService.class);var c=new CustomStoreConnectionClient(remote);var raw=profile("CUSTOM","NONE");raw.put("canSelect","true");when(remote.getSourceProfile(any())).thenReturn(raw);assertThat(c.sourceProfile(user(),"custom.example").getBooleanValue("available")).isFalse();raw=profile("CUSTOM","AUW_V2");raw.put("connectorStatus","PLANNED");when(remote.getSourceProfile(any())).thenReturn(raw);assertThat(c.sourceProfile(user(),"custom.example").getBooleanValue("available")).isFalse();}
  @Test void unboundLegacyProfileIsReadOnlyAndExplicit(){var remote=mock(ICustomStoreConnectionService.class);var raw=profile("CUSTOM","NONE");raw.put("bindingRequired",true);raw.put("selectionAvailable",false);raw.put("canSelect",false);when(remote.getSourceProfile(any())).thenReturn(raw);var v=new CustomStoreConnectionClient(remote).sourceProfile(user(),"custom.example");assertThat(v.getBooleanValue("available")).isTrue();assertThat(v.getBooleanValue("bindingRequired")).isTrue();assertThat(v.getBooleanValue("canSelect")).isFalse();}
+ @Test void merchantCommandIsFixedToIncrementalAndRequiresANewBatch() {
+  var remote=mock(ICustomStoreConnectionService.class);
+  var client=new CustomStoreConnectionClient(remote);
+  String previous="11111111-1111-4111-8111-111111111111";
+  String next="22222222-2222-4222-8222-222222222222";
+  var reply=new JSONObject();
+  reply.put("schemaVersion",1); reply.put("shopDomain","custom.example");
+  reply.put("available",true); reply.put("featureEnabled",true); reply.put("canManage",false);
+  reply.put("signatureState","VERIFIED"); reply.put("syncState","ACTIVE");
+  reply.put("configVersion",1L); reply.put("batchId",next); reply.put("mode","INCREMENTAL");
+  reply.put("resources",new com.alibaba.fastjson.JSONArray());
+  when(remote.commandSync(any())).thenReturn(reply);
+  client.startIncrementalSync(user(),"custom.example",1,previous);
+  verify(remote).commandSync(argThat(q->"MERCHANT".equals(q.getString("surface"))
+          && "session-user".equals(q.getJSONObject("user").getString("id"))
+          && "INCREMENTAL".equals(q.getJSONObject("payload").getString("action"))
+          && previous.equals(q.getJSONObject("payload").getString("expectedBatchId"))));
+  reply.put("batchId",previous);
+  assertThatThrownBy(()->client.startIncrementalSync(user(),"custom.example",1,previous)).isInstanceOf(IllegalStateException.class);
+ }
 }

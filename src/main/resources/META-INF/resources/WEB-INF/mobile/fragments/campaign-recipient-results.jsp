@@ -37,26 +37,26 @@
           <c:when test="${recipient.sendStatus eq 'SENDING'}"><c:set var="recipientState" value="发送中"/><c:set var="recipientStatus" value="SENDING"/></c:when>
         </c:choose>
         <article class="mr-card md-recipient-card">
-          <div class="mr-card-head"><strong><c:out value="${recipientName}"/></strong><span class="mr-badge" data-tone="${recipientTone}" data-status="${recipientStatus}"><c:out value="${recipientState}"/></span></div>
+          <div class="mr-card-head">
+            <div class="mr-customer-name"><span class="mr-customer-icon mobile-customer-icon" aria-hidden="true"></span><strong><c:out value="${recipientName}"/></strong></div>
+            <span class="mr-badge" data-tone="${recipientTone}" data-status="${recipientStatus}"><c:out value="${recipientState}"/></span>
+          </div>
           <p class="mr-email"><c:out value="${recipient.email}" default="邮箱未记录"/></p>
-          <div class="mr-stats"><div><span>打开</span><strong><c:out value="${recipient.openCount}" default="—"/> 次</strong></div><div><span>点击</span><strong><c:out value="${recipient.clickCount}" default="—"/> 次</strong></div><div><span>转化</span><strong><c:out value="${recipient.orderCount}" default="—"/> 单</strong></div></div>
-          <p class="mr-meta">送达：<time data-browser-time="<c:out value='${recipient.deliveredAt}'/>"><c:out value="${recipient.deliveredAt}" default="未记录"/></time></p>
-          <c:if test="${recipient.machineOpenCount gt 0 or recipient.machineClickCount gt 0}"><p class="mr-meta">供应商标记的机器行为：打开 <c:out value="${recipient.machineOpenCount}" default="0"/> 次，点击 <c:out value="${recipient.machineClickCount}" default="0"/> 次。原始次数保持不变，未标记不代表真人。</p></c:if>
-          <c:if test="${canViewCustomers and not empty recipient.customerSourceId}"><c:url var="recipientCustomerUrl" value="/mobile/customers/detail"><c:param name="shop" value="${shopDomain}"/><c:param name="customerId" value="${recipient.customerSourceId}"/></c:url><a class="mr-customer-open" data-recipient-customer href="<c:out value='${recipientCustomerUrl}'/>">打开客户详情 →</a></c:if>
-          <details><summary>更多执行信息</summary><dl>
-            <div><dt>客户 ID</dt><dd><c:out value="${recipient.customerSourceId}" default="未记录"/></dd></div>
-            <div><dt>通道</dt><dd data-recipient-provider="<c:out value='${recipient.provider}'/>"><c:out value="${recipient.provider}" default="未记录"/></dd></div>
-            <div><dt>尝试次数</dt><dd><c:out value="${recipient.attemptCount}" default="—"/></dd></div>
-            <div><dt>发送时间</dt><dd><time data-browser-time="<c:out value='${recipient.sentAt}'/>"><c:out value="${recipient.sentAt}" default="未记录"/></time></dd></div>
-            <div><dt>打开时间</dt><dd><time data-browser-time="<c:out value='${recipient.openedAt}'/>"><c:out value="${recipient.openedAt}" default="未记录"/></time></dd></div>
-            <div><dt>点击时间</dt><dd><time data-browser-time="<c:out value='${recipient.clickedAt}'/>"><c:out value="${recipient.clickedAt}" default="未记录"/></time></dd></div>
-            <c:if test="${recipient.orderCount gt 0}"><div><dt>归因金额</dt><dd><c:out value="${recipient.netRevenue}"/></dd></div><div><dt>最近下单</dt><dd><time data-browser-time="<c:out value='${recipient.lastOrderAt}'/>"><c:out value="${recipient.lastOrderAt}"/></time></dd></div></c:if>
+          <dl class="mr-execution">
+            <div><dt>通道</dt><dd><span data-recipient-provider="<c:out value='${recipient.provider}'/>"><c:out value="${recipient.provider}" default="未记录"/></span><c:if test="${recipient.attemptCount ne null}"><span class="mr-secondary">尝试 <c:out value="${recipient.attemptCount}"/> 次</span></c:if></dd></div>
+            <div class="mr-execution-time"><dt>发送</dt><dd><time data-browser-time="<c:out value='${recipient.sentAt}'/>"><c:out value="${recipient.sentAt}" default="未记录"/></time></dd></div>
+            <div class="mr-execution-time"><dt>送达</dt><dd><time data-browser-time="<c:out value='${recipient.deliveredAt}'/>"><c:out value="${recipient.deliveredAt}" default="未记录"/></time></dd></div>
+            <div class="mr-execution-activity"><dt>打开</dt><dd><strong><c:out value="${recipient.openCount}" default="—"/> 次</strong><c:if test="${not empty recipient.openedAt}"><time class="mr-secondary" data-browser-time="<c:out value='${recipient.openedAt}'/>"><c:out value="${recipient.openedAt}"/></time></c:if></dd></div>
+            <div class="mr-execution-activity"><dt>点击</dt><dd><strong><c:out value="${recipient.clickCount}" default="—"/> 次</strong><c:if test="${not empty recipient.clickedAt}"><time class="mr-secondary" data-browser-time="<c:out value='${recipient.clickedAt}'/>"><c:out value="${recipient.clickedAt}"/></time></c:if></dd></div>
+            <div class="mr-execution-activity"><dt>转化</dt><dd><strong><c:out value="${recipient.orderCount}" default="—"/> 单</strong><c:if test="${recipient.orderCount gt 0}"><c:if test="${not empty recipient.netRevenue}"><span class="mr-secondary">归因金额 <c:out value="${recipient.netRevenue}"/></span></c:if><c:if test="${not empty recipient.lastOrderAt}"><time class="mr-secondary" data-browser-time="<c:out value='${recipient.lastOrderAt}'/>"><c:out value="${recipient.lastOrderAt}"/></time></c:if></c:if></dd></div>
             <c:if test="${not empty recipient.bouncedAt}"><div><dt>退信</dt><dd><time data-browser-time="<c:out value='${recipient.bouncedAt}'/>"><c:out value="${recipient.bouncedAt}"/></time></dd></div></c:if>
             <c:if test="${not empty recipient.complainedAt}"><div><dt>投诉</dt><dd><time data-browser-time="<c:out value='${recipient.complainedAt}'/>"><c:out value="${recipient.complainedAt}"/></time></dd></div></c:if>
             <c:if test="${not empty recipient.unsubscribedAt}"><div><dt>退订</dt><dd><time data-browser-time="<c:out value='${recipient.unsubscribedAt}'/>"><c:out value="${recipient.unsubscribedAt}"/></time></dd></div></c:if>
             <c:if test="${not empty recipient.lastErrorCode}"><div><dt>错误码</dt><dd><c:out value="${recipient.lastErrorCode}"/></dd></div></c:if>
             <c:if test="${not empty recipient.providerErrorName or not empty recipient.providerErrorDescription}"><div><dt>通道反馈</dt><dd><c:out value="${recipient.providerErrorName}"/> <c:out value="${recipient.providerErrorDescription}"/></dd></div></c:if>
-          </dl></details>
+          </dl>
+          <c:if test="${recipient.machineOpenCount gt 0 or recipient.machineClickCount gt 0}"><p class="mr-meta">供应商标记的机器行为：打开 <c:out value="${recipient.machineOpenCount}" default="0"/> 次，点击 <c:out value="${recipient.machineClickCount}" default="0"/> 次。原始次数保持不变，未标记不代表真人。</p></c:if>
+          <c:if test="${canViewCustomers and not empty recipient.customerSourceId}"><c:url var="recipientCustomerUrl" value="/mobile/customers/detail"><c:param name="shop" value="${shopDomain}"/><c:param name="customerId" value="${recipient.customerSourceId}"/></c:url><a class="mr-customer-open" data-recipient-customer href="<c:out value='${recipientCustomerUrl}'/>">打开客户详情 →</a></c:if>
         </article>
       </c:forEach>
       <c:if test="${not empty recipientPage.items or recipientPage.hasPrevious or recipientPage.hasNext}"><nav class="mr-pagination" aria-label="收件人分页"><c:if test="${recipientPage.hasPrevious}"><button type="button" data-recipient-page="${recipientPage.page - 1}">上一页</button></c:if><span>第 <c:out value="${recipientPage.page}"/> 页<c:if test="${recipientPage.totalPages gt 0}"> / <c:out value="${recipientPage.totalPages}"/> 页</c:if></span><c:if test="${recipientPage.hasNext}"><button type="button" data-recipient-page="${recipientPage.page + 1}">下一页</button></c:if><c:if test="${recipientPage.page gt 1}"><button type="button" data-recipient-page="1">第一页</button></c:if></nav></c:if>

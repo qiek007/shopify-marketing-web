@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261016-campaign-editor-actions">
     <link rel="stylesheet" href="${ctx}/shopify/css/campaign-channel-weights.css?v=20261105-weights-card1">
-    <link rel="stylesheet" href="${ctx}/shopify/css/campaign-search-picker.css?v=20261107-tag-mode1">
+    <link rel="stylesheet" href="${ctx}/shopify/css/campaign-search-picker.css?v=20261116-all-count-left">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -48,7 +48,7 @@
                                         <span class="customer-tag-search-empty" data-tag-search-empty hidden>没有匹配分群</span>
                                         <c:forEach items="${segments}" var="segment">
                                             <label><input type="checkbox" name="segmentIds" value="<c:out value='${segment.segmentId}'/>" <c:if test="${editorCampaign.segmentIds.contains(segment.segmentId)}">checked</c:if>>
-                                                <span><c:out value="${segment.name}"/><small> · <c:out value="${segment.ruleSummary}"/></small></span>
+                                                <span class="campaign-segment-option-text" title="<c:out value='${segment.ruleSummary}'/>"><strong><c:out value="${segment.name}"/></strong><c:if test="${not empty segment.ruleSummary}"><small> · <c:out value="${segment.ruleSummary}"/></small></c:if></span>
                                             </label>
                                         </c:forEach>
                                         <c:forEach items="${editorCampaign.segmentIds}" var="selectedSegmentId">
@@ -129,7 +129,7 @@
         <script src="${ctx}/shopify/js/campaign-search-picker.js?v=20261106-audience1"></script>
     </main>
 </div>
-<script src="${ctx}/shopify/js/campaign-editor-audience.js?v=20261114-preview-inline"></script><script src="${ctx}/shopify/js/campaign-audience-search.js?v=20261107-template1"></script>
+<script src="${ctx}/shopify/js/campaign-editor-audience.js?v=20261116-all-count-left"></script><script src="${ctx}/shopify/js/campaign-audience-search.js?v=20261107-template1"></script>
 <script>
 (function () {
     var campaignEditorForm = document.querySelector('[data-campaign-editor-form]');

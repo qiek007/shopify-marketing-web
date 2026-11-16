@@ -16,4 +16,21 @@ import com.yskj.shopify.web.service.CustomStoreConnectionClient;import com.yskj.
  @PostMapping("/stores/custom-connection/save") public String saveRequest(@RequestParam String shop,@RequestParam String apiBaseUrl,@RequestParam String sourceStoreId,@RequestParam String datasetEpoch,@RequestParam(defaultValue="") String apiToken,@RequestParam long expectedVersion,@RequestParam(name="_connectionCsrf",required=false) String csrf,HttpSession session,RedirectAttributes flash){user(session);checkCsrf(session,csrf);return save(shop,apiBaseUrl,sourceStoreId,datasetEpoch,apiToken,expectedVersion,session,flash);}
  @PostMapping("/stores/custom-connection/test") public String probeRequest(@RequestParam String shop,@RequestParam long expectedVersion,@RequestParam(name="_connectionCsrf",required=false) String csrf,HttpSession session,RedirectAttributes flash){user(session);checkCsrf(session,csrf);return probe(shop,expectedVersion,session,flash);}
  @PostMapping("/stores/custom-connection/source") public String sourceRequest(@RequestParam String shop,@RequestParam String sourceType,@RequestParam String connectorKey,@RequestParam long expectedVersion,@RequestParam(name="_connectionCsrf",required=false) String csrf,HttpSession session,RedirectAttributes flash){user(session);checkCsrf(session,csrf);throw new ResponseStatusException(HttpStatus.FORBIDDEN,"连接配置仅由平台管理端维护");}
+ @PostMapping("/stores/custom-connection/sync-incremental")
+ public String startIncrementalSync(@RequestParam String shop,@RequestParam long expectedVersion,
+        @RequestParam String expectedBatchId,@RequestParam(name="_connectionCsrf",required=false) String csrf,
+        HttpSession session,RedirectAttributes flash){
+  var principal=user(session);
+  checkCsrf(session,csrf);
+  String target="redirect:/stores?shop="+URLEncoder.encode(CustomStoreConnectionClient.shop(shop),StandardCharsets.UTF_8);
+  try {
+   client.startIncrementalSync(principal,shop,expectedVersion,expectedBatchId);
+   flash.addFlashAttribute("successMessage","增量同步已受理，商品、客户和订单的处理进度可在本页查看。");
+  } catch(SecurityException denied){
+   throw new ResponseStatusException(HttpStatus.FORBIDDEN,denied.getMessage());
+  } catch(IllegalArgumentException | IllegalStateException rejected){
+   flash.addFlashAttribute("errorMessage",rejected.getMessage());
+  }
+  return target;
+ }
 }

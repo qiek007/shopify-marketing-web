@@ -85,6 +85,29 @@ public class MerchantConsoleController {
         return view("dashboard.load", params, session, model, redirect);
     }
 
+    @GetMapping("/stores/transactional-email")
+    public String transactionalEmail(@RequestParam MultiValueMap<String,String> params,HttpSession session,
+            Model model,RedirectAttributes redirect){
+        String target=view("transactional-email.page",params,session,model,redirect);
+        synchronized(session){
+            if(!(session.getAttribute("transactionalEmailCsrf") instanceof String))
+                session.setAttribute("transactionalEmailCsrf",java.util.UUID.randomUUID().toString());
+            model.addAttribute("transactionalEmailCsrf",session.getAttribute("transactionalEmailCsrf"));
+        }
+        return target;
+    }
+
+    @PostMapping("/stores/transactional-email")
+    public String saveTransactionalEmail(@RequestParam MultiValueMap<String,String> params,HttpSession session,
+            Model model,RedirectAttributes redirect){
+        requireUser(session);
+        Object expected=session.getAttribute("transactionalEmailCsrf");String supplied=params.getFirst("_transactionalCsrf");
+        if(!(expected instanceof String token)||supplied==null||!java.security.MessageDigest.isEqual(
+                token.getBytes(StandardCharsets.UTF_8),supplied.getBytes(StandardCharsets.UTF_8)))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        return view("transactional-email.save",params,session,model,redirect);
+    }
+
     @GetMapping(value = "/dashboard/trends", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> trends(@RequestParam MultiValueMap<String, String> params,
                                     HttpSession session) {
@@ -144,7 +167,6 @@ public class MerchantConsoleController {
                 model.addAttribute("customConnection", sourceConnections.status(requireUser(session), key));
                 model.addAttribute("customSync", sourceConnections.syncStatus(requireUser(session), key));
                 model.addAttribute("customAutomation", sourceConnections.automationStatus(requireUser(session), key));
-                model.addAttribute("customIdentities", sourceConnections.identityStatus(requireUser(session), key));
                 model.addAttribute("customConnectionCsrf", CustomStoreConnectionController.csrf(session));
             }
         }

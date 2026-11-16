@@ -24,3 +24,15 @@
 .customer-tag-mode { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px; }
 .customer-tag-options .customer-tag-mode label { display: inline-flex; gap: 4px; padding: 4px 0; white-space: nowrap; font-size: 12px; }
 .customer-tag-options .customer-tag-mode input[type="radio"] { flex: 0 0 14px; width: 14px !important; height: 14px; min-height: 14px !important; accent-color: #16865a; }
+
+#campaign-segment-multi .customer-tag-options { grid-template-columns: minmax(0, 1fr); }
+#campaign-segment-multi .customer-tag-options > label > input { flex: none; }
+.campaign-segment-option-text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.campaign-segment-option-text strong { font-weight: 700; }
+.campaign-segment-option-text small { font: inherit; font-weight: 400; }
+.campaign-audience-tags .customer-tag-select { min-width: 0; max-width: 100%; }
+.campaign-audience-tags .customer-tag-select > summary { min-width: 0; overflow: hidden; }
+.campaign-audience-tags .customer-tag-select > summary > span { display: flex; flex: 1; min-width: 0; align-items: center; gap: 8px; }
+.campaign-audience-tags .customer-tag-select > summary > i { flex: none; }
+.campaign-audience-tags .customer-tag-select .campaign-segment-summary-names { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.campaign-audience-tags .customer-tag-select .campaign-segment-summary-count { flex: none; white-space: nowrap; }

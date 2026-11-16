@@ -24,7 +24,29 @@ import com.alibaba.fastjson.JSONObject;import com.yskj.core.annotation.HkInject;
   for(String field:List.of("selectionAvailable","canSelect","legacy"))if(!(raw.get(field) instanceof Boolean))return profileUnavailable(shop);
   var v=new JSONObject();v.put("available",true);v.put("shopDomain",shop);v.put("sourceType",source);v.put("connectorKey",connector);v.put("sourceLabel",Map.of("SHOPIFY","Shopify","SHOPLINE","Shopline","CUSTOM","自建站").get(source));v.put("connectorLabel",Map.of("SHOPIFY_NATIVE","Shopify 原生连接","SHOPLINE_PENDING","Shopline（待适配）","NONE","未选择连接器","AUW_V2","AUW v2").get(connector));v.put("connectorStatus",status);v.put("profileVersion",n.longValue());v.put("selectionAvailable",raw.getBooleanValue("selectionAvailable"));v.put("canSelect",false);v.put("legacy",raw.getBooleanValue("legacy"));v.put("bindingRequired",Boolean.TRUE.equals(raw.get("bindingRequired")));return v;
  }
- /** Merchant surface exposes status only; it never forwards sync or trust commands. */
+ /** Merchant sessions may submit only the incremental action. */
+ public void startIncrementalSync(LoginedUser user,String shop,long version,String batchId){
+  if(version<1 || !canonicalUuid(batchId))throw new IllegalArgumentException("同步状态已变化，请刷新页面后重试。");
+  var payload=new JSONObject();
+  payload.put("action","INCREMENTAL");
+  payload.put("expectedVersion",version);
+  payload.put("expectedBatchId",batchId);
+  var request=request(user,shop,payload);
+  JSONObject raw;
+  try { raw=remote.commandSync(request); }
+  catch(RuntimeException unavailable){throw new IllegalStateException("同步服务暂不可用，请刷新进度后重试。");}
+  if(raw!=null && Boolean.FALSE.equals(raw.get("success"))){
+   String code=raw.getString("errorCode");
+   if("CUSTOM_SYNC_BATCH_CHANGED".equals(code)||"CUSTOM_SYNC_BATCH_ACTIVE".equals(code))
+    throw new IllegalStateException("同步进度刚刚更新，请查看当前批次后再试。");
+   if("CUSTOM_PERMISSION_DENIED".equals(code))throw new SecurityException("当前账号没有该店铺的同步权限。");
+  }
+  var result=syncView(raw,request.getString("shopDomain"));
+  String newBatch=result.getString("batchId");
+  if(!result.getBooleanValue("available") || result.getLongValue("configVersion")!=version
+     || !"INCREMENTAL".equals(result.getString("mode")) || !canonicalUuid(newBatch) || batchId.equals(newBatch))
+   throw new IllegalStateException("未确认增量任务已受理，请查看当前同步进度。");
+ }
  public JSONObject syncStatus(LoginedUser user,String shop){var r=request(user,shop,null);try{return syncView(remote.getSyncStatus(r),r.getString("shopDomain"));}catch(RuntimeException unavailable){return unavailableSync(r.getString("shopDomain"));}}
  private static boolean canonicalUuid(String s){try{return s!=null&&UUID.fromString(s).toString().equals(s);}catch(RuntimeException invalid){return false;}}
  public static JSONObject unavailableSync(String shop){var v=new JSONObject();v.put("available",false);v.put("shopDomain",shop);v.put("featureEnabled",false);v.put("canManage",false);v.put("configVersion",0L);v.put("signatureState","NOT_VERIFIED");v.put("syncState","NOT_VERIFIED");v.put("resources",new com.alibaba.fastjson.JSONArray());v.put("environment","TEST");v.put("effectPolicy","SUPPRESS");return v;}
@@ -38,6 +60,9 @@ import com.alibaba.fastjson.JSONObject;import com.yskj.core.annotation.HkInject;
    if(raw.containsKey("environment")&&!"TEST".equals(raw.getString("environment"))||raw.containsKey("effectPolicy")&&!"SUPPRESS".equals(raw.getString("effectPolicy")))return unavailableSync(shop);
    var v=new JSONObject();v.put("available",true);v.put("shopDomain",shop);v.put("configVersion",version);v.put("featureEnabled",raw.getBooleanValue("featureEnabled"));v.put("canManage",false);v.put("signatureState",signature);v.put("syncState",state);v.put("environment","TEST");v.put("effectPolicy","SUPPRESS");
    String batch=raw.getString("batchId");if(batch!=null&&!batch.isEmpty()){if(!canonicalUuid(batch))return unavailableSync(shop);v.put("batchId",batch);}
+   v.put("canStartIncremental",Boolean.TRUE.equals(raw.get("canStartIncremental"))
+           && "VERIFIED".equals(signature) && "COMPLETED".equals(state)
+           && raw.getBooleanValue("featureEnabled") && canonicalUuid(batch));
    String mode=raw.getString("mode");if(mode!=null){if(!Set.of("FULL","INCREMENTAL").contains(mode))return unavailableSync(shop);v.put("mode",mode);}
    for(String field:List.of("lastCompletedAt","nextAttemptAt")){Object value=raw.get(field);if(value!=null){if(!(value instanceof String s)||s.length()>64)return unavailableSync(shop);v.put(field,java.time.Instant.parse(s).toString());}}
    safeSyncCode(raw,v,"lastErrorCode");

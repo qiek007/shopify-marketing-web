@@ -53,27 +53,52 @@ class CampaignStatisticsJspRenderingTest {
     boolean savedLegacy=mode.startsWith("SAVED_LEGACY");
     if(savedLegacy){
      boolean missing=mode.equals("SAVED_LEGACY_MISSING"),zero=mode.equals("SAVED_LEGACY_ZERO"),siteD=mode.equals("SAVED_LEGACY_SITED");
-     var delivered=theme.equals("mobile")?doc.select(".md-detail-metric").get(2):doc.selectFirst("#campaign-delivered").parent();
+     boolean mobile=theme.equals("mobile");
+     var delivered=doc.selectFirst(mobile?"#campaign-delivered-label":"#campaign-delivered").parent();
+     var engagement=mobile?doc.selectFirst("#campaign-open-rate-label").parent():delivered;
+     var conversion=mobile?doc.selectFirst("#campaign-conversion-label").parent():doc.selectFirst("#campaign-orders").parent();
+     var risk=mobile?doc.select(".md-detail-metric").last():doc.selectFirst("#campaign-risk").parent();
+     if(mobile)assertThat(engagement.selectFirst("strong").text()).isEqualTo("—");
      if(mode.equals("SAVED_LEGACY_OCT_17")) {
-      var metrics=theme.equals("mobile")?doc.select(".md-detail-metric"):doc.select(".campaign-kpi-grid article");
-      assertThat(delivered.text()).contains("79 次","34 人 / 98 次","0 人 / 0 次");
-      assertThat(metrics.get(3).text()).contains("0 次","历史未记录");
-      assertThat(metrics.get(4).text()).contains("风险反馈（历史事件口径）","3 次","退信记录 2 次","退订事件 1 次");
+      assertThat(delivered.text()).contains("79 次");
+      assertThat(engagement.text()).contains("34 人 / 98 次","0 人 / 0 次");
+      assertThat(conversion.text()).contains("0 次","历史未记录");
+      assertThat(risk.text()).contains("风险反馈（历史事件口径）","3 次","退信记录 2 次","退订事件 1 次");
       assertThat(doc.text()).doesNotContain("统计正在后台准备");
       continue;
      }
-     var conversion=theme.equals("mobile")?doc.select(".md-detail-metric").get(3):doc.selectFirst("#campaign-orders").parent();
-     var risk=theme.equals("mobile")?doc.select(".md-detail-metric").get(4):doc.selectFirst("#campaign-risk").parent();
      assertThat(doc.text()).contains("已显示历史保留统计").doesNotContain("统计正在后台准备");
      assertThat(delivered.selectFirst("strong").text()).isEqualTo(missing?"—":(zero?"0":siteD?"185":"21475")+" 次");
      assertThat(conversion.selectFirst("strong").text()).isEqualTo(missing?"—":"0 次");
      if(!missing){assertThat(delivered.text()).contains("送达累计记录","历史事件口径","去重送达人数历史未记录");assertThat(conversion.text()).contains("原转化记录","订单、客户及金额历史未记录").doesNotContain("0 单");assertThat(risk.selectFirst("strong").text()).isEqualTo((zero?"0":siteD?"4":"472")+" 次");assertThat(risk.text()).contains("原退信记录","投诉 0 次","退订事件","去重人数历史未记录");}
-     if(mode.equals("SAVED_LEGACY_US"))assertThat(delivered.text()).contains("3797 人 / 8289 次","154 人 / 1649 次");
-     if(siteD)assertThat(delivered.text()).contains("19 人 / 27 次","20 人 / 367 次");
-     if(mode.equals("SAVED_LEGACY_NO_FREEZE"))assertThat(delivered.text()).contains("打开 历史未记录 / 8289 次","点击 历史未记录 / 1649 次");
+     if(mode.equals("SAVED_LEGACY_US"))assertThat(engagement.text()).contains("3797 人 / 8289 次","154 人 / 1649 次");
+     if(siteD)assertThat(engagement.text()).contains("19 人 / 27 次","20 人 / 367 次");
+     if(mode.equals("SAVED_LEGACY_NO_FREEZE"))assertThat(engagement.text()).contains("打开 历史未记录 / 8289 次","点击 历史未记录 / 1649 次");
      continue;
     }
-    if(theme.equals("mobile")){if(mode.equals("FROZEN_CONTROL")){assertThat(doc.select(".md-detail-metric").get(2).text()).contains("959","96 人 / 118 次","37 人 / 456 次");assertThat(doc.select(".md-detail-metric").get(3).text()).contains("0 单");}continue;}
+    if(theme.equals("mobile")){
+     var delivered=doc.selectFirst("#campaign-delivered-label").parent();
+     var engagement=doc.selectFirst("#campaign-open-rate-label").parent();
+     if(mode.equals("FROZEN_CONTROL")){
+      assertThat(delivered.selectFirst("strong").text()).isEqualTo("99.9%");
+      assertThat(delivered.select("small").text()).isEqualTo("送达 959 / 960");
+      assertThat(engagement.selectFirst("strong").text()).isEqualTo("10.0%");
+      assertThat(engagement.select("small").text()).isEqualTo("打开 96 / 959 人 · 118 次 点击 37 人 / 456 次");
+      assertThat(doc.selectFirst("#campaign-conversion-label").parent().text()).contains("0 单");
+     }else if(ready){
+      assertThat(delivered.selectFirst("strong").text()).isEqualTo("76.3%");
+      assertThat(delivered.select("small").text()).isEqualTo("送达 222656 / 291644");
+      assertThat(engagement.selectFirst("strong").text()).isEqualTo("2.6%");
+     }else if(mode.startsWith("FROZEN_PARTIAL")&&!mode.equals("FROZEN_PARTIAL_NO_JOBS")){
+      assertThat(delivered.selectFirst("strong").text()).isEqualTo("76.3%");
+      assertThat(delivered.select("small").text()).isEqualTo("送达 222656 / 291644（原最终任务计数）");
+      assertThat(engagement.selectFirst("strong").text()).isEqualTo("—");
+     }else{
+      assertThat(delivered.selectFirst("strong").text()).isEqualTo("—");
+      assertThat(engagement.selectFirst("strong").text()).isEqualTo("—");
+     }
+     continue;
+    }
     if(mode.equals("FROZEN_CONTROL")){assertThat(doc.selectFirst("#campaign-delivered").text()).isEqualTo("959");assertThat(doc.selectFirst("#campaign-delivery-rate").text()).as(theme+" "+doc.selectFirst("#campaign-delivery-rate").outerHtml()).contains("99.9%","959 / 960");assertThat(doc.selectFirst("#campaign-risk").text()).isEqualTo("2");assertThat(doc.selectFirst("#campaign-orders").text()).isEqualTo("0 单");continue;}
     boolean partial=mode.startsWith("FROZEN_PARTIAL");
     assertThat(doc.selectFirst("#campaign-delivered").text()).isEqualTo(ready||partial?"222656":"—");

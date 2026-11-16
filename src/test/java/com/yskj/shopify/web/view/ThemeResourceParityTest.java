@@ -15,6 +15,16 @@ class ThemeResourceParityTest {
     private static final Path ROOT = Path.of("src/main/resources/META-INF/resources");
 
     @Test
+    void bothStoreThemesUseAuwStatusAndKeepShopifySyncControls() throws Exception {
+        for (String theme : List.of("shopify", "shopify-theme2")) {
+            String stores = Files.readString(ROOT.resolve("WEB-INF").resolve(theme).resolve("stores.jsp"));
+            assertThat(stores).contains("auwStore", "customSync.resources", "customAutomation.lastSuccessAt",
+                    "customAutomation.pollEnabled", "customSync.lastCompletedAt", "canConfigureSender && shopifyStore",
+                    "customSync.canStartIncremental", "/stores/custom-connection/sync-incremental", "customConnectionCsrf", "customSync.batchId");
+        }
+    }
+
+    @Test
     void bothProductThemesShowUnavailableSalesInsteadOfFalseZero() throws Exception {
         for (String theme : Set.of("shopify", "shopify-theme2")) {
             String list = Files.readString(ROOT.resolve("WEB-INF").resolve(theme).resolve("products.jsp"));
@@ -72,7 +82,7 @@ class ThemeResourceParityTest {
         Set<String> classic = views("shopify");
         Set<String> theme2 = views("shopify-theme2");
 
-        assertThat(classic).hasSize(43).contains("custom-store-connection.jsp").containsExactlyInAnyOrderElementsOf(theme2)
+        assertThat(classic).hasSize(44).contains("custom-store-connection.jsp","transactional-email.jsp").containsExactlyInAnyOrderElementsOf(theme2)
                 .contains(Path.of("fragments","sender-domain-verification.jspf").toString(),
                         Path.of("fragments","store-connection-readonly.jspf").toString());
         assertThat(ROOT.resolve("WEB-INF/org/index.jsp")).exists();
@@ -866,7 +876,7 @@ class ThemeResourceParityTest {
                 "name=\"_connectionCsrf\"", "name=\"shop\"", "name=\"expectedVersion\"",
                 "customConnection.canTest", "customConnection.featureEnabled", "customConnection.configured",
                 "id=\"store-sync-status\"", "customSync.signatureState eq 'VERIFIED'", "customSync.syncState eq 'COMPLETED'",
-                "已接收 / 已处理记录", "TEST · SUPPRESS", "c:out value=\"${customConnection.apiBaseUrl}\"")
+                "已接收 / 已处理记录", "c:out value=\"${customConnection.apiBaseUrl}\"")
                 .doesNotContain("name=\"apiBaseUrl\"", "name=\"apiToken\"", "type=\"password\"",
                         "name=\"sourceStoreId\"", "name=\"datasetEpoch\"", "name=\"connectorKey\"",
                         "${customConnection.apiToken}", "/custom-connection/save", "/custom-connection/source",

@@ -34,14 +34,14 @@ class SourceConnectionJspRenderingTest {
     var response=client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+tomcat.getConnector().getLocalPort()+"/web/fixture?theme="+theme+"&mode=auw&sync="+sync)).timeout(Duration.ofSeconds(15)).GET().build(),HttpResponse.BodyHandlers.ofString());assertThat(response.statusCode()).as(response.body()).isEqualTo(200);var doc=Jsoup.parse(response.body());var status=doc.selectFirst("#store-sync-status");assertThat(status).isNotNull();
     assertThat(status.select("form,button,input,select,textarea")).isEmpty();assertThat(doc.select("form[action$='/sync/trust'],form[action$='/sync/command']")).isEmpty();
     if(sync.equals("unavailable"))assertThat(status.text()).contains("管理员", "更新");
-    else{assertThat(status.text()).contains("数据签名", "同步任务", "TEST", "SUPPRESS", "商品", "客户", "订单", "已处理");assertThat(status.select("tbody tr")).hasSize(3);}
+    else{assertThat(status.text()).contains("数据签名", "同步任务", "商品", "客户", "订单", "已处理").doesNotContain("最近完成：", "TEST · SUPPRESS");assertThat(status.select("tbody tr")).hasSize(3);}
     if(sync.equals("completed"))assertThat(status.text()).contains("签名验证通过", "本批同步完成").doesNotContain("尚未启用客户");
     if(sync.equals("stale"))assertThat(status.text()).contains("重新验证");
    }
    for(String theme:List.of("shopify","shopify-theme2"))for(String state:List.of("ready","awaiting","unavailable")){
     var response=client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+tomcat.getConnector().getLocalPort()+"/web/fixture?theme="+theme+"&mode=auw&t15="+state)).timeout(Duration.ofSeconds(15)).GET().build(),HttpResponse.BodyHandlers.ofString());assertThat(response.statusCode()).as(response.body()).isEqualTo(200);var doc=Jsoup.parse(response.body());
-    assertThat(doc.select("#store-automation-status")).hasSize(1);assertThat(doc.select("#store-identity-status")).hasSize(1);assertThat(doc.select("#store-automation-status form,#store-automation-status input,#store-automation-status button,#store-identity-status form,#store-identity-status input,#store-identity-status button")).isEmpty();assertThat(doc.select("form[action$='/automation/save'],form[action$='/identity/command']")).isEmpty();
-    if(state.equals("awaiting"))assertThat(doc.select("#store-automation-status").text()).contains("首次全量");
+    assertThat(doc.select("#store-automation-status,#store-identity-status")).isEmpty();
+    assertThat(doc.select("form[action$='/automation/save'],form[action$='/identity/command']")).isEmpty();
    }
   }finally{tomcat.stop();tomcat.destroy();}
  }

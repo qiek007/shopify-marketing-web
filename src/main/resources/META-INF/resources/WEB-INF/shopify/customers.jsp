@@ -113,6 +113,7 @@
                 var activeRequest;
                 var lastSuccessfulQuery;
                 var lastSuccessfulPage = 1;
+                var lastSuccessfulCursor;
                 var lastSuccessfulTotal;
                 var deletePending = false;
                 form.querySelectorAll('input[name="tag"]').forEach(function (input) {
@@ -371,11 +372,12 @@
                     });
                 }
 
-                function load(page) {
+                function load(page, cursor) {
                     if (activeRequest) activeRequest.abort();
                     activeRequest = new AbortController();
                     var params = new URLSearchParams(new FormData(form));
                     params.set('page', page || '1');
+                    if (cursor) params.set('cursor', cursor);
                     loading();
                     fetch(form.action + '?' + params.toString(), {
                         credentials: 'same-origin', signal: activeRequest.signal,
@@ -391,8 +393,10 @@
                                 ? '共 ' + total.dataset.customerTotal + ' 位' : '匹配结果';
                         }
                         lastSuccessfulPage = params.get('page') || '1';
+                        lastSuccessfulCursor = params.get('cursor');
                         lastSuccessfulQuery = new URLSearchParams(params);
                         lastSuccessfulQuery.delete('page');
+                        lastSuccessfulQuery.delete('cursor');
                         lastSuccessfulTotal = total && total.dataset.customerTotalExact === 'true' ? total.dataset.customerTotal : null;
                         if (bulkActions) bulkActions.hidden = false;
                     }).catch(function (error) {
@@ -437,7 +441,7 @@
                     var link = event.target.closest('[data-customer-results-page]');
                     if (!link) return;
                     event.preventDefault();
-                    load(link.dataset.customerResultsPage);
+                    load(link.dataset.customerResultsPage, link.dataset.customerPageCursor);
                 });
                 if (customerListDialog) {
                     customerListDialogBody.addEventListener('click', function (event) {
@@ -454,7 +458,7 @@
                         if (event.target === customerListDialog) customerListDialog.close();
                     });
                     function refreshAfterCustomerChange() {
-                        if (lastSuccessfulQuery) load(lastSuccessfulPage);
+                        if (lastSuccessfulQuery) load(lastSuccessfulPage, lastSuccessfulCursor);
                     }
                     customerListDialog.addEventListener('customer-tags-changed', refreshAfterCustomerChange);
                     customerListDialog.addEventListener('customer-subscription-changed', refreshAfterCustomerChange);

@@ -11,4 +11,18 @@ class CustomStoreConnectionControllerTest {
  @Test void sourceSelectionRejectsCsrfAndReadonly(){var c=mock(CustomStoreConnectionClient.class);var controller=new CustomStoreConnectionController(c);var session=session();var flash=new RedirectAttributesModelMap();assertThatThrownBy(()->controller.sourceRequest("custom.example","CUSTOM","AUW_V2",0,"wrong",session,flash)).isInstanceOf(ResponseStatusException.class);verifyNoInteractions(c);var p=new JSONObject();p.put("available",true);p.put("selectionAvailable",true);p.put("canSelect",false);when(c.sourceProfile(any(),anyString())).thenReturn(p);String csrf=CustomStoreConnectionController.csrf(session);assertThatThrownBy(()->controller.sourceRequest("custom.example","CUSTOM","AUW_V2",0,csrf,session,flash)).isInstanceOf(ResponseStatusException.class);verify(c,never()).saveSourceProfile(any(),anyString(),anyString(),anyString(),anyLong());}
  @Test void oldPageRedirectsToInlineCardWithoutConfigurationLookup(){var c=mock(CustomStoreConnectionClient.class);assertThat(new CustomStoreConnectionController(c).page("custom.example",session(),new org.springframework.ui.ExtendedModelMap())).isEqualTo("redirect:/stores?shop=custom.example#store-data-connection");verifyNoInteractions(c);}
  @Test void allowedProbeReturnsToInlineStoreCard(){var c=mock(CustomStoreConnectionClient.class);when(c.status(any(),anyString())).thenReturn(ready());var result=new JSONObject();result.put("state","VERIFIED");when(c.probe(any(),anyString(),anyLong())).thenReturn(result);var flash=new RedirectAttributesModelMap();assertThat(new CustomStoreConnectionController(c).probe("custom.example",1,session(),flash)).isEqualTo("redirect:/stores?shop=custom.example#store-data-connection");assertThat(flash.getFlashAttributes()).containsKey("successMessage");verify(c).probe(any(),eq("custom.example"),eq(1L));}
+ @Test void incrementalPostChecksCsrfAndUsesTheSessionIdentity() {
+  var client=mock(CustomStoreConnectionClient.class);
+  var controller=new CustomStoreConnectionController(client);
+  var session=session();
+  String batch="11111111-1111-4111-8111-111111111111";
+  var flash=new RedirectAttributesModelMap();
+  assertThatThrownBy(()->controller.startIncrementalSync("custom.example",1,batch,"invalid",session,flash))
+          .isInstanceOf(ResponseStatusException.class);
+  verifyNoInteractions(client);
+  assertThat(controller.startIncrementalSync("custom.example",1,batch,
+          CustomStoreConnectionController.csrf(session),session,flash)).isEqualTo("redirect:/stores?shop=custom.example");
+  verify(client).startIncrementalSync(argThat(u->"server-user".equals(u.getId())),eq("custom.example"),eq(1L),eq(batch));
+  assertThat(flash.getFlashAttributes()).containsKey("successMessage");
+ }
 }
