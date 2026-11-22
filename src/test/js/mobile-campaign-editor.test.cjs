@@ -30,6 +30,10 @@ test('creation steps require content, audience confirmation and a channel before
   assert.equal(editor.creationStepError(2, values), '');
 });
 
+test('Shopline draft can advance without a sending channel', () => {
+  assert.equal(editor.creationStepError(2, { channelCount: 0, allowUnroutedDraft: true }), '');
+});
+
 test('only custom variables referenced by the selected template are editable', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(editor.referencedCustomVariables({
     customVariables: {campaignMessage: '', greeting: '欢迎'},

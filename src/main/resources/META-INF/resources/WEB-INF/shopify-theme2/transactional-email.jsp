@@ -8,6 +8,15 @@
 <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
 <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css">
 <style>
+.page-heading.transaction-page-heading{flex-wrap:wrap;align-items:center;gap:20px}
+.transaction-page-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px}
+.transaction-page-actions .transaction-nav-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box;min-height:40px;padding:0 16px;border:1px solid #ced9d3;border-radius:6px;background:#fff;color:#435b50;font-size:13px;font-weight:600;line-height:1.4;text-decoration:none;white-space:nowrap;transition:background-color .15s,border-color .15s,box-shadow .15s}
+.transaction-page-actions .transaction-nav-button:hover{border-color:#9fbbab;background:#f1f7f3;color:#244f3c;text-decoration:none}
+.transaction-page-actions .transaction-nav-button:focus-visible{outline:2px solid #16845b;outline-offset:3px}
+.transaction-page-actions .transaction-nav-primary{border-color:#16845b;background:#16845b;color:#fff}
+.transaction-page-actions .transaction-nav-primary:hover{border-color:#116b49;background:#116b49;color:#fff;box-shadow:0 2px 6px rgba(22,132,91,.16)}
+.transaction-page-actions .transaction-nav-button>i{font-size:14px}
+@media(max-width:600px){.transaction-page-actions{width:100%;justify-content:flex-start}.transaction-page-actions .transaction-nav-button{flex:1 1 auto}}
 .transaction-settings-fieldset{min-width:0;margin:0;padding:0;border:0}
 .transaction-settings-body{padding:0 24px}
 .transaction-setting-group{display:grid;grid-template-columns:200px minmax(0,1fr);gap:32px;padding:22px 0;border-bottom:1px solid #edf1f3}
@@ -52,7 +61,7 @@
 </head><body class="shopify-console"><%@ include file="fragments/header.jspf" %>
 <div class="console-layout"><%@ include file="fragments/navigation.jspf" %><main class="console-main">
 <c:url var="storesUrl" value="/stores"><c:param name="shop" value="${selectedShop}"/></c:url>
-<section class="page-heading"><div><p class="eyebrow">店铺通信</p><h1>事务邮件</h1><p>发送验证码和邮箱验证链接，与营销邮件共用店铺额度，用量单独记录。</p></div><a class="secondary-button" href="<c:out value='${storesUrl}'/>">返回店铺管理</a></section>
+<section class="page-heading transaction-page-heading"><div><p class="eyebrow">店铺通信</p><h1>事务邮件</h1><p>发送验证码和邮箱验证链接，与营销邮件共用店铺额度，用量单独记录。</p></div><div class="transaction-page-actions"><c:if test="${transactionalTemplateManagementAvailable}"><c:url var="templateManagementUrl" value="/stores/transactional-email/templates"><c:param name="shop" value="${selectedShop}"/></c:url><a class="secondary-button transaction-nav-button transaction-nav-primary" data-transactional-template-link href="<c:out value='${templateManagementUrl}'/>"><i class="fa fa-language" aria-hidden="true"></i>管理多语言模板</a></c:if><a class="secondary-button transaction-nav-button" href="<c:out value='${storesUrl}'/>"><i class="fa fa-arrow-left" aria-hidden="true"></i>返回店铺管理</a></div></section>
 <c:if test="${not empty successMessage}"><p role="status"><c:out value="${successMessage}"/></p></c:if>
 <c:choose><c:when test="${!transactionalSettings.featureEnabled}"><section class="content-section"><div class="empty-state">平台尚未启用事务邮件服务，请联系平台管理员。</div></section></c:when><c:otherwise>
 <section class="content-section"><div class="section-heading"><div><h2>发送设置</h2><p>自建站负责生成和校验凭证；平台负责邮件投递及用量结算。</p></div><span class="status-pill"><c:choose><c:when test="${transactionalSettings.enabled}">已启用</c:when><c:otherwise>未启用</c:otherwise></c:choose></span></div>
@@ -118,5 +127,5 @@
 </fieldset></form></section>
 <section class="content-section spaced-section"><div class="section-heading"><div><h2>用量与发送状态</h2><p>提交发送前预留额度；结果未知时等待回执核对，不自动重发。</p></div></div>
 <div class="transaction-totals"><div><span>店铺可用额度</span><strong><c:out value="${transactionalQuota.availableCount}"/></strong></div><div><span>共用额度中的全部占用</span><strong><c:out value="${transactionalQuota.reservedCount}"/></strong></div><c:forEach items="${transactionalSummary.counts}" var="count"><div><span><c:out value="${count.statusLabel}"/> · <c:out value="${count.quotaLabel}"/></span><strong><c:out value="${count.message_count}"/></strong></div></c:forEach></div>
-<div class="transaction-table-wrap"><table class="transaction-table"><thead><tr><th>邮件 ID</th><th>用途</th><th>通道</th><th>状态</th><th>额度</th><th>创建时间（北京时间）</th></tr></thead><tbody><c:forEach items="${transactionalSummary.recentMessages}" var="message"><tr><td class="transaction-message"><c:out value="${message.message_id}"/></td><td><c:choose><c:when test="${message.purpose eq 'EMAIL_VERIFICATION_CODE'}">邮箱验证码</c:when><c:otherwise>邮箱验证链接</c:otherwise></c:choose></td><td><c:out value="${providerAliases[message.provider]}" default="${message.provider}"/></td><td><c:out value="${message.statusLabel}"/></td><td><c:out value="${message.quotaLabel}"/></td><td><c:out value="${message.createdAtDisplay}"/></td></tr></c:forEach><c:if test="${empty transactionalSummary.recentMessages}"><tr><td colspan="6">暂无事务邮件记录。</td></tr></c:if></tbody></table></div></section>
+<div class="transaction-table-wrap"><table class="transaction-table"><thead><tr><th>邮件 ID</th><th>用途</th><th>语言</th><th>模板版本</th><th>通道</th><th>状态</th><th>额度</th><th>创建时间（北京时间）</th></tr></thead><tbody><c:forEach items="${transactionalSummary.recentMessages}" var="message"><tr><td class="transaction-message"><c:out value="${message.message_id}"/></td><td><c:choose><c:when test="${message.purpose eq 'EMAIL_VERIFICATION_CODE'}">邮箱验证码</c:when><c:otherwise>邮箱验证链接</c:otherwise></c:choose></td><td><c:out value="${message.locale}" default="en"/></td><td><c:choose><c:when test="${message.templateVersion gt 0}">v<c:out value="${message.templateVersion}"/></c:when><c:otherwise>内置模板</c:otherwise></c:choose></td><td><c:out value="${providerAliases[message.provider]}" default="${message.provider}"/></td><td><c:out value="${message.statusLabel}"/></td><td><c:out value="${message.quotaLabel}"/></td><td><c:out value="${message.createdAtDisplay}"/></td></tr></c:forEach><c:if test="${empty transactionalSummary.recentMessages}"><tr><td colspan="8">暂无事务邮件记录。</td></tr></c:if></tbody></table></div></section>
 </c:otherwise></c:choose></main></div></body></html>

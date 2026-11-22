@@ -51,9 +51,9 @@ test('mobile page keeps full editable rule fields and defaults new rules to disa
     assert.match(html, /\/mobile\/automations\/action/);
     assert.match(html, /\/automations\/detail/);
 });
-test('the template selector offers only published templates', () => {
+test('the template selector includes unpublished drafts only for the Shopline draft editor', () => {
     const html=fs.readFileSync(page,'utf8');
-    assert.match(html, /<c:forEach items="\$\{templates\}" var="template">\s*<c:if test="\$\{template.status eq 'PUBLISHED'\}">\s*<option/);
+    assert.match(html, /<c:forEach items="\$\{templates\}" var="template">\s*<c:if test="\$\{template.status eq 'PUBLISHED' or \(shoplineDraftEditor and template.status eq 'DRAFT'\)\}">\s*<option/);
 });
 
 function mountFixture() {

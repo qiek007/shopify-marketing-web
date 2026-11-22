@@ -41,10 +41,10 @@
         if (isNaN(date.getTime())) return '—';
         return new Intl.DateTimeFormat(locale || undefined, {timeZone:zone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', timeZoneName:'short'}).format(date);
     }
-    function customerElement(doc, base, shop, id, name) {
-        var hasId = typeof id === 'string' && id.trim().length > 0;
+    function customerElement(doc, base, shop, id, name, canOpenCustomer) {
+        var hasId = canOpenCustomer !== false && typeof id === 'string' && id.trim().length > 0;
         var item = doc.createElement(hasId ? 'a' : 'strong');
-        item.textContent = display(name || id);
+        item.textContent = display(name || id) + (canOpenCustomer === false ? ' · 客户已删除' : '');
         if (hasId) item.href = base + '?' + new URLSearchParams({shop:shop, customerId:id}).toString();
         return item;
     }
@@ -98,7 +98,7 @@
             var page=data.journeys || {}, host=root.querySelector('[data-detail-journeys]'); clear(host);
             var journeys=Array.isArray(page.items) ? page.items : [];
             if (!journeys.length) host.appendChild(element('p','暂无客户旅程'));
-            journeys.forEach(function (j) { var card=doc.createElement('article'); card.className='ma-journey'; card.appendChild(customerElement(doc,root.dataset.customerUrl,shop,j.customerSourceId,j.customerName)); card.appendChild(element('p',display(j.email) + ' · ' + display(j.exitReason || j.status))); card.appendChild(element('p','触发 ' + formatTime(j.triggeredAt) + ' · 计划 ' + formatTime(j.dueAt))); card.appendChild(element('p','实际发送 ' + formatTime(j.sentAt) + ' · 通道 ' + display(j.provider))); card.appendChild(element('p','打开 ' + display(j.openedCount) + ' · 点击 ' + display(j.clickedCount) + ' · 订单 ' + display(j.orderCount))); host.appendChild(card); });
+            journeys.forEach(function (j) { var card=doc.createElement('article'); card.className='ma-journey'; card.appendChild(customerElement(doc,root.dataset.customerUrl,shop,j.customerSourceId,j.customerName,j.canOpenCustomer)); card.appendChild(element('p',display(j.email) + ' · ' + display(j.exitReason || j.status))); card.appendChild(element('p','触发 ' + formatTime(j.triggeredAt) + ' · 计划 ' + formatTime(j.dueAt))); card.appendChild(element('p','实际发送 ' + formatTime(j.sentAt) + ' · 通道 ' + display(j.provider))); card.appendChild(element('p','打开 ' + display(j.openedCount) + ' · 点击 ' + display(j.clickedCount) + ' · 订单 ' + display(j.orderCount))); host.appendChild(card); });
             currentPage = Number(page.page) || 1; totalPages = Number(page.totalPages) || 1;
             root.querySelector('[data-journey-page]').textContent = '第 ' + currentPage + ' / ' + totalPages + ' 页';
             root.querySelector('[data-journey-prev]').disabled = currentPage <= 1; root.querySelector('[data-journey-next]').disabled = currentPage >= totalPages;
@@ -152,7 +152,7 @@
             }
             updateSender(); updateCoupon(); editorForm.dataset.ready='true'; save.disabled=false;
             if (d && d.couponMode === 'FIXED_CODE') loadDiscounts(d.discountSourceId);
-            if (!d && (!editorForm.elements.templateId.options.length || editorForm.elements.templateId.options.length === 1 || editorForm.elements.provider.options.length <= 1)) { editorError('请先准备已发布模板和可用发件通道。'); editorForm.hidden=true; }
+            if (!d && (!editorForm.elements.templateId.options.length || editorForm.elements.templateId.options.length === 1 || (editorForm.dataset.allowUnroutedDraft !== 'true' && editorForm.elements.provider.options.length <= 1))) { editorError('请先准备已发布模板和可用发件通道。'); editorForm.hidden=true; }
             editor.scrollIntoView({behavior:'smooth',block:'start'});
         }
         root.querySelectorAll('[data-automation-view], [data-automation-edit]').forEach(function (button) { button.disabled=false; button.addEventListener('click', function () { var row=button.closest('[data-automation-row]'), editing=button.hasAttribute('data-automation-edit'); if (editing) editorTrigger=button; else { detailTrigger=button; filter.elements.q.value=''; filter.elements.lifecycle.value='ALL'; } loadDetail(row.dataset.id,1,editing); }); });

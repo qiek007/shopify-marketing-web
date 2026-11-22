@@ -17,7 +17,7 @@
         if (step === 1 && !audienceAllowed(values.segment, values.allCustomers)) {
             return '请选择客户分群，或明确确认全部符合发送资格的客户。';
         }
-        if (step === 2 && !values.channelCount) return '请至少选择一个发送通道。';
+        if (step === 2 && !values.allowUnroutedDraft && !values.channelCount) return '请至少选择一个发送通道。';
         return '';
     }
 
@@ -154,7 +154,8 @@
                 templateReady: ready,
                 segment: segment.value,
                 allCustomers: confirmation.checked,
-                channelCount: form.querySelectorAll('[name="providers"]:checked').length
+                channelCount: form.querySelectorAll('[name="providers"]:checked').length,
+        allowUnroutedDraft: form.dataset.allowUnroutedDraft === 'true'
             });
             stepError.textContent = message;
             stepError.hidden = !message;
@@ -334,7 +335,7 @@
                 return;
             }
             var checked = form.querySelectorAll('[name="providers"]:checked').length;
-            if (!ready || submitting || !audienceAllowed(segment.value, confirmation.checked) || !checked) {
+            if (!ready || submitting || !audienceAllowed(segment.value, confirmation.checked) || (!checked && form.dataset.allowUnroutedDraft !== 'true')) {
                 event.preventDefault();
                 status.textContent = !ready ? '请先选择可用模板。'
                     : !audienceAllowed(segment.value, confirmation.checked) ? '请选择客户分群，或明确确认全部符合发送资格的客户。'

@@ -35,12 +35,20 @@
                 <div class="form-actions filter-actions"><span class="customer-bulk-actions" data-customer-bulk-actions hidden><c:if test="${canManageCustomers}"><button class="secondary-button customer-tag-add-action" type="button" data-customer-tag-add><i class="fa fa-tag"></i><span>添加标签</span></button><button class="secondary-button customer-tag-remove-action" type="button" data-customer-tag-remove><i class="fa fa-tag"></i><span>删除标签</span></button><button class="secondary-button danger-text customer-delete-action" type="button" data-customer-delete><i class="fa fa-trash-o"></i><span>删除客户</span></button></c:if><c:if test="${canManageCampaigns}"><button class="secondary-button customer-segment-save-action" type="button" data-customer-segment-save><i class="fa fa-users"></i><span>保存为分群</span></button></c:if></span><button class="action-button" type="submit"><i class="fa fa-search"></i><span>查询</span></button><button class="secondary-button" type="button" data-customer-results-reset><i class="fa fa-eraser"></i><span>清空条件</span></button></div>
             </form>
             <div class="customer-tag-feedback" data-customer-tag-feedback aria-live="polite" hidden></div>
+            <c:if test="${canManageCustomers}">
+            <section class="customer-deletion-progress" data-customer-deletion-job data-shop="<c:out value="${selectedShop}"/>" data-base="${ctx}/customers/delete/jobs" hidden>
+                <header><div><h3>客户删除进度</h3><p data-delete-job-status aria-live="polite">等待后台处理</p></div><div class="customer-delete-controls"><button class="action-button" type="button" data-delete-job-refresh>刷新进度</button><button class="action-button danger-text" type="button" data-delete-job-retry hidden>重试失败项</button></div></header>
+                <dl class="customer-delete-counts"><div><dt>目标客户</dt><dd data-delete-job-total>0</dd></div><div><dt>已完成</dt><dd data-delete-job-succeeded>0</dd></div><div><dt>失败</dt><dd data-delete-job-failed>0</dd></div><div><dt>待处理</dt><dd data-delete-job-pending>0</dd></div></dl>
+                <progress data-delete-job-progress max="100" value="0" aria-label="客户删除处理进度"></progress><p data-delete-job-processed>已处理 0 / 0</p>
+                <p data-delete-job-message>目标名单已固定，后台会分批处理。</p><p class="customer-delete-updated" data-delete-job-updated></p>
+            </section>
+            </c:if>
             <div id="customer-results" class="async-result-region" aria-live="polite">
                 <div class="async-loading customer-results-loading"><i class="fa fa-spinner fa-spin"></i><strong>正在加载客户</strong></div>
             </div>
             <c:if test="${canManageCustomers}"><dialog id="customer-tag-add-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="customer-tag-add-title"><div class="campaign-send-dialog-icon"><i class="fa fa-tag"></i></div><div><h2 id="customer-tag-add-title">为查询结果添加标签</h2><p>将为当前查询条件匹配的全部客户添加标签，包括未显示在当前页的客户。</p></div><form action="${ctx}/customers/tags/add" method="post" data-customer-tag-add-form><label><span>标签名称</span><input name="targetTag" maxlength="100" required autocomplete="off" placeholder="输入标签名称"></label><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-customer-tag-dialog-close>取消</button><button class="primary-button" type="submit"><i class="fa fa-check"></i>确认添加</button></div></form></dialog></c:if>
             <c:if test="${canManageCustomers}"><dialog id="customer-tag-remove-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="customer-tag-remove-title"><div class="campaign-send-dialog-icon danger"><i class="fa fa-tag"></i></div><div><h2 id="customer-tag-remove-title">从查询结果删除标签</h2><p>只会从当前查询条件匹配且带有该标签的客户中移除，范围包括所有结果页。</p></div><form action="${ctx}/customers/tags/remove" method="post" data-customer-tag-remove-form><label><span>选择已有标签</span><select name="targetTag" required data-customer-tag-remove-select><option value="" disabled selected>请选择标签</option><c:forEach items="${customerTags}" var="tagOption"><option value="<c:out value='${tagOption}'/>"><c:out value="${tagOption}"/></option></c:forEach></select></label><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-customer-tag-dialog-close>取消</button><button class="primary-button danger-button" type="submit"><i class="fa fa-trash-o"></i>确认删除</button></div></form></dialog></c:if>
-            <c:if test="${canManageCustomers}"><dialog id="customer-delete-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="customer-delete-title"><div class="campaign-send-dialog-icon danger"><i class="fa fa-trash-o"></i></div><div><h2 id="customer-delete-title">删除查询结果中的客户</h2><p>将删除当前查询条件匹配的全部客户，包括未显示在当前页的客户。Shopify 客户会按隐私删除规则匿名化，此操作不可撤销。</p></div><form action="${ctx}/customers/delete" method="post" data-customer-delete-form><div class="customer-segment-summary"><strong>删除范围</strong><span data-customer-delete-summary>全部客户</span><span data-customer-delete-count>等待查询结果</span></div><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-customer-delete-dialog-close>取消</button><button class="primary-button danger-button" type="submit"><i class="fa fa-trash-o"></i>确认删除客户</button></div></form></dialog></c:if>
+            <c:if test="${canManageCustomers}"><dialog id="customer-delete-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="customer-delete-title"><div class="campaign-send-dialog-icon danger"><i class="fa fa-trash-o"></i></div><div><h2 id="customer-delete-title">删除查询结果中的客户</h2><p>将为当前查询条件匹配的全部客户创建后台删除任务，包括未显示在当前页的客户。每批完成后立即生效，失败项可单独重试。客户资料和时间线会清理；活动明细、统计及已冻结发送保留。下次店铺同步会重新建档，旧档案及时间线不可恢复。</p></div><form action="${ctx}/customers/delete" method="post" data-customer-delete-form><div class="customer-segment-summary"><strong>删除范围</strong><span data-customer-delete-summary>全部客户</span><span data-customer-delete-count>等待查询结果</span></div><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-customer-delete-dialog-close>取消</button><button class="primary-button danger-button" type="submit"><i class="fa fa-trash-o"></i><span>确认删除客户</span></button></div></form></dialog></c:if>
             <c:if test="${canManageCampaigns}"><dialog id="customer-segment-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="customer-segment-title"><div class="campaign-send-dialog-icon segment"><i class="fa fa-users"></i></div><div><h2 id="customer-segment-title">保存查询条件为分群</h2><p>将保存最后一次成功查询的全部条件，不受当前页显示数量影响。</p></div><form action="${ctx}/segments/from-customer-filter" method="post" data-customer-segment-form><label><span>分群名称</span><input name="segmentName" maxlength="255" required autocomplete="off" placeholder="例如：近30天点击客户"></label><div class="customer-segment-summary"><strong>条件摘要</strong><span data-customer-segment-summary>全部客户</span></div><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-customer-segment-dialog-close>取消</button><button class="primary-button" type="submit"><i class="fa fa-save"></i>创建分群</button></div></form></dialog></c:if>
             <dialog id="customer-list-dialog" class="campaign-customer-dialog" aria-label="客户详情">
                 <header class="campaign-customer-dialog-heading">
@@ -58,6 +66,8 @@
             </dialog>
         </section>
         <script src="${ctx}/shopify/js/customer-timeline.js?v=20261105-shanghai1"></script>
+        <link rel="stylesheet" href="${ctx}/shopify/css/customer-deletion-progress.css?v=20261118-1">
+        <script src="${ctx}/shopify/js/customer-deletion-progress.js?v=20261118-1"></script>
         <script>
             (function () {
                 var form = document.querySelector('[data-customer-results-form]');
@@ -116,6 +126,10 @@
                 var lastSuccessfulCursor;
                 var lastSuccessfulTotal;
                 var deletePending = false;
+                var deleteJobActive = false;
+                var deletionRequestToken = null;
+                document.addEventListener('customer-deletion-job-state', function (event) { deleteJobActive = event.detail.active; if (deleteButton) deleteButton.disabled = deleteJobActive; });
+                document.addEventListener('customer-deletion-finished', function () { load(1); });
                 form.querySelectorAll('input[name="tag"]').forEach(function (input) {
                     input.checked = input.dataset.tagSelected === 'true';
                 });
@@ -255,7 +269,7 @@
                 }
 
                 function runCustomerDeletion() {
-                    if (!deleteForm || !deleteDialog || !lastSuccessfulQuery || deletePending) return;
+                    if (!deleteForm || !deleteDialog || !lastSuccessfulQuery || deletePending || deleteJobActive) return;
                     var submit = deleteForm.querySelector('button[type="submit"]');
                     var cancel = deleteDialog.querySelector('[data-customer-delete-dialog-close]');
                     var icon = submit.querySelector('i');
@@ -264,18 +278,40 @@
                     var originalLabel = label ? label.textContent : '确认删除客户';
                     var payload = new URLSearchParams(lastSuccessfulQuery);
                     payload.set('confirm', 'DELETE_CUSTOMERS');
+                    if (!deletionRequestToken) deletionRequestToken = window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : 'delete-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+                    payload.set('requestToken', deletionRequestToken);
                     deletePending = true;
                     deleteForm.setAttribute('aria-busy', 'true');
                     submit.setAttribute('aria-busy', 'true');
                     submit.disabled = true;
                     if (cancel) cancel.disabled = true;
                     if (icon) icon.className = 'fa fa-spinner fa-spin';
-                    if (label) label.textContent = '正在删除…';
-                    fetch(deleteForm.action, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }, body: payload.toString() })
-                        .then(function (response) { if (!response.ok) throw new Error('HTTP ' + response.status); return response.json(); })
-                        .then(function (result) { deleteDialog.close(); showFeedback(result.message || '客户删除完成', false); load(1); })
-                        .catch(function () { showFeedback('客户删除失败，请稍后重试', true); })
-                        .finally(function () { deletePending = false; deleteForm.removeAttribute('aria-busy'); submit.removeAttribute('aria-busy'); submit.disabled = false; if (cancel) cancel.disabled = false; if (icon) icon.className = originalIcon; if (label) label.textContent = originalLabel; });
+                    if (label) label.textContent = '正在提交任务…';
+                    fetch(deleteForm.action, {
+                        method: 'POST', credentials: 'same-origin',
+                        headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        body: payload.toString()
+                    }).then(function (response) {
+                        return response.json().then(function (result) {
+                            if (!response.ok) { var rejected = new Error('Task not confirmed'); if (/^(DELETION_[A-Z_]+|INVALID_REQUEST)$/.test(result.code || '')) rejected.userMessage = result.message; throw rejected; }
+                            return result;
+                        });
+                    }).then(function (result) {
+                        deleteDialog.close();
+                        showFeedback(result.message || '删除任务已提交，请查看下方进度', false);
+                        if (window.CustomerDeletionProgress && result.job) window.CustomerDeletionProgress.show(result.job);
+                    }).catch(function (error) {
+                        showFeedback(error.userMessage || '删除任务提交结果暂未确认，正在核对后台任务。请查看进度，不要重复提交。', true);
+                        if (window.CustomerDeletionProgress) window.CustomerDeletionProgress.refreshLatest();
+                    }).finally(function () {
+                        deletePending = false;
+                        deleteForm.removeAttribute('aria-busy');
+                        submit.removeAttribute('aria-busy');
+                        submit.disabled = false;
+                        if (cancel) cancel.disabled = false;
+                        if (icon) icon.className = originalIcon;
+                        if (label) label.textContent = originalLabel;
+                    });
                 }
 
                 function describeSuccessfulQuery() {
@@ -510,6 +546,8 @@
                 if (deleteButton && deleteDialog && deleteForm) {
                     deleteButton.addEventListener('click', function () {
                         if (!lastSuccessfulQuery) return;
+                        if (deleteJobActive) return;
+                        deletionRequestToken = null;
                         deleteSummary.textContent = describeSuccessfulQuery();
                         deleteCount.textContent = lastSuccessfulTotal ? '共 ' + lastSuccessfulTotal + ' 位客户' : '当前查询匹配的全部客户';
                         deleteDialog.showModal();
@@ -546,6 +584,7 @@
                 form.querySelectorAll('input[name="tag"]:not([data-untagged])').forEach(function (input) {
                     ensureTagChoice(input.value);
                 });
+                if (window.CustomerDeletionProgress) window.CustomerDeletionProgress.refreshLatest();
                 loadCustomerTags();
                 load(form.dataset.initialPage || '1');
             }());

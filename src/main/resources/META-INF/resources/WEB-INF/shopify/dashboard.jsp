@@ -26,6 +26,12 @@
             <p class="dashboard-page-subtitle"><c:choose><c:when test="${not empty selectedShop}"><c:out value="${selectedShop}"/></c:when><c:otherwise>请先连接店铺或获取店铺授权</c:otherwise></c:choose></p>
         </section>
 
+        <c:if test="${not empty shoplineSync}">
+            <p class="dashboard-page-subtitle">SHOPLINE 同步数据 · <c:out value="${shoplineSync.statusLabel}"/>
+                <c:if test="${not empty shoplineSync.sourceWatermark}"> · 增量数据截至 <time data-browser-time="<c:out value='${shoplineSync.sourceWatermark}'/>" datetime="<c:out value='${shoplineSync.sourceWatermark}'/>" ><c:out value="${shoplineSync.sourceWatermark}"/></time></c:if>
+            </p>
+        </c:if>
+
         <c:choose>
             <c:when test="${!overview.available}">
                 <section class="system-notice danger" role="alert">
@@ -38,15 +44,15 @@
                 <section class="metric-grid" aria-label="关键指标">
                     <a class="metric-card metric-link accent-blue" href="${ctx}/products?shop=${selectedShop}">
                         <span class="metric-icon"><i class="fa fa-tags" aria-hidden="true"></i></span>
-                        <div><span>商品数</span><strong><c:out value="${overview.products}"/></strong></div>
+                        <div><span><c:out value="${empty shoplineSync ? '商品数' : 'SHOPLINE 商品'}"/></span><strong><c:choose><c:when test="${empty shoplineSync}"><c:out value="${overview.products}"/></c:when><c:when test="${shoplineSync.productsCountAvailable}"><c:out value="${shoplineSync.products}"/></c:when><c:otherwise>—</c:otherwise></c:choose></strong></div>
                     </a>
                     <a class="metric-card metric-link accent-teal" id="customers" href="${ctx}/customers?shop=${selectedShop}">
                         <span class="metric-icon"><i class="fa fa-users" aria-hidden="true"></i></span>
-                        <div><span>总用户数</span><strong><c:out value="${overview.customers}"/></strong></div>
+                        <div><span><c:out value="${empty shoplineSync ? '总用户数' : 'SHOPLINE 客户'}"/></span><strong><c:choose><c:when test="${empty shoplineSync}"><c:out value="${overview.customers}"/></c:when><c:when test="${shoplineSync.customersCountAvailable}"><c:out value="${shoplineSync.customers}"/></c:when><c:otherwise>—</c:otherwise></c:choose></strong></div>
                     </a>
                     <a class="metric-card metric-link accent-amber" href="${ctx}/orders?shop=${selectedShop}">
                         <span class="metric-icon"><i class="fa fa-file-text-o" aria-hidden="true"></i></span>
-                        <div><span>平台订单</span><strong><c:out value="${overview.orders}"/></strong></div>
+                        <div><span><c:out value="${empty shoplineSync ? '平台订单' : 'SHOPLINE 订单'}"/></span><strong><c:choose><c:when test="${empty shoplineSync}"><c:out value="${overview.orders}"/></c:when><c:when test="${shoplineSync.ordersCountAvailable}"><c:out value="${shoplineSync.orders}"/></c:when><c:otherwise>—</c:otherwise></c:choose></strong></div>
                     </a>
                     <a class="metric-card metric-link accent-violet" href="${ctx}/discounts?shop=${selectedShop}">
                         <span class="metric-icon"><i class="fa fa-ticket" aria-hidden="true"></i></span>

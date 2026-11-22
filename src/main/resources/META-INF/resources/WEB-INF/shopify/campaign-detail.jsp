@@ -560,7 +560,9 @@
                 || campaignDetail.status eq 'PREPARING'
                 || campaignDetail.status eq 'SCHEDULED'
                 || campaignDetail.status eq 'QUEUED'
-                || campaignDetail.status eq 'RUNNING'};
+                || campaignDetail.status eq 'RUNNING'
+                || (campaignDetail.summary.statisticsStatus eq 'INCREMENTAL'
+                    and (campaignDetail.status eq 'COMPLETED' or campaignDetail.status eq 'CANCELLED'))};
         var refreshTimer;
         var refreshInFlight = false;
 
@@ -781,7 +783,8 @@
             applySendGate(progress);
             applyScheduleGate(progress);
             autoRefresh = summary.statisticsStatus === 'INITIALIZING' || ['PREPARING', 'SCHEDULED', 'QUEUED', 'RUNNING'].includes(progress.status)
-                    || ['BUILDING', 'PROCESSING'].includes(progress.snapshotStatus);
+                    || ['BUILDING', 'PROCESSING'].includes(progress.snapshotStatus)
+                    || (summary.statisticsStatus === 'INCREMENTAL' && ['COMPLETED', 'CANCELLED'].includes(progress.status));
         }
 
         function refreshProgress(event) {

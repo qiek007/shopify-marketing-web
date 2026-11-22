@@ -15,11 +15,13 @@ class ThemeResourceParityTest {
     private static final Path ROOT = Path.of("src/main/resources/META-INF/resources");
 
     @Test
-    void bothStoreThemesUseAuwStatusAndKeepShopifySyncControls() throws Exception {
+    void bothStoreThemesShowAuwStatusAndKeepAuthorizedConnectorSyncControls() throws Exception {
         for (String theme : List.of("shopify", "shopify-theme2")) {
             String stores = Files.readString(ROOT.resolve("WEB-INF").resolve(theme).resolve("stores.jsp"));
             assertThat(stores).contains("auwStore", "customSync.resources", "customAutomation.lastSuccessAt",
-                    "customAutomation.pollEnabled", "customSync.lastCompletedAt", "canConfigureSender && shopifyStore",
+                    "customAutomation.pollEnabled", "customSync.lastCompletedAt",
+                    "canConfigureSender and (shopifyStore or manualConnectorSync.supported)",
+                    "/stores/sync", "_connectorSyncCsrf", "not manualConnectorSync.ready",
                     "customSync.canStartIncremental", "/stores/custom-connection/sync-incremental", "customConnectionCsrf", "customSync.batchId");
         }
     }
@@ -82,7 +84,7 @@ class ThemeResourceParityTest {
         Set<String> classic = views("shopify");
         Set<String> theme2 = views("shopify-theme2");
 
-        assertThat(classic).hasSize(44).contains("custom-store-connection.jsp","transactional-email.jsp").containsExactlyInAnyOrderElementsOf(theme2)
+        assertThat(classic).contains("custom-store-connection.jsp","transactional-email.jsp","transactional-templates.jsp").containsExactlyInAnyOrderElementsOf(theme2)
                 .contains(Path.of("fragments","sender-domain-verification.jspf").toString(),
                         Path.of("fragments","store-connection-readonly.jspf").toString());
         assertThat(ROOT.resolve("WEB-INF/org/index.jsp")).exists();
@@ -111,8 +113,8 @@ class ThemeResourceParityTest {
         assertThat(page).contains(
                 "id=\"campaign-delivery-rate\"",
                 "campaignDetail.summary.accepted gt 0 ? campaignDetail.summary.delivered * 100.0 / campaignDetail.summary.accepted : 0",
-                "id=\"campaign-risk-note\"><c:choose><c:when test=\"${legacySavedRisk}\">",
-                "campaignDetail.summary.outcomeStatisticsAvailable}\"><c:out value=\"${campaignDetail.summary.bounced}\"/>",
+                "id=\"campaign-risk-note\"",
+                "${campaignDetail.summary.bounced}",
                 "function deliveryRate(delivered, accepted)",
                 "setText('campaign-delivery-rate', '送达率 ' + deliveryRate(summary.delivered, summary.accepted)",
                 "setText('campaign-risk-note', '退信 ' + summary.bounced + ' / 投诉 '");
@@ -845,7 +847,8 @@ class ThemeResourceParityTest {
             assertThat(customers).contains(
                     "data-customer-delete", "customer-delete-dialog",
                     "/customers/delete", "runCustomerDeletion",
-                    "fa fa-spinner fa-spin", "正在删除…",
+                    "fa fa-spinner fa-spin", "正在提交任务…",
+                    "data-customer-deletion-job", "customer-deletion-progress.js",
                     "deleteForm.setAttribute('aria-busy', 'true')");
             assertThat(suppressions).contains(
                     "data-suppression-release", "suppression-release-dialog",

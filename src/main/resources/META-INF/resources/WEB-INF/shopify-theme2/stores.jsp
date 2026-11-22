@@ -47,10 +47,15 @@
                     <c:set var="auwStore" value="${sourceProfile.connectorKey eq 'AUW_V2'}"/>
                     <c:set var="lastStoreSync" value="${currentStore.lastSyncedAt}"/>
                     <c:if test="${auwStore}"><c:set var="lastStoreSync" value="${customSync.syncState eq 'COMPLETED' and not empty customSync.lastCompletedAt ? customSync.lastCompletedAt : customAutomation.lastSuccessAt}"/></c:if>
+                    <c:if test="${not empty shoplineSync}"><c:set var="lastStoreSync" value="${shoplineSync.lastSyncedAt}"/></c:if>
                     <div class="table-wrap"><table class="status-table wide-table"><thead><tr><th>店铺</th><th>连接</th><th>商品</th><th>客户</th><th>订单</th><th>安装时间</th><th>最近同步</th></tr></thead><tbody><tr>
-                        <td><strong><c:out value="${currentStore.shopDomain}"/></strong><span class="cell-note">来源类型：<c:out value="${sourceProfile.sourceLabel}" default="暂不可用"/> · 连接器：<c:out value="${sourceProfile.connectorLabel}" default="未确认"/></span><c:if test="${shopifyStore}"><span class="cell-note"><c:out value="${currentStore.grantedScopes}" default="未记录授权范围"/></span></c:if></td>
-                        <td><span class="status-pill"><c:out value="${currentStore.status}"/></span></td>
-                        <c:choose><c:when test="${auwStore}">
+                        <td><strong><c:out value="${currentStore.shopDomain}"/></strong><span class="cell-note">来源类型：<c:out value="${empty shoplineSync ? sourceProfile.sourceLabel : 'SHOPLINE'}" default="暂不可用"/> · 连接器：<c:out value="${empty shoplineSync ? sourceProfile.connectorLabel : 'SHOPLINE 连接器'}" default="未确认"/></span><c:if test="${shopifyStore}"><span class="cell-note"><c:out value="${currentStore.grantedScopes}" default="未记录授权范围"/></span></c:if></td>
+                        <td><span class="status-pill"><c:out value="${empty shoplineSync ? currentStore.status : shoplineSync.statusLabel}"/></span><c:if test="${not empty shoplineSync.grantedScopes}"><span class="cell-note"><c:out value="${shoplineSync.grantedScopes}"/></span></c:if></td>
+                        <c:choose><c:when test="${not empty shoplineSync}">
+                            <td><span class="sync-state"><c:out value="${shoplineSync.productsStatus}"/><c:if test="${shoplineSync.productsCountAvailable}"> · <c:out value="${shoplineSync.products}"/></c:if></span></td>
+                            <td><span class="sync-state"><c:out value="${shoplineSync.customersStatus}"/><c:if test="${shoplineSync.customersCountAvailable}"> · <c:out value="${shoplineSync.customers}"/></c:if></span></td>
+                            <td><span class="sync-state"><c:out value="${shoplineSync.ordersStatus}"/><c:if test="${shoplineSync.ordersCountAvailable}"> · <c:out value="${shoplineSync.orders}"/></c:if></span></td>
+                        </c:when><c:when test="${auwStore}">
                             <c:forTokens items="PRODUCT,CUSTOMER,ORDER" delims="," var="type">
                                 <c:set var="resourceState" value=""/>
                                 <c:forEach items="${customSync.resources}" var="resource"><c:if test="${resource.resource eq type}"><c:set var="resourceState" value="${resource.status}"/></c:if></c:forEach>
@@ -67,13 +72,28 @@
                             <td><span class="sync-state"><c:out value="${currentStore.customersStatus}" default="未同步"/></span></td>
                             <td><span class="sync-state"><c:out value="${currentStore.ordersStatus}" default="未同步"/></span></td>
                         </c:otherwise></c:choose>
-                        <td><time data-browser-time="<c:out value='${currentStore.installedAt}'/>" datetime="<c:out value='${currentStore.installedAt}'/>"><c:out value="${currentStore.installedAt}" default="-"/></time></td>
+                        <c:set var="storeInstalledAt" value="${empty shoplineSync ? currentStore.installedAt : shoplineSync.authorizedAt}"/>
+                        <td><time data-browser-time="<c:out value='${storeInstalledAt}'/>" datetime="<c:out value='${storeInstalledAt}'/>"><c:out value="${storeInstalledAt}" default="-"/></time></td>
                         <td><div class="store-sync-cell">
                             <div class="store-sync-timing"><time data-browser-time="<c:out value='${lastStoreSync}'/>" datetime="<c:out value='${lastStoreSync}'/>"><c:out value="${lastStoreSync}" default="${auwStore and not customSync.available ? '状态暂不可用' : '尚未同步'}"/></time>
                                 <c:if test="${auwStore and customAutomation.available and customAutomation.featureEnabled}"><span class="cell-note"><c:choose><c:when test="${customAutomation.awaitingBaseline}">自动增量已配置，等待首次同步完成。</c:when><c:when test="${customAutomation.pollEnabled}">自动增量同步已开启，每 <c:out value="${customAutomation.pollIntervalSeconds}"/> 秒查询一次。</c:when><c:otherwise>自动增量同步未开启。</c:otherwise></c:choose></span></c:if>
                             </div>
-                            <c:if test="${canConfigureSender && shopifyStore}"><form method="post" action="${ctx}/stores/sync" onsubmit="var b=this.querySelector('button');b.disabled=true;b.innerHTML='<i class=&quot;fa fa-spinner fa-spin&quot;></i><span>同步中</span>';"><input type="hidden" name="shop" value="${selectedShop}"><button class="action-button" type="submit"><i class="fa fa-refresh"></i><span>立即同步</span></button></form></c:if>
-                            <c:if test="${auwStore and customSync.canStartIncremental}">
+                            <c:if test="${canConfigureSender and (shopifyStore or manualConnectorSync.supported)}">
+                                <form method="post" action="${ctx}/stores/sync"
+                                      onsubmit="var button=this.querySelector('button');button.disabled=true;button.querySelector('span').textContent='同步中';">
+                                    <input type="hidden" name="shop" value="<c:out value='${selectedShop}'/>">
+                                    <c:if test="${not shopifyStore}">
+                                        <input type="hidden" name="_connectorSyncCsrf" value="<c:out value='${connectorSyncCsrf}'/>">
+                                    </c:if>
+                                    <button class="action-button" type="submit" ${not shopifyStore and not manualConnectorSync.ready ? 'disabled="disabled"' : ''}>
+                                        <i class="fa fa-refresh" aria-hidden="true"></i><span>立即同步</span>
+                                    </button>
+                                </form>
+                                <c:if test="${not shopifyStore and not manualConnectorSync.ready}">
+                                    <span class="cell-note"><c:out value="${manualConnectorSync.reason}"/></span>
+                                </c:if>
+                            </c:if>
+                            <c:if test="${empty manualConnectorSync and auwStore and customSync.canStartIncremental}">
                                 <form method="post" action="${ctx}/stores/custom-connection/sync-incremental"
                                       onsubmit="var b=this.querySelector('button');b.disabled=true;b.innerHTML='<i class=&quot;fa fa-spinner fa-spin&quot;></i><span>提交中</span>';">
                                     <input type="hidden" name="shop" value="<c:out value='${selectedShop}'/>">
@@ -87,6 +107,15 @@
                         </div></td>
                     </tr></tbody></table></div>
                     <c:if test="${shopifyStore && currentStore.status eq 'ACTIVE'}"><p class="cell-note store-sync-note">每日自动同步（距上次成功同步满 24 小时），无需保持页面打开；也可点击“立即同步”提前执行。</p></c:if>
+                    <c:if test="${not empty shoplineSync and (shoplineSync.automaticSync or not empty shoplineSync.sourceWatermark or not empty shoplineSync.syncStatus)}">
+                        <p class="cell-note store-sync-note">
+                            <c:if test="${shoplineSync.authorizationStatus eq 'AUTHORIZED' and shoplineSync.automaticSync}">SHOPLINE 自动同步已配置，无需保持页面打开。</c:if>
+                            <c:if test="${not empty shoplineSync.syncStatus}"><c:out value="${shoplineSync.syncStatus}"/>。</c:if>
+                            <c:if test="${not empty shoplineSync.pixelSetupStatus}">Pixel <c:out value="${shoplineSync.pixelSetupStatus}"/>。</c:if>
+                            <c:if test="${not empty shoplineSync.webhooksReady}">已配置 <c:out value="${shoplineSync.webhooksReady}"/> 项 Webhook。<c:if test="${shoplineSync.provisionRetrying}">部分配置正在重试。</c:if></c:if>
+                            <c:if test="${not empty shoplineSync.sourceWatermark}">增量数据截至 <time data-browser-time="<c:out value='${shoplineSync.sourceWatermark}'/>" datetime="<c:out value='${shoplineSync.sourceWatermark}'/>"><c:out value="${shoplineSync.sourceWatermark}"/></time>。</c:if>
+                        </p>
+                    </c:if>
                     <c:if test="${not shopifyStore}"><%@ include file="fragments/store-connection-readonly.jspf" %></c:if>
                     <c:if test="${not empty currentStore.lastError}"><div class="system-notice danger" role="alert"><i class="fa fa-exclamation-circle"></i><div><strong>最近同步异常</strong><span><c:out value="${currentStore.lastError}"/></span></div></div></c:if>
                 </c:otherwise>

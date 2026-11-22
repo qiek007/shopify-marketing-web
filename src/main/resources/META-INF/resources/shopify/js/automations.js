@@ -212,7 +212,7 @@
     (page.items || []).forEach(function (item) {
       var row = document.createElement('tr');
       var customerCell = document.createElement('td');
-      if (item.customerSourceId) {
+      if (item.customerSourceId && item.canOpenCustomer !== false) {
         var button = document.createElement('button');
         button.type = 'button';
         button.className = 'link-button';
@@ -220,7 +220,7 @@
         button.textContent = text(item.customerName, item.customerSourceId);
         customerCell.appendChild(button);
       } else {
-        customerCell.textContent = text(item.customerName);
+        customerCell.textContent = text(item.customerName) + (item.canOpenCustomer === false ? ' · 客户已删除' : '');
       }
       var email = document.createElement('span');
       email.className = 'cell-note';

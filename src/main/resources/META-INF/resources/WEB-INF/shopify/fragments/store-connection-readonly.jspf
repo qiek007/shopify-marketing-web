@@ -44,7 +44,7 @@
 <c:choose>
 <c:when test="${not sourceProfile.available}"><p class="connection-note" role="status">连接信息暂不可用，请稍后刷新或联系平台管理员。</p></c:when>
 <c:when test="${sourceProfile.connectorKey eq 'NONE'}"><p class="connection-note">未选择连接器，请联系平台管理员配置。</p></c:when>
-<c:when test="${sourceProfile.sourceType eq 'SHOPLINE'}"><p class="connection-note">Shopline 连接器待开发，尚未启用业务同步。</p></c:when>
+<c:when test="${sourceProfile.sourceType eq 'SHOPLINE' or not empty shoplineSync}"><p class="connection-note" role="status"><c:out value="${shoplineSync.statusLabel}" default="SHOPLINE 连接状态暂不可用"/></p></c:when>
 <c:when test="${sourceProfile.connectorKey eq 'AUW_V2' and not customConnection.available}"><p class="connection-note" role="status">连接状态暂不可用，请稍后刷新或联系平台管理员。</p></c:when>
 <c:when test="${sourceProfile.connectorKey eq 'AUW_V2'}">
 <section id="store-sync-status" class="connection-sync-status" aria-label="数据签名与同步状态">

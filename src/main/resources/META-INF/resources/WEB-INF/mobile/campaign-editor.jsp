@@ -97,7 +97,7 @@
             <section class="mobile-editor-card"><p>当前账号没有创建活动的权限。</p></section>
         </c:when>
         <c:otherwise>
-            <form id="mobile-campaign-form" method="post" action="${ctx}/mobile/campaigns" data-context="<c:out value='${ctx}'/>">
+            <form id="mobile-campaign-form" data-allow-unrouted-draft="${shoplineDraftEditor}" method="post" action="${ctx}/mobile/campaigns" data-context="<c:out value='${ctx}'/>">
                 <div class="mobile-editor-progress" id="mobile-editor-progress" hidden>
                     <ol aria-label="创建步骤"><li>1 内容</li><li>2 受众</li><li>3 通道</li><li>4 确认</li></ol>
                     <p id="mobile-editor-step-status" role="status" aria-live="polite"></p>
@@ -113,7 +113,7 @@
                         <select name="templateId" required>
                             <option value="">请选择模板</option>
                             <c:forEach items="${templates}" var="template">
-                                <c:if test="${template.status eq 'PUBLISHED'}"><option value="<c:out value='${template.templateId}'/>"><c:out value="${template.name}" /></option></c:if>
+                                <c:if test="${template.status eq 'PUBLISHED' or (shoplineDraftEditor and template.status eq 'DRAFT')}"><option value="<c:out value='${template.templateId}'/>"><c:out value="${template.name}" /></option></c:if>
                             </c:forEach>
                         </select>
                     </label>
@@ -137,7 +137,7 @@
                 <section class="mobile-editor-card" data-editor-step>
                     <h2>03 · 发送配置</h2>
                     <p class="mobile-note">请选择发送通道，按选中通道等权分配批次。重复发送间隔默认 24 小时，数据保留 14 天；归因来源为 auw、媒介为 email。</p>
-                    <c:choose><c:when test="${empty senderSettings}"><p role="alert">当前店铺没有可用的发送通道，请先在电脑端配置。</p></c:when>
+                    <c:choose><c:when test="${empty senderSettings}"><p role="alert"><c:choose><c:when test="${shoplineDraftEditor}">可先保存草稿。发送前需配置发件身份，并由平台分配邮件额度。</c:when><c:otherwise>当前店铺没有可用的发送通道，请先在电脑端配置。</c:otherwise></c:choose></p></c:when>
                     <c:otherwise><c:forEach items="${senderSettings}" var="setting">
                         <label class="mobile-check"><input type="checkbox" name="providers" value="<c:out value='${setting.provider}'/>" checked>
                             <span><strong><c:out value="${providerAliases[setting.provider]}" default="${setting.provider}" /></strong><br><c:out value="${setting.fromHeader}" /></span></label>

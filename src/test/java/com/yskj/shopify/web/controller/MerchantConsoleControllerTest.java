@@ -127,9 +127,96 @@ class MerchantConsoleControllerTest {
         verify(client).exchange(eq("sender-domain.status"),any(),eq("demo.myshopify.com"),any(),eq(null));
     }
 
+    @Test void customerDeletionProgressAndFailedRetryUseDedicatedAuthorizedOperations() {
+        var params=new LinkedMultiValueMap<String,String>();params.add("shop","demo.myshopify.com");params.add("jobId","cdj-test");params.add("confirm","RETRY_FAILED_CUSTOMERS");
+        var payload=new JSONObject(Map.of("job",new JSONObject(Map.of("jobId","cdj-test","status","RUNNING","total",946,"succeeded",20,"pending",926))));
+        for(String operation:java.util.List.of("customers.delete.latest","customers.delete.status","customers.delete.retry"))
+            when(client.exchange(eq(operation),any(),eq("demo.myshopify.com"),any(),eq(null))).thenReturn(MerchantWebProtocol.json(payload));
+        assertThat(controller.latestCustomerDeletion(params,session()).getBody()).isEqualTo(payload);
+        assertThat(controller.customerDeletionStatus(params,session()).getBody()).isEqualTo(payload);
+        assertThat(controller.retryCustomerDeletion(params,session()).getBody()).isEqualTo(payload);
+        org.assertj.core.api.Assertions.assertThatThrownBy(()->controller.customerDeletionStatus(params,new MockHttpSession())).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        verify(client).exchange(eq("customers.delete.status"),any(),eq("demo.myshopify.com"),org.mockito.ArgumentMatchers.argThat(p->"cdj-test".equals(p.getString("jobId"))),eq(null));
+        verify(client).exchange(eq("customers.delete.retry"),any(),eq("demo.myshopify.com"),org.mockito.ArgumentMatchers.argThat(p->"RETRY_FAILED_CUSTOMERS".equals(p.getString("confirm"))),eq(null));
+    }
+
+    @Test void deletionTaskRejectionKeepsSafeReasonAndDisablesCaching() {
+        var params=new LinkedMultiValueMap<String,String>();params.add("shop","demo.myshopify.com");
+        when(client.exchange(eq("customers.delete"),any(),eq("demo.myshopify.com"),any(),eq(null)))
+                .thenReturn(MerchantWebProtocol.error("DELETION_ALREADY_RUNNING","该店铺已有删除任务，请先查看当前任务进度",409));
+        var response=controller.deleteCustomers(params,session());
+        assertThat(response.getStatusCodeValue()).isEqualTo(409);assertThat(response.getHeaders().getCacheControl()).contains("no-store");
+        assertThat((JSONObject)response.getBody()).containsEntry("code","DELETION_ALREADY_RUNNING").containsEntry("message","该店铺已有删除任务，请先查看当前任务进度");
+    }
+
     private final MerchantWebFacadeClient client = mock(MerchantWebFacadeClient.class);
     private final MerchantConsoleController controller =
             new MerchantConsoleController(client, new RemotePageSupport());
+
+    @Test
+    void connectorSyncConfirmationComesOnlyFromTheSessionToken() {
+        String shop = "demo.myshopline.com";
+        var session = session();
+        var page = new ExtendedModelMap();
+        when(client.exchange(eq("stores.load"), any(), eq(shop), any(), eq(null)))
+                .thenReturn(MerchantWebProtocol.view("shopify/stores", new JSONObject(Map.of(
+                        "selectedShop", shop, "manualConnectorSync", Map.of("supported", "true", "ready", true)))));
+        when(client.exchange(eq("store.sync"), any(), eq(shop), any(), eq(null)))
+                .thenReturn(MerchantWebProtocol.view("shopify/stores", new JSONObject()));
+
+        var params = new LinkedMultiValueMap<String, String>();
+        params.set("shop", shop);
+        controller.stores(params, session, page, new RedirectAttributesModelMap());
+        String token = (String) page.getAttribute("connectorSyncCsrf");
+        assertThat(token).isNotBlank();
+
+        params.set("connectorSyncConfirmed", "true");
+        controller.syncStore(params, session, new ExtendedModelMap(), new RedirectAttributesModelMap());
+
+        params.set("_connectorSyncCsrf", token);
+        controller.syncStore(params, session, new ExtendedModelMap(), new RedirectAttributesModelMap());
+
+        var sent = org.mockito.ArgumentCaptor.forClass(JSONObject.class);
+        verify(client, org.mockito.Mockito.times(2)).exchange(eq("store.sync"), any(), eq(shop), sent.capture(), eq(null));
+        assertThat(sent.getAllValues().get(0)).doesNotContainKeys("connectorSyncConfirmed", "_connectorSyncCsrf");
+        assertThat(sent.getAllValues().get(1)).containsEntry("connectorSyncConfirmed", "true")
+                .doesNotContainKey("_connectorSyncCsrf");
+    }
+
+    @Test
+    void expiredConnectorSyncFormReturnsToTheSameStoreWithAnError() {
+        String shop = "demo.myshopline.com";
+        var params = new LinkedMultiValueMap<String, String>();
+        params.set("shop", shop);
+        params.set("_connectorSyncCsrf", "");
+        var redirect = new RedirectAttributesModelMap();
+
+        String view = controller.syncStore(params, session(), new ExtendedModelMap(), redirect);
+
+        assertThat(view).isEqualTo("redirect:/stores");
+        assertThat(redirect.getAttribute("shop")).isEqualTo(shop);
+        assertThat(redirect.getFlashAttributes().get("errorMessage"))
+                .isEqualTo("同步页面已失效，请重新点击「立即同步」。");
+        org.mockito.Mockito.verifyNoInteractions(client);
+    }
+
+    @Test
+    void remoteSyncPermissionDenialStaysOnTheCurrentStorePage() {
+        String shop = "demo.myshopline.com";
+        var session = session();
+        var params = new LinkedMultiValueMap<String, String>();
+        params.set("shop", shop);
+        params.set("_connectorSyncCsrf", com.yskj.shopify.web.security.SenderDomainCsrf.issue(
+                session, "domain-1:user-1"));
+        when(client.exchange(eq("store.sync"), any(), eq(shop), any(), eq(null)))
+                .thenReturn(MerchantWebProtocol.error("FORBIDDEN", "当前店铺未满足同步条件", 403));
+        var redirect = new RedirectAttributesModelMap();
+
+        assertThat(controller.syncStore(params, session, new ExtendedModelMap(), redirect))
+                .isEqualTo("redirect:/stores");
+        assertThat(redirect.getAttribute("shop")).isEqualTo(shop);
+        assertThat(redirect.getFlashAttributes().get("errorMessage")).isEqualTo("当前店铺未满足同步条件");
+    }
 
     @Test
     void dashboardUsesTheLoggedInUserAndRemoteViewModel() {

@@ -170,6 +170,11 @@ public class MerchantConsoleController {
                 model.addAttribute("customConnectionCsrf", CustomStoreConnectionController.csrf(session));
             }
         }
+        if (!result.startsWith("redirect:")) {
+            var user = requireUser(session);
+            model.addAttribute("connectorSyncCsrf", com.yskj.shopify.web.security.SenderDomainCsrf.issue(
+                    session, user.getDomainid() + ":" + user.getId()));
+        }
         return result;
     }
 
@@ -263,7 +268,32 @@ public class MerchantConsoleController {
     @PostMapping("/stores/sync")
     public String syncStore(@RequestParam MultiValueMap<String, String> params,
                             HttpSession session, Model model, RedirectAttributes redirect) {
-        return view("store.sync", params, session, model, redirect);
+        var safeParams = new org.springframework.util.LinkedMultiValueMap<String, String>(params);
+        safeParams.remove("connectorSyncConfirmed");
+        var tokens = safeParams.remove("_connectorSyncCsrf");
+        if (tokens != null) {
+            var user = requireUser(session);
+            String token = tokens.size() == 1 ? tokens.get(0) : null;
+            try {
+                com.yskj.shopify.web.security.SenderDomainCsrf.require(
+                        session, user.getDomainid() + ":" + user.getId(), token);
+            } catch (ResponseStatusException denied) {
+                redirect.addAttribute("shop", safeParams.getFirst("shop"));
+                redirect.addFlashAttribute("errorMessage", "同步页面已失效，请重新点击「立即同步」。");
+                return "redirect:/stores";
+            }
+            safeParams.set("connectorSyncConfirmed", "true");
+        }
+        try {
+            return view("store.sync", safeParams, session, model, redirect);
+        } catch (ResponseStatusException denied) {
+            if (denied.getStatus() != HttpStatus.FORBIDDEN) throw denied;
+            redirect.addAttribute("shop", safeParams.getFirst("shop"));
+            String reason = denied.getReason();
+            redirect.addFlashAttribute("errorMessage", reason == null || reason.isBlank()
+                    ? "当前账号没有此店铺的同步权限。" : reason);
+            return "redirect:/stores";
+        }
     }
 
     @GetMapping("/customers")
@@ -328,7 +358,20 @@ public class MerchantConsoleController {
     @PostMapping(value = "/customers/delete", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> deleteCustomers(@RequestParam MultiValueMap<String, String> params,
                                              HttpSession session) {
-        return body("customers.delete", params, session, null);
+        return customerDeletionBody("customers.delete",params,session);
+    }
+
+    @GetMapping(value = "/customers/delete/jobs/latest", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> latestCustomerDeletion(@RequestParam MultiValueMap<String,String> params,HttpSession session) {
+        return customerDeletionBody("customers.delete.latest",params,session);
+    }
+    @GetMapping(value = "/customers/delete/jobs/status", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> customerDeletionStatus(@RequestParam MultiValueMap<String,String> params,HttpSession session) {
+        return customerDeletionBody("customers.delete.status",params,session);
+    }
+    @PostMapping(value = "/customers/delete/jobs/retry", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> retryCustomerDeletion(@RequestParam MultiValueMap<String,String> params,HttpSession session) {
+        return customerDeletionBody("customers.delete.retry",params,session);
     }
 
     @PostMapping(value = "/segments/from-customer-filter",
@@ -957,6 +1000,16 @@ public class MerchantConsoleController {
                                    HttpSession session, JSONObject payload) {
         return support.applyBody(client.exchange(operation, requireUser(session),
                 values.getFirst("shop"), parameters(values), payload));
+    }
+
+    private ResponseEntity<?> customerDeletionBody(String operation,MultiValueMap<String,String> values,HttpSession session) {
+        JSONObject response=client.exchange(operation,requireUser(session),values.getFirst("shop"),parameters(values),null);
+        if("ERROR".equals(response.getString("kind"))) {
+            var error=new JSONObject();error.put("code",response.getString("code"));error.put("message",response.getString("message"));
+            return ResponseEntity.status(response.getIntValue("httpStatus")).contentType(MediaType.APPLICATION_JSON).cacheControl(org.springframework.http.CacheControl.noStore()).body(error);
+        }
+        var result=support.applyBody(response);
+        return ResponseEntity.status(result.getStatusCode()).headers(result.getHeaders()).cacheControl(org.springframework.http.CacheControl.noStore()).body(result.getBody());
     }
 
     private JSONObject responseBody(String operation, MultiValueMap<String, String> values,

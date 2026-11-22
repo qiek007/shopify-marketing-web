@@ -85,6 +85,7 @@ class MobileOverviewRenderingTest {
                 req.setAttribute("canViewCustomers", !"restricted".equals(req.getParameter("mode")));
                 var recipient = new HashMap<String,Object>();
                 recipient.putAll(Map.ofEntries(Map.entry("customerName","收件示例 <script>alert(1)</script>"),Map.entry("customerSourceId","c&1"),
+                        Map.entry("canOpenCustomer",true),
                         Map.entry("email","recipient@example.com"),Map.entry("provider","TEST"),Map.entry("sendStatus","SENT"),
                         Map.entry("openCount",5),Map.entry("clickCount",2),Map.entry("orderCount",1),Map.entry("netRevenue",123),
                         Map.entry("machineOpenCount",2),Map.entry("attemptCount",1),Map.entry("deliveredAt","2026-11-01T01:00:00Z"),

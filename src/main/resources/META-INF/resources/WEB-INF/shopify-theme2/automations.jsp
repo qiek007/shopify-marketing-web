@@ -72,12 +72,12 @@
                     <div><h2>自动营销列表</h2><p>查看规则配置、发送效果和客户旅程</p></div>
                     <div class="section-heading-actions">
                         <span class="section-count"><c:out value="${automationPage.total}"/> 条</span>
-                        <c:if test="${canManageCampaigns}"><button class="primary-button compact" type="button" data-automation-new <c:if test="${empty senderSettings}">disabled title="请先配置店铺发件身份"</c:if>><i class="fa fa-plus"></i><span>新建自动营销</span></button></c:if>
+                        <c:if test="${canManageCampaigns}"><button class="primary-button compact" type="button" data-automation-new <c:if test="${empty senderSettings and not shoplineDraftEditor}">disabled title="请先配置店铺发件身份"</c:if>><i class="fa fa-plus"></i><span>新建自动营销</span></button></c:if>
                     </div>
                 </div>
                 <c:choose>
                     <c:when test="${empty automations}">
-                        <div class="empty-state"><i class="fa fa-random"></i><strong>还没有自动营销</strong><span><c:choose><c:when test="${empty senderSettings}">请先到“我的店铺”完成发件设置。</c:when><c:otherwise>点击“新建自动营销”添加第一条规则。</c:otherwise></c:choose></span></div>
+                        <div class="empty-state"><i class="fa fa-random"></i><strong>还没有自动营销</strong><span><c:choose><c:when test="${empty senderSettings and not shoplineDraftEditor}">请先到“我的店铺”完成发件设置。</c:when><c:otherwise>点击“新建自动营销”添加第一条规则。</c:otherwise></c:choose></span></div>
                     </c:when>
                     <c:otherwise>
                         <div class="table-wrap">
@@ -112,7 +112,7 @@
                                         <td><c:out value="${automation.openedRecipientCount}"/></td>
                                         <td><c:out value="${automation.clickedRecipientCount}"/></td>
                                         <td><c:out value="${automation.orderCount}"/></td>
-                                        <td><div class="table-actions"><button class="action-button" type="button" data-automation-view>查看</button><c:if test="${canManageCampaigns}"><button class="action-button" type="button" data-automation-edit <c:if test="${empty senderSettings}">disabled title="请先配置店铺发件身份"</c:if>>编辑</button></c:if></div></td>
+                                        <td><div class="table-actions"><button class="action-button" type="button" data-automation-view>查看</button><c:if test="${canManageCampaigns}"><button class="action-button" type="button" data-automation-edit <c:if test="${empty senderSettings and not shoplineDraftEditor}">disabled title="请先配置店铺发件身份"</c:if>>编辑</button></c:if></div></td>
                                     </tr>
                                 </c:forEach>
                                 </tbody>
@@ -132,10 +132,10 @@
                         <input type="hidden" name="shop" value="<c:out value='${selectedShop}'/>">
                         <input type="hidden" name="automationId" value="">
                         <input type="hidden" name="page" value="${automationPage.page}">
-                        <div class="form-grid"><label><span>规则名称</span><input name="name" placeholder="加入购物车 30 分钟未购买" required></label><label><span>状态</span><select name="status" required><option value="PAUSED">禁用</option><option value="ACTIVE">生效</option></select></label></div>
+                        <div class="form-grid"><label><span>规则名称</span><input name="name" placeholder="加入购物车 30 分钟未购买" required></label><label><span>状态</span><select name="status" required><option value="PAUSED">禁用</option><option value="ACTIVE" <c:if test="${shoplineDraftEditor and empty senderSettings}">disabled</c:if>>生效</option></select></label></div>
                         <div class="form-grid"><label><span>旅程类型</span><select name="journeyType"><c:forEach items="${journeyTypes}" var="type"><option value="${type}"><c:choose><c:when test="${type eq 'ABANDONED_CART'}">购物车挽回</c:when><c:when test="${type eq 'BROWSE_ABANDONMENT'}">浏览挽回</c:when><c:when test="${type eq 'POST_PURCHASE'}">购买后跟进</c:when><c:otherwise><c:out value="${type}"/></c:otherwise></c:choose></option></c:forEach></select></label><label><span>触发事件</span><select name="triggerEvent"><c:forEach items="${behaviorEventTypes}" var="event"><option value="${event}"><c:choose><c:when test="${event eq 'PAGE_VIEWED'}">浏览页面</c:when><c:when test="${event eq 'CLICKED'}">点击页面</c:when><c:when test="${event eq 'PRODUCT_VIEWED'}">查看商品</c:when><c:when test="${event eq 'SEARCH_SUBMITTED'}">提交搜索</c:when><c:when test="${event eq 'PRODUCT_ADDED_TO_CART'}">加入购物车</c:when><c:when test="${event eq 'CHECKOUT_STARTED'}">开始结账</c:when><c:when test="${event eq 'CHECKOUT_COMPLETED'}">完成结账</c:when><c:otherwise><c:out value="${event}"/></c:otherwise></c:choose></option></c:forEach></select></label></div>
                         <div class="form-grid"><label><span>等待分钟</span><input name="waitMinutes" type="number" min="1" max="43200" value="30" required></label><label><span>同一客户频控（天）</span><input name="frequencyDays" type="number" min="0" max="365" value="7" required><small class="field-note">0 表示不限制。</small></label></div>
-                        <div class="form-grid"><label><span>邮件模板</span><select name="templateId" required><c:forEach items="${templates}" var="template"><option value="<c:out value='${template.templateId}'/>"><c:out value="${template.name}"/></option></c:forEach></select></label><label><span>邮件通道</span><select name="provider"><c:forEach items="${senderSettings}" var="setting"><option value="${setting.provider}"><c:out value="${providerAliases[setting.provider]}"/></option></c:forEach></select></label></div>
+                        <div class="form-grid"><label><span>邮件模板</span><select name="templateId" required><c:forEach items="${templates}" var="template"><option value="<c:out value='${template.templateId}'/>"><c:out value="${template.name}"/></option></c:forEach></select></label><label><span>邮件通道</span><select name="provider"><c:if test="${shoplineDraftEditor}"><option value="">稍后配置</option></c:if><c:forEach items="${senderSettings}" var="setting"><option value="${setting.provider}"><c:out value="${providerAliases[setting.provider]}"/></option></c:forEach></select></label></div>
                         <div class="form-grid"><label><span>UTM 来源（utm_source）</span><input name="utmSource" value="auw" maxlength="128" required><small class="field-note">默认 auw。</small></label><label><span>UTM 媒介（utm_medium）</span><input name="utmMedium" value="email" maxlength="128" required><small class="field-note">默认 email。</small></label></div>
                         <div class="form-grid"><label><span>UTM 活动（utm_campaign）</span><input name="utmCampaign" maxlength="255" placeholder="留空时使用自动营销名称"><small class="field-note">可选；留空时使用自动营销名称。</small></label><label><span>UTM 内容（utm_content）</span><input name="utmContent" maxlength="255" placeholder="留空时按链接自动生成"><small class="field-note">可选；留空时按链接自动生成。</small></label></div>
                         <div class="form-grid"><label><span>发件身份</span><input id="automation-sender-preview" readonly></label><label><span>优惠券动作</span><select name="couponMode"><option value="NONE">不使用优惠券</option><option value="FIXED_CODE">使用固定优惠码</option></select></label></div>
