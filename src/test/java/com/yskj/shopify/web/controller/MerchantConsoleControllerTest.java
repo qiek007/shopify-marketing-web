@@ -148,6 +148,12 @@ class MerchantConsoleControllerTest {
         assertThat(response.getStatusCodeValue()).isEqualTo(409);assertThat(response.getHeaders().getCacheControl()).contains("no-store");
         assertThat((JSONObject)response.getBody()).containsEntry("code","DELETION_ALREADY_RUNNING").containsEntry("message","该店铺已有删除任务，请先查看当前任务进度");
     }
+    @Test void customerRestoreForwardsTheObservedTokenAndUsesNoStoreResponses(){
+        var params=new LinkedMultiValueMap<String,String>();params.add("shop","demo.myshopify.com");params.add("customerId","original-id");params.add("sourceType","IMPORTED");params.add("deletionToken","observed");params.add("confirm","RESTORE_CUSTOMER");
+        when(client.exchange(eq("customers.restore"),any(),eq("demo.myshopify.com"),any(),eq(null))).thenReturn(MerchantWebProtocol.json(new JSONObject(Map.of("restored",true))));
+        var response=controller.restoreCustomer(params,session());assertThat(response.getStatusCodeValue()).isEqualTo(200);assertThat(response.getHeaders().getCacheControl()).contains("no-store");
+        verify(client).exchange(eq("customers.restore"),any(),eq("demo.myshopify.com"),org.mockito.ArgumentMatchers.argThat(p->"observed".equals(p.getString("deletionToken"))&&"RESTORE_CUSTOMER".equals(p.getString("confirm"))),eq(null));
+    }
 
     private final MerchantWebFacadeClient client = mock(MerchantWebFacadeClient.class);
     private final MerchantConsoleController controller =

@@ -72,6 +72,7 @@
             <span id="campaign-current-status" data-archived="${campaignStatusDisplayName eq '已归档'}" data-campaign-status="<c:out value='${campaignStatusDisplayName eq "已归档" ? "ARCHIVED" : campaignDetail.status}'/>" class="status-pill campaign-status"><c:choose><c:when test="${not empty campaignStatusDisplayName}"><c:out value="${campaignStatusDisplayName}"/></c:when><c:when test="${campaignDetail.status eq 'DRAFT'}">草稿</c:when><c:when test="${campaignDetail.status eq 'PENDING_APPROVAL'}">待审批</c:when><c:when test="${campaignDetail.status eq 'APPROVED'}">已审批</c:when><c:when test="${campaignDetail.status eq 'PREPARING'}">准备中</c:when><c:when test="${campaignDetail.status eq 'SCHEDULED'}">已计划</c:when><c:when test="${campaignDetail.status eq 'RUNNING'}">发送中</c:when><c:when test="${campaignDetail.status eq 'QUEUED'}">已进入队列</c:when><c:when test="${campaignDetail.status eq 'PAUSED'}">已暂停</c:when><c:when test="${campaignDetail.status eq 'COMPLETED'}">已完成</c:when><c:when test="${campaignDetail.status eq 'CANCELLED'}">已取消</c:when><c:when test="${campaignDetail.status eq 'FAILED'}">失败</c:when><c:otherwise><c:out value="${campaignDetail.status}"/></c:otherwise></c:choose></span>
         </section>
 
+        <c:if test="${campaignDetail.status eq 'CANCELLED'}"><div class="system-notice" role="status" data-campaign-cancel-notice><span>活动已取消。取消仅停止尚未提交的后续发送。本平台无法撤回已提交或正在提交给邮件通道的邮件，这些邮件仍可能继续送达。活动有效期内回调继续统计，已产生的明细和统计保留，并按有效期规则归档。</span></div></c:if>
         <c:if test="${not empty successMessage}"><div class="flash-message success"><i class="fa fa-check-circle"></i><c:out value="${successMessage}"/></div></c:if>
         <c:if test="${not empty errorMessage}"><div class="flash-message danger"><i class="fa fa-exclamation-circle"></i><c:out value="${errorMessage}"/></div></c:if>
 
@@ -529,7 +530,7 @@
 
         function displayCampaignStatus(status) {
             var badge = document.getElementById('campaign-current-status');
-            if (status === 'COMPLETED' && badge && badge.dataset.archived === 'true') return '已归档';
+            if ((status === 'COMPLETED' || status === 'CANCELLED') && badge && badge.dataset.archived === 'true') return '已归档';
             return ({ DRAFT: '草稿', PENDING_APPROVAL: '待审批', APPROVED: '已审批', PREPARING: '准备中', SCHEDULED: '已计划', RUNNING: '发送中', QUEUED: '已进入队列', PAUSED: '已暂停', COMPLETED: '已完成', CANCELLED: '已取消', FAILED: '失败' })[status] || status || '-';
         }
         function displaySnapshotStatus(status) {
@@ -707,7 +708,7 @@
             }
             var summary = progress.summary;
             var statusBadge = document.getElementById('campaign-current-status');
-            if (statusBadge) statusBadge.dataset.campaignStatus = progress.status === 'COMPLETED' && statusBadge.dataset.archived === 'true' ? 'ARCHIVED' : progress.status;
+            if (statusBadge) statusBadge.dataset.campaignStatus = (progress.status === 'COMPLETED' || progress.status === 'CANCELLED') && statusBadge.dataset.archived === 'true' ? 'ARCHIVED' : progress.status;
             setText('campaign-current-status', displayCampaignStatus(progress.status));
             setText('campaign-snapshot-status', displaySnapshotStatus(progress.snapshotStatus));
             setText('campaign-audience', summary.audience);

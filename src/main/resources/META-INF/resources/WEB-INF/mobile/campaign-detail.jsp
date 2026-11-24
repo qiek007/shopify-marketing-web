@@ -76,6 +76,7 @@
       <c:if test="${hasMobileActions}"><a class="md-detail-actions-link" href="#md-actions-title">查看活动操作 ↓</a></c:if>
     </div>
 
+        <c:if test="${campaignDetail.status eq 'CANCELLED'}"><p class="md-detail-note" role="status" data-campaign-cancel-notice>活动已取消。取消仅停止尚未提交的后续发送。本平台无法撤回已提交或正在提交给邮件通道的邮件，这些邮件仍可能继续送达。活动有效期内回调继续统计，已产生的明细和统计保留，并按有效期规则归档。</p></c:if>
     <c:if test="${not empty successMessage}"><p role="status" class="md-detail-note"><c:out value="${successMessage}"/></p></c:if>
     <c:if test="${not empty errorMessage}"><p role="alert" class="md-detail-note md-detail-error"><c:out value="${errorMessage}"/></p></c:if>
     <c:if test="${campaignDetail.status eq 'APPROVED' and approvedSendState eq 'APPROVE_AND_SEND'}"><p class="md-detail-note">已批准，系统正在冻结受众；完成后自动提交发送。</p></c:if>

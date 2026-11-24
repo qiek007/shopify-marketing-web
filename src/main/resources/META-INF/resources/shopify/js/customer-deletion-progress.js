@@ -1,48 +1,61 @@
 (function(root,factory){
     if(typeof module==='object'&&module.exports)module.exports=factory;
     else {var panel=root.document.querySelector('[data-customer-deletion-job]');if(panel)root.CustomerDeletionProgress=factory(panel,{
-        fetch:root.fetch.bind(root),setTimeout:root.setTimeout.bind(root),clearTimeout:root.clearTimeout.bind(root),confirm:root.confirm.bind(root),
+        fetch:function(url,options){
+            var requests=root.ShopifyEmbeddedRequests;
+            if(requests)return requests.fetch(url,options);
+            if(root.DidaShoplineWorkspace)return Promise.reject(new Error('嵌入会话暂不可用'));
+            return root.fetch(url,options);
+        },setTimeout:root.setTimeout.bind(root),clearTimeout:root.clearTimeout.bind(root),confirm:root.confirm.bind(root),
         notify:function(name,detail){root.document.dispatchEvent(new CustomEvent(name,{detail:detail}));}
     });}
 }(typeof window==='undefined'?this:window,function(panel,env){
     'use strict';
-    var current=null,timer=null,sequence=0,finishedKey='',retrying=false,readFailures=0;
+    var current=null,timer=null,hideTimer=null,sequence=0,finishedKey='',retrying=false,readFailures=0;
     function node(key){return panel.querySelector('[data-delete-job-'+key+']');}
     function text(key,value){var target=node(key);if(target)target.textContent=String(value);}
     function url(action,id){var p=new URLSearchParams({shop:panel.dataset.shop});if(id)p.set('jobId',id);return panel.dataset.base+'/'+action+'?'+p.toString();}
     function schedule(delay){env.clearTimeout(timer);if(current&&current.active)timer=env.setTimeout(refresh,delay);}
+    function successful(job){return job.status==='COMPLETED'&&Number(job.failed)===0;}
     function show(job){
         if(!job||!job.jobId)return;
         var total=Number(job.total),succeeded=Number(job.succeeded),failed=Number(job.failed);
         if(![total,succeeded,failed].every(function(n){return Number.isSafeInteger(n)&&n>=0;})||succeeded+failed>total)throw new Error('Invalid deletion progress');
-        sequence++;env.clearTimeout(timer);current=Object.assign({},job,{total:total,succeeded:succeeded,failed:failed,pending:total-succeeded-failed,active:['QUEUED','RUNNING'].includes(job.status)});
+        var mysqlRemoved=job.mysqlRemoved==null?succeeded:Number(job.mysqlRemoved),timelinePending=job.timelinePending==null?mysqlRemoved-succeeded:Number(job.timelinePending);
+        if(![mysqlRemoved,timelinePending].every(function(n){return Number.isSafeInteger(n)&&n>=0;})||mysqlRemoved<succeeded||mysqlRemoved>total||timelinePending!==mysqlRemoved-succeeded)throw new Error('Invalid deletion stages');
+        var completed=successful(job),key=job.jobId+':'+job.status+':'+succeeded+':'+failed;
+        if(completed&&key===finishedKey)return;
+        sequence++;env.clearTimeout(timer);env.clearTimeout(hideTimer);current=Object.assign({},job,{total:total,succeeded:succeeded,failed:failed,pending:total-succeeded-failed,active:['QUEUED','RUNNING','CLEANING'].includes(job.status)});
         panel.hidden=false;
-        var labels={QUEUED:current.errorCode?'等待自动重试':'等待后台处理',RUNNING:'正在分批删除',COMPLETED:'删除完成',PARTIAL_FAILED:'部分客户删除失败'};
+        var labels={QUEUED:current.errorCode?'等待自动重试':'等待后台处理',RUNNING:'正在分批删除客户',CLEANING:'等待旧版时间线任务升级核对',COMPLETED:'删除完成',PARTIAL_FAILED:'部分客户删除失败，可重试'};
         text('status',labels[current.status]||'正在核对任务状态');text('total',total);text('succeeded',succeeded);text('failed',failed);text('pending',current.pending);
+        text('mysql-removed',mysqlRemoved);text('timeline-pending',timelinePending);
         var percent=total===0?100:Math.floor((succeeded+failed)*100/total);node('progress').value=percent;text('processed','已处理 '+(succeeded+failed)+' / '+total+'（'+percent+'%）');
-        text('message',current.errorMessage||(current.active?'目标名单已固定，后台会分批处理；刷新页面可继续查看进度。':'已完成批次已保留，失败项可单独重试。'));
+        text('message',current.errorMessage||(current.active?'客户分批标记后立即生效，资料和历史保留；刷新页面可继续查看。':completed?'已删除的客户可在「已删除客户」中恢复。':'已完成的删除已生效，失败项可单独重试；可在已删除客户中恢复。'));
         if(job.updatedAt)text('updated','更新时间：'+new Date(job.updatedAt).toLocaleString('zh-CN',{hour12:false,timeZone:'Asia/Shanghai'}));
         node('retry').hidden=!(current.status==='PARTIAL_FAILED'&&failed>0);node('retry').disabled=retrying;
         env.notify('customer-deletion-job-state',{active:current.active,jobId:current.jobId});
-        if(!current.active){var key=current.jobId+':'+current.status+':'+succeeded+':'+failed;if(key!==finishedKey){finishedKey=key;env.notify('customer-deletion-finished',{jobId:current.jobId,status:current.status,succeeded:succeeded,failed:failed});}}
-        schedule(2000);
+        if(!current.active&&key!==finishedKey){finishedKey=key;env.notify('customer-deletion-finished',{jobId:current.jobId,status:current.status,succeeded:succeeded,failed:failed});}
+        if(completed)hideTimer=env.setTimeout(function(){panel.hidden=true;},5000);
+        else schedule(2000);
     }
     function safeMessage(payload){return payload&&/^(DELETION_[A-Z_]+|INVALID_REQUEST)$/.test(payload.code||'')&&typeof payload.message==='string'?payload.message.slice(0,300):null;}
-    async function read(action,id){
+    async function read(action,id,announceCompletion){
         var request=++sequence;
         try {
             var response=await env.fetch(url(action,id),{method:'GET',credentials:'same-origin',headers:{Accept:'application/json'}});
             var payload=await response.json();if(!response.ok){var rejected=new Error('Progress unavailable');rejected.userMessage=safeMessage(payload);throw rejected;}if(request!==sequence)return;readFailures=0;
-            if(payload.job)show(payload.job);else if(!current)panel.hidden=true;
+            if(payload.job&&(action!=='latest'||announceCompletion||!successful(payload.job)||(current&&current.active)))show(payload.job);
+            else if(!current)panel.hidden=true;
         }catch(error){
-            if(request!==sequence)return;
+            if(request!==sequence||(action==='status'&&current&&successful(current)))return;
             if(error.userMessage){panel.hidden=false;text('message',error.userMessage);if(!current){text('status','删除任务暂不可用');text('processed','任务尚未开始');node('retry').hidden=true;}}
             else if(current)text('message','暂时无法读取进度，任务可能仍在后台执行，正在重连。');
-            if(!error.userMessage||(current&&current.active)){env.clearTimeout(timer);timer=env.setTimeout(function(){read(action,id);},Math.min(30000,5000*Math.pow(2,Math.min(3,readFailures++))));}
+            if(!error.userMessage||(current&&current.active)){env.clearTimeout(timer);timer=env.setTimeout(function(){read(action,id,announceCompletion);},Math.min(30000,5000*Math.pow(2,Math.min(3,readFailures++))));}
         }
     }
     function refresh(){return current?read('status',current.jobId):refreshLatest();}
-    function refreshLatest(){return read('latest');}
+    function refreshLatest(announceCompletion){return read('latest',null,announceCompletion===true);}
     async function retry(){
         if(retrying||!current||current.status!=='PARTIAL_FAILED'||current.failed<1)return;
         if(!env.confirm('仅重试这次任务失败的 '+current.failed+' 位客户，已完成的客户不会重复处理。是否继续？'))return;
@@ -55,5 +68,5 @@
         finally{retrying=false;node('retry').disabled=false;}
     }
     node('refresh').addEventListener('click',refresh);node('retry').addEventListener('click',retry);
-    return {show:show,refresh:refresh,refreshLatest:refreshLatest,retry:retry,destroy:function(){sequence++;env.clearTimeout(timer);}};
+    return {show:show,refresh:refresh,refreshLatest:refreshLatest,retry:retry,destroy:function(){sequence++;env.clearTimeout(timer);env.clearTimeout(hideTimer);}};
 }));

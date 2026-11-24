@@ -302,6 +302,15 @@ public class MerchantConsoleController {
         return view("customers.page", params, session, model, redirect);
     }
 
+    @GetMapping("/customers/deleted")
+    public String deletedCustomers(@RequestParam MultiValueMap<String,String> params,HttpSession session,Model model,RedirectAttributes redirect,javax.servlet.http.HttpServletResponse response) {
+        response.setHeader("Cache-Control","no-store");
+        return view("customers.deleted",params,session,model,redirect);
+    }
+
+    @PostMapping(value="/customers/restore",produces=MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> restoreCustomer(@RequestParam MultiValueMap<String,String> params,HttpSession session){return customerDeletionBody("customers.restore",params,session);}
+
     @GetMapping("/customers/results")
     public String customerResults(@RequestParam MultiValueMap<String, String> params,
                                   HttpSession session, Model model, RedirectAttributes redirect) {

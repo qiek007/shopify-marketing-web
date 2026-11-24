@@ -3,6 +3,16 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../../main/resources/META-INF/resources/WEB-INF');
+
+test('submitting a campaign shows the execution refresh while preparation is in progress', () => {
+  for (const moduleName of ['public']) {
+    const detail = path.join(__dirname, '../../..',
+      'src/main/resources/META-INF/resources/WEB-INF/shopify/campaign-detail.jsp');
+    const page = fs.readFileSync(detail, 'utf8');
+    assert.match(page, /<c:set var="showExecutionRefresh" value="[^"]*campaignDetail\.status eq 'PREPARING'/,
+      moduleName);
+  }
+});
 for (const theme of ['shopify', 'shopify-theme2']) {
   test(`${theme}: detail uses localized archive-aware status and progress stays localized`, () => {
     const page = fs.readFileSync(path.join(root, theme, 'campaign-detail.jsp'), 'utf8');

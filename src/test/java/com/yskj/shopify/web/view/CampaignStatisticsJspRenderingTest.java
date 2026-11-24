@@ -16,7 +16,7 @@ class CampaignStatisticsJspRenderingTest {
   var tomcat=new Tomcat();tomcat.setBaseDir(temporary.toString());tomcat.setPort(0);tomcat.getConnector().setProperty("address","127.0.0.1");
   var ctx=tomcat.addWebapp("/web",Path.of("src/main/resources/META-INF/resources").toAbsolutePath().toString());ctx.setParentClassLoader(getClass().getClassLoader());ctx.setContainerSciFilter("org.springframework.web.SpringServletContainerInitializer");
   Tomcat.addServlet(ctx,"fixture",new HttpServlet(){@Override protected void doGet(HttpServletRequest req,HttpServletResponse res)throws java.io.IOException,javax.servlet.ServletException{
-   String mode=req.getParameter("mode");boolean ready=List.of("INCREMENTAL","FROZEN","FROZEN_CONTROL","legacy").contains(mode);boolean savedLegacy=mode.startsWith("SAVED_LEGACY");
+   String mode=req.getParameter("mode");boolean ready=List.of("INCREMENTAL","FROZEN","FROZEN_CONTROL","legacy","CANCELLED","CANCELLED_ARCHIVED").contains(mode);boolean savedLegacy=mode.startsWith("SAVED_LEGACY");
    var summary=new HashMap<String,Object>();for(String key:List.of("audience","recipients","accepted"))summary.put(key,291644);
    for(String key:List.of("pending","failed","unknown","complained"))summary.put(key,0);
    summary.put("delivered",222656);summary.put("opened",6516);summary.put("clicked",2006);summary.put("openedRecipients",5691);summary.put("clickedRecipients",641);
@@ -42,14 +42,19 @@ class CampaignStatisticsJspRenderingTest {
     if(mode.equals("FROZEN_CONTROL")){summary.putAll(Map.of("audience",960,"accepted",960,"delivered",959,"bounced",1,"opened",118,"openedRecipients",96,"clicked",456,"clickedRecipients",37,"unsubscribed",1,"unsubscribedRecipients",1));summary.put("orders",0);summary.put("convertedRecipients",0);summary.put("netRevenue","0.0");}
    var detail=new HashMap<String,Object>();detail.put("shopDomain","store.example");detail.put("campaignId","cmp");detail.put("name","测试活动");detail.put("status","COMPLETED");detail.put("summary",summary);detail.put("jobs",List.of());detail.put("providers",List.of("INFOBIP"));detail.put("audienceReady",true);detail.put("snapshotStatus","READY");detail.put("ga4Evaluation",Map.of("configured",false,"showMetrics",false,"status","NOT_CONNECTED"));
     if(partial&&!mode.equals("FROZEN_PARTIAL_NO_JOBS")){detail.put("legacySendingProgress",Map.of("total",291644,"processed",291644,"accepted",291644,"progressPercent",100));detail.put("jobs",List.of(Map.of("jobId","job-1","status","COMPLETED","provider","INFOBIP","total",291644,"processed",291644,"accepted",291644,"progressPercent",100)));}
+   if(mode.startsWith("CANCELLED")){detail.put("status","CANCELLED");summary.put("statisticsStatus","INCREMENTAL");if(mode.equals("CANCELLED_ARCHIVED"))req.setAttribute("campaignStatusDisplayName","已归档");}
    req.setAttribute("campaignDetail",detail);req.setAttribute("campaignFilter",Map.of("search","","provider","ALL","lifecycle","ALL","page",1,"pageSize",10));req.setAttribute("logineduser",Map.of("lastName","测试用户","domainid","tenant","id","user"));req.setAttribute("selectedShop","store.example");req.setAttribute("campaignActors",Map.of());
    req.getRequestDispatcher("/WEB-INF/"+req.getParameter("theme")+"/campaign-detail.jsp").forward(req,res);
   }});ctx.addServletMappingDecoded("/fixture","fixture");
   try {tomcat.start();var client=HttpClient.newHttpClient();
-   for(String theme:List.of("shopify","shopify-theme2","mobile"))for(String mode:List.of("INCREMENTAL","FROZEN","FROZEN_CONTROL","INITIALIZING","ARCHIVE_PENDING","legacy","FROZEN_PARTIAL","FROZEN_PARTIAL_NO_FINANCE","FROZEN_PARTIAL_NO_JOBS","SAVED_LEGACY_US","SAVED_LEGACY_SITED","SAVED_LEGACY_ZERO","SAVED_LEGACY_MISSING","SAVED_LEGACY_NO_FREEZE","SAVED_LEGACY_OCT_17")) {
+   for(String theme:List.of("shopify","shopify-theme2","mobile"))for(String mode:List.of("INCREMENTAL","FROZEN","FROZEN_CONTROL","INITIALIZING","ARCHIVE_PENDING","legacy","FROZEN_PARTIAL","FROZEN_PARTIAL_NO_FINANCE","FROZEN_PARTIAL_NO_JOBS","SAVED_LEGACY_US","SAVED_LEGACY_SITED","SAVED_LEGACY_ZERO","SAVED_LEGACY_MISSING","SAVED_LEGACY_NO_FREEZE","SAVED_LEGACY_OCT_17","CANCELLED","CANCELLED_ARCHIVED")) {
     // Match browser requests so JSTL resolves a formatting locale instead of echoing the raw Number.
     var response=client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+tomcat.getConnector().getLocalPort()+"/web/fixture?theme="+theme+"&mode="+mode)).header("Accept-Language","zh-CN,zh;q=0.9").build(),HttpResponse.BodyHandlers.ofString());
-    assertThat(response.statusCode()).as(response.body()).isEqualTo(200);var doc=Jsoup.parse(response.body());boolean ready=List.of("INCREMENTAL","FROZEN","FROZEN_CONTROL","legacy").contains(mode);
+    assertThat(response.statusCode()).as(response.body()).isEqualTo(200);var doc=Jsoup.parse(response.body());boolean ready=List.of("INCREMENTAL","FROZEN","FROZEN_CONTROL","legacy","CANCELLED","CANCELLED_ARCHIVED").contains(mode);
+    if(mode.startsWith("CANCELLED")){
+        assertThat(doc.select("[data-campaign-cancel-notice]").text()).contains("尚未提交","无法撤回","回调","归档");
+        if(mode.equals("CANCELLED_ARCHIVED"))assertThat(doc.select(theme.equals("mobile")?".md-detail-status":"#campaign-current-status").text()).isEqualTo("已归档");
+    }
     boolean savedLegacy=mode.startsWith("SAVED_LEGACY");
     if(savedLegacy){
      boolean missing=mode.equals("SAVED_LEGACY_MISSING"),zero=mode.equals("SAVED_LEGACY_ZERO"),siteD=mode.equals("SAVED_LEGACY_SITED");

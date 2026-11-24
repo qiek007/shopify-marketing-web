@@ -4,7 +4,11 @@
 .import-error-dialog-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; min-width: 0; }
 .import-error-dialog-header h2 { margin: 0; font-size: 19px; }
 .import-error-dialog-meta { font-size: 12px; color: #73808b; overflow-wrap: anywhere; }
-.import-error-dialog-close { flex: none; border: 0; background: transparent; color: #556573; font-size: 25px; line-height: 1; cursor: pointer; }
+.import-error-dialog-close { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 36px; box-sizing: border-box; width: 36px; height: 36px; min-width: 36px; padding: 0; margin: 0; border: 1px solid #e2e9e7; border-radius: 9px; background: #f5f8f7; color: #61716b; font-size: 0; line-height: 1; cursor: pointer; transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
+.import-error-dialog-close::before, .import-error-dialog-close::after { content: ""; position: absolute; top: 50%; left: 50%; width: 14px; height: 1.5px; border-radius: 1px; background: currentColor; transform: translate(-50%, -50%) rotate(45deg); }
+.import-error-dialog-close::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.import-error-dialog-close:hover { border-color: #c2dfd0; background: #eaf5ef; color: #137952; }
+.import-error-dialog-close:active { border-color: #a9d1bc; background: #dceee3; color: #0f6543; }
 .import-error-dialog-close:focus-visible { outline: 2px solid #17825a; outline-offset: 3px; }
 .import-error-dialog-content { padding: 0; overflow: auto; max-height: min(55vh, 480px); }
 .import-error-dialog-content .content-section { margin: 0; padding: 0; border: 0; box-shadow: none; }

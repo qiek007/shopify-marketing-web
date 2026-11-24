@@ -18,7 +18,7 @@
     <main class="console-main">
         <section class="page-heading"><div><p class="eyebrow">客户管理</p></div></section>
         <section class="content-section">
-            <div class="section-heading"><div><h2>客户列表</h2><p>每页显示 10 位客户，查询结果同步分页</p></div><div class="section-heading-actions"><span id="customer-result-count" class="section-count" data-customer-result-count>正在统计</span><c:if test="${not empty selectedShop and canManageCustomers}"><a class="primary-button compact" href="${ctx}/customers/imports?shop=${selectedShop}"><i class="fa fa-upload"></i>导入客户</a></c:if></div></div>
+            <div class="section-heading"><div><h2>客户列表</h2><p>每页显示 10 位客户，查询结果同步分页</p></div><div class="section-heading-actions"><span id="customer-result-count" class="section-count" data-customer-result-count>正在统计</span><c:if test="${not empty selectedShop and canManageCustomers}"><a class="secondary-button compact" href="${ctx}/customers/deleted?shop=${selectedShop}">已删除客户</a><a class="primary-button compact" href="${ctx}/customers/imports?shop=${selectedShop}"><i class="fa fa-upload"></i>导入客户</a></c:if></div></div>
             <form class="workspace-form" method="get" action="${ctx}/customers/results" data-customer-results-form data-initial-page="${empty param.page ? 1 : param.page}" data-customer-tags-url="${ctx}/customers/tags/options">
                 <input type="hidden" name="shop" value="${selectedShop}">
                 <div class="form-grid">
@@ -38,7 +38,7 @@
             <c:if test="${canManageCustomers}">
             <section class="customer-deletion-progress" data-customer-deletion-job data-shop="<c:out value="${selectedShop}"/>" data-base="${ctx}/customers/delete/jobs" hidden>
                 <header><div><h3>客户删除进度</h3><p data-delete-job-status aria-live="polite">等待后台处理</p></div><div class="customer-delete-controls"><button class="action-button" type="button" data-delete-job-refresh>刷新进度</button><button class="action-button danger-text" type="button" data-delete-job-retry hidden>重试失败项</button></div></header>
-                <dl class="customer-delete-counts"><div><dt>目标客户</dt><dd data-delete-job-total>0</dd></div><div><dt>已完成</dt><dd data-delete-job-succeeded>0</dd></div><div><dt>失败</dt><dd data-delete-job-failed>0</dd></div><div><dt>待处理</dt><dd data-delete-job-pending>0</dd></div></dl>
+                <dl class="customer-delete-counts"><div><dt>目标客户</dt><dd data-delete-job-total>0</dd></div><div><dt>已删除</dt><dd data-delete-job-succeeded>0</dd></div><div><dt>失败</dt><dd data-delete-job-failed>0</dd></div><div><dt>待处理</dt><dd data-delete-job-pending>0</dd></div></dl>
                 <progress data-delete-job-progress max="100" value="0" aria-label="客户删除处理进度"></progress><p data-delete-job-processed>已处理 0 / 0</p>
                 <p data-delete-job-message>目标名单已固定，后台会分批处理。</p><p class="customer-delete-updated" data-delete-job-updated></p>
             </section>
@@ -48,7 +48,7 @@
             </div>
             <c:if test="${canManageCustomers}"><dialog id="customer-tag-add-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="customer-tag-add-title"><div class="campaign-send-dialog-icon"><i class="fa fa-tag"></i></div><div><h2 id="customer-tag-add-title">为查询结果添加标签</h2><p>将为当前查询条件匹配的全部客户添加标签，包括未显示在当前页的客户。</p></div><form action="${ctx}/customers/tags/add" method="post" data-customer-tag-add-form><label><span>标签名称</span><input name="targetTag" maxlength="100" required autocomplete="off" placeholder="输入标签名称"></label><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-customer-tag-dialog-close>取消</button><button class="primary-button" type="submit"><i class="fa fa-check"></i>确认添加</button></div></form></dialog></c:if>
             <c:if test="${canManageCustomers}"><dialog id="customer-tag-remove-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="customer-tag-remove-title"><div class="campaign-send-dialog-icon danger"><i class="fa fa-tag"></i></div><div><h2 id="customer-tag-remove-title">从查询结果删除标签</h2><p>只会从当前查询条件匹配且带有该标签的客户中移除，范围包括所有结果页。</p></div><form action="${ctx}/customers/tags/remove" method="post" data-customer-tag-remove-form><label><span>选择已有标签</span><select name="targetTag" required data-customer-tag-remove-select><option value="" disabled selected>请选择标签</option><c:forEach items="${customerTags}" var="tagOption"><option value="<c:out value='${tagOption}'/>"><c:out value="${tagOption}"/></option></c:forEach></select></label><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-customer-tag-dialog-close>取消</button><button class="primary-button danger-button" type="submit"><i class="fa fa-trash-o"></i>确认删除</button></div></form></dialog></c:if>
-            <c:if test="${canManageCustomers}"><dialog id="customer-delete-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="customer-delete-title"><div class="campaign-send-dialog-icon danger"><i class="fa fa-trash-o"></i></div><div><h2 id="customer-delete-title">删除查询结果中的客户</h2><p>将为当前查询条件匹配的全部客户创建后台删除任务，包括未显示在当前页的客户。每批完成后立即生效，失败项可单独重试。客户资料和时间线会清理；活动明细、统计及已冻结发送保留。下次店铺同步会重新建档，旧档案及时间线不可恢复。</p></div><form action="${ctx}/customers/delete" method="post" data-customer-delete-form><div class="customer-segment-summary"><strong>删除范围</strong><span data-customer-delete-summary>全部客户</span><span data-customer-delete-count>等待查询结果</span></div><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-customer-delete-dialog-close>取消</button><button class="primary-button danger-button" type="submit"><i class="fa fa-trash-o"></i><span>确认删除客户</span></button></div></form></dialog></c:if>
+            <c:if test="${canManageCustomers}"><dialog id="customer-delete-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="customer-delete-title"><div class="campaign-send-dialog-icon danger"><i class="fa fa-trash-o"></i></div><div><h2 id="customer-delete-title">删除查询结果中的客户</h2><p>将为当前查询条件匹配的全部客户创建后台删除任务，包括未显示在当前页的客户。客户将分批标记为已删除，不再出现在普通查询、分组和新活动冻结中。资料、标签、时间线及活动历史保留；主动重新导入或恢复可接续原档案。自动店铺同步不会自行恢复；退订和抑制状态保持不变。</p></div><form action="${ctx}/customers/delete" method="post" data-customer-delete-form><div class="customer-segment-summary"><strong>删除范围</strong><span data-customer-delete-summary>全部客户</span><span data-customer-delete-count>等待查询结果</span></div><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-customer-delete-dialog-close>取消</button><button class="primary-button danger-button" type="submit"><i class="fa fa-trash-o"></i><span>确认删除客户</span></button></div></form></dialog></c:if>
             <c:if test="${canManageCampaigns}"><dialog id="customer-segment-dialog" class="campaign-send-dialog customer-tag-dialog" aria-labelledby="customer-segment-title"><div class="campaign-send-dialog-icon segment"><i class="fa fa-users"></i></div><div><h2 id="customer-segment-title">保存查询条件为分群</h2><p>将保存最后一次成功查询的全部条件，不受当前页显示数量影响。</p></div><form action="${ctx}/segments/from-customer-filter" method="post" data-customer-segment-form><label><span>分群名称</span><input name="segmentName" maxlength="255" required autocomplete="off" placeholder="例如：近30天点击客户"></label><div class="customer-segment-summary"><strong>条件摘要</strong><span data-customer-segment-summary>全部客户</span></div><div class="campaign-send-dialog-actions"><button class="action-button" type="button" data-customer-segment-dialog-close>取消</button><button class="primary-button" type="submit"><i class="fa fa-save"></i>创建分群</button></div></form></dialog></c:if>
             <dialog id="customer-list-dialog" class="campaign-customer-dialog" aria-label="客户详情">
                 <header class="campaign-customer-dialog-heading">
@@ -66,8 +66,8 @@
             </dialog>
         </section>
         <script src="${ctx}/shopify/js/customer-timeline.js?v=20261105-shanghai1"></script>
-        <link rel="stylesheet" href="${ctx}/shopify/css/customer-deletion-progress.css?v=20261118-1">
-        <script src="${ctx}/shopify/js/customer-deletion-progress.js?v=20261118-1"></script>
+        <link rel="stylesheet" href="${ctx}/shopify/css/customer-deletion-progress.css?v=20261123-soft-delete">
+        <script src="${ctx}/shopify/js/customer-deletion-progress.js?v=20261124-hide-completed"></script>
         <script>
             (function () {
                 var form = document.querySelector('[data-customer-results-form]');
@@ -302,7 +302,7 @@
                         if (window.CustomerDeletionProgress && result.job) window.CustomerDeletionProgress.show(result.job);
                     }).catch(function (error) {
                         showFeedback(error.userMessage || '删除任务提交结果暂未确认，正在核对后台任务。请查看进度，不要重复提交。', true);
-                        if (window.CustomerDeletionProgress) window.CustomerDeletionProgress.refreshLatest();
+                        if (window.CustomerDeletionProgress) window.CustomerDeletionProgress.refreshLatest(!error.userMessage);
                     }).finally(function () {
                         deletePending = false;
                         deleteForm.removeAttribute('aria-busy');
