@@ -26,6 +26,8 @@
         <div><dt>地区语言</dt><dd><c:out value="${customerDetail.locale}" default="-"/></dd></div>
         <div><dt>客户来源</dt><dd><c:choose><c:when test="${customerDetail.customer.sourceType eq 'IMPORTED'}">文件导入</c:when><c:otherwise>Shopify</c:otherwise></c:choose></dd></div>
         <div><dt>购买频次</dt><dd><c:out value="${customerDetail.frequency}" default="0"/></dd></div>
+        <div><dt>创建时间</dt><dd><%@ include file="/WEB-INF/shared/customer-detail-created-at.jspf" %></dd></div>
+        <div><dt>更新时间</dt><dd><%@ include file="/WEB-INF/shared/customer-detail-updated-at.jspf" %></dd></div>
     </dl>
     <%@ include file="/WEB-INF/shared/customer-detail-tags.jspf" %>
 </section>

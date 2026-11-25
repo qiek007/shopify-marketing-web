@@ -13,6 +13,16 @@
 .report-period-switch a.active { background: #fff; box-shadow: 0 4px 13px rgba(4, 25, 35, .2); color: var(--report-ink); }
 .report-period-switch strong { font-size: 14px; }
 .report-period-switch span { font-size: 10px; white-space: nowrap; }
+.report-range-controls { position: relative; z-index: 1; display: grid; justify-items: end; gap: 10px; }
+.report-range-form { display: flex; flex-wrap: wrap; align-items: end; justify-content: flex-end; gap: 8px; }
+.report-range-form label { display: grid; gap: 4px; color: #e2edf0; font-size: 12px; }
+.report-range-form input, .report-range-form select { min-width: 0; min-height: 34px; padding: 0 7px; border: 1px solid #aebfc6; border-radius: 4px; background: #fff; color: var(--report-ink); }
+.report-range-form button { min-height: 34px; white-space: nowrap; }
+.report-range-error { margin: 0 0 14px; padding: 10px 14px; border: 1px solid #e8bec1; border-radius: 6px; background: #fff1f2; color: #8f2932; }
+@media (max-width: 760px) {
+    .report-range-controls { justify-items: start; }
+    .report-range-form { justify-content: flex-start; }
+}
 
 .report-kpi-grid { display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
 .report-kpi { display: flex; min-width: 0; align-items: flex-start; gap: 11px; padding: 16px; border: 1px solid #dfe7ec; border-top: 3px solid var(--accent); border-radius: 7px; background: #fff; box-shadow: 0 4px 14px rgba(26, 51, 68, .045); }

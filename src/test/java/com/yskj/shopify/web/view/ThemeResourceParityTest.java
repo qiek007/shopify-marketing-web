@@ -223,10 +223,10 @@ class ThemeResourceParityTest {
         String theme2 = Files.readString(ROOT.resolve("shopify-theme2/css/dashboard.css"));
 
         assertThat(classic).contains(
-                ".customer-import-fields { grid-template-columns: minmax(220px, 1.1fr) minmax(235px, 1.1fr) minmax(210px, 1fr) minmax(280px, 1.35fr) auto;",
+                ".customer-import-fields { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr) max-content;",
                 "@media (max-width: 1320px) { .customer-import-fields { grid-template-columns: repeat(2, minmax(0, 1fr));");
         assertThat(theme2).contains(
-                ".customer-import-fields { grid-template-columns: minmax(240px, 1.15fr) minmax(280px, 1.2fr) minmax(260px, 1.45fr) auto;");
+                ".customer-import-fields { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.15fr) max-content;");
     }
 
     @Test
@@ -330,7 +330,7 @@ class ThemeResourceParityTest {
         String script = Files.readString(ROOT.resolve("shopify/js/reports-analytics.js"));
         String styles = Files.readString(ROOT.resolve("shopify/css/reports-analytics.css"));
 
-        assertThat(reports).contains("reports-analytics.css?v=20261015-chart-tooltip",
+        assertThat(reports).contains("reports-analytics.css?v=20261125-custom-range",
                 "reports-analytics.js?v=20261015-chart-tooltip-follow", "data-report-chart-tooltip");
         assertThat(script).contains(
                 "function bindTooltip", "pointermove", "nearestPointIndex",

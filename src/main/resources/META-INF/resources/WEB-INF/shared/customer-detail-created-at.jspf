@@ -1,0 +1,8 @@
+<%@ page pageEncoding="UTF-8" %>
+<c:choose>
+    <c:when test="${not empty customerDetail.createdAt}">
+        <time data-browser-time="<c:out value='${customerDetail.createdAt}'/>" data-browser-time-format="date-time" datetime="<c:out value='${customerDetail.createdAt}'/>"><c:out value="${customerDetail.createdAt}"/></time>
+    </c:when>
+    <c:otherwise>—</c:otherwise>
+</c:choose>
+<span class="cell-note"><c:choose><c:when test="${customerDetail.customer.sourceType eq 'IMPORTED'}">首次导入</c:when><c:otherwise>首次同步</c:otherwise></c:choose></span>

@@ -37,6 +37,7 @@
                         <option value="COMPLAINT"${suppressionFilter.reason eq 'COMPLAINT' ? ' selected' : ''}>垃圾邮件投诉</option>
                         <option value="HARD_BOUNCE"${suppressionFilter.reason eq 'HARD_BOUNCE' ? ' selected' : ''}>永久退信</option>
                         <option value="MANUAL"${suppressionFilter.reason eq 'MANUAL' ? ' selected' : ''}>人工抑制</option>
+                        <option value="IMPORT"${suppressionFilter.reason eq 'IMPORT' ? ' selected' : ''}>导入抑制</option>
                         <option value="PROVIDER"${suppressionFilter.reason eq 'PROVIDER' ? ' selected' : ''}>邮件通道抑制</option>
                     </select></label>
                     <label><span>名单状态</span><select name="status">

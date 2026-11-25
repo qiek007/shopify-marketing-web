@@ -412,6 +412,8 @@ class MerchantConsoleControllerTest {
         params.add("customerTag", "VIP");
         params.add("consentState", "SUBSCRIBED");
         params.add("validateEmails", "true");
+        params.add("suppressionAction", "RELEASE");
+        params.add("namesOnly", "true");
 
         String view = controller.uploadCustomers(
                 params, file, session(), new ExtendedModelMap(), new RedirectAttributesModelMap());
@@ -432,6 +434,8 @@ class MerchantConsoleControllerTest {
         verify(client).exchange(eq("customer-imports.upload-complete"), any(),
                 eq("demo.myshopify.com"), org.mockito.ArgumentMatchers.argThat(value ->
                         "SUBSCRIBED".equals(value.getString("consentState"))
+                                && "RELEASE".equals(value.getString("suppressionAction"))
+                                && value.getBooleanValue("namesOnly")
                                 && value.getBooleanValue("validateEmails")), eq(null));
         verify(store).delete("2026/09/staged.csv");
     }
@@ -557,6 +561,70 @@ class MerchantConsoleControllerTest {
         assertThat((byte[]) trends.getBody()).isNotEmpty();
         assertThat(trends.getHeaders().getFirst("Content-Disposition"))
                 .contains("daily-marketing-trend");
+    }
+
+    @Test
+    void exportsEveryMatchingPageUsingTheCustomerImportWorkbookLayout() throws Exception {
+        controller.setCustomerImportTemplateExporter(new CustomerImportTemplateExporter());
+        when(client.exchange(eq("segments.export-page"), any(), eq("demo.myshopify.com"), any(), eq(null)))
+                .thenAnswer(call -> {
+                    JSONObject query = call.getArgument(3);
+                    assertThat(query.getString("matchMode")).isEqualTo("ALL");
+                    JSONObject page = new JSONObject();
+                    JSONArray rows = new JSONArray();
+                    if (query.getString("afterSourceId") == null) {
+                        rows.add(new JSONObject(Map.of("firstName", "Ada", "lastName", "De La Cruz",
+                                "email", "ada@example.test")));
+                        page.put("nextSourceType", "IMPORTED");
+                        page.put("nextSourceId", "imported-1");
+                    } else {
+                        assertThat(query.getString("afterSourceId")).isEqualTo("imported-1");
+                        assertThat(query.getString("afterSourceType")).isEqualTo("IMPORTED");
+                        rows.add(new JSONObject(Map.of("firstName", "", "lastName", "Sun",
+                                "email", "sun@example.test")));
+                    }
+                    page.put("rows", rows);
+                    return MerchantWebProtocol.json(page);
+                });
+        var params = new LinkedMultiValueMap<String, String>();
+        params.add("shop", "demo.myshopify.com");
+        params.add("matchMode", "ALL");
+        params.add("previewPage", "3");
+        var response = new org.springframework.mock.web.MockHttpServletResponse();
+
+        controller.exportSegmentCustomers(params, session(), response);
+
+        try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(
+                new java.io.ByteArrayInputStream(response.getContentAsByteArray()))) {
+            var sheet = workbook.getSheetAt(0);
+            assertThat(sheet.getLastRowNum()).isEqualTo(2);
+            assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("firstName");
+            assertThat(sheet.getRow(0).getCell(1).getStringCellValue()).isEqualTo("lastName");
+            assertThat(sheet.getRow(0).getCell(2).getStringCellValue()).isEqualTo("email");
+            assertThat(sheet.getRow(1).getCell(1).getStringCellValue()).isEqualTo("De La Cruz");
+            assertThat(sheet.getRow(2).getCell(0).getStringCellValue()).isEmpty();
+            assertThat(sheet.getRow(2).getCell(2).getStringCellValue()).isEqualTo("sun@example.test");
+        }
+        verify(client, org.mockito.Mockito.times(2)).exchange(
+                eq("segments.export-page"), any(), eq("demo.myshopify.com"), any(), eq(null));
+    }
+
+    @Test
+    void forwardsTheReportDateRangeAndGranularityToMarketingCore() {
+        var params = new LinkedMultiValueMap<String, String>();
+        params.add("shop", "demo.myshopify.com");
+        params.add("period", "year");
+        params.add("fromDate", "2026-01-04");
+        params.add("toDate", "2026-11-12");
+        when(client.exchange(eq("reports.page"), any(), eq("demo.myshopify.com"), any(), eq(null)))
+                .thenReturn(MerchantWebProtocol.view("shopify/reports", new JSONObject()));
+
+        assertThat(controller.reports(params, session(), new ExtendedModelMap(), new RedirectAttributesModelMap()))
+                .isEqualTo("shopify/reports");
+        verify(client).exchange(eq("reports.page"), any(), eq("demo.myshopify.com"),
+                org.mockito.ArgumentMatchers.argThat(query -> "year".equals(query.getString("period"))
+                        && "2026-01-04".equals(query.getString("fromDate"))
+                        && "2026-11-12".equals(query.getString("toDate"))), eq(null));
     }
 
     @Test

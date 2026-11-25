@@ -34,7 +34,7 @@
                     <c:choose><c:when test="${empty editorSegment.groups}"><section class="segment-rule-group" data-group-id="group-1"><header><div><strong>条件组 1</strong><span>组内关系</span></div><input type="hidden" name="groupIds" value="group-1"><button class="secondary-button add-group-rule" type="button" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-plus"></i>组内添加条件</button><select name="groupMatchModes" aria-label="组内关系"><option value="ALL" selected>全部满足（且）</option><option value="ANY">任一满足（或）</option></select><button class="icon-button remove-group" type="button" <c:if test="${not canManageCampaigns}">disabled hidden</c:if> title="删除条件组"><i class="fa fa-times"></i></button></header><div class="segment-group-rules"><div class="segment-rule-row"><input type="hidden" name="ruleGroupIds" value="group-1"><select name="fields" aria-label="筛选字段"><%@ include file="fragments/segment-field-options.jspf" %></select><select name="operators" aria-label="比较条件"><%@ include file="fragments/segment-operator-options.jspf" %></select><input name="values" required aria-label="筛选值" placeholder="输入条件值"><button class="icon-button remove-rule" type="button" <c:if test="${not canManageCampaigns}">disabled hidden</c:if> title="删除条件"><i class="fa fa-trash"></i></button></div></div></section></c:when><c:otherwise><c:forEach items="${editorSegment.groups}" var="group" varStatus="groupStatus"><section class="segment-rule-group" data-group-id="${group.groupId}"><header><div><strong>条件组 <c:out value="${groupStatus.index + 1}"/></strong><span>组内关系</span></div><input type="hidden" name="groupIds" value="${group.groupId}"><button class="secondary-button add-group-rule" type="button" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-plus"></i>组内添加条件</button><select name="groupMatchModes" aria-label="组内关系"><option value="ALL" ${group.matchMode eq 'ALL' ? 'selected' : ''}>全部满足（且）</option><option value="ANY" ${group.matchMode eq 'ANY' ? 'selected' : ''}>任一满足（或）</option></select><button class="icon-button remove-group" type="button" <c:if test="${not canManageCampaigns}">disabled hidden</c:if> title="删除条件组"><i class="fa fa-times"></i></button></header><div class="segment-group-rules"><c:forEach items="${group.rules}" var="rule"><div class="segment-rule-row"><input type="hidden" name="ruleGroupIds" value="${group.groupId}"><select name="fields" aria-label="筛选字段"><%@ include file="fragments/segment-field-options.jspf" %></select><select name="operators" aria-label="比较条件"><%@ include file="fragments/segment-operator-options.jspf" %></select><input name="values" value="<c:out value='${rule.value}'/>" required aria-label="筛选值"><button class="icon-button remove-rule" type="button" <c:if test="${not canManageCampaigns}">disabled hidden</c:if> title="删除条件"><i class="fa fa-trash"></i></button></div></c:forEach></div></section></c:forEach></c:otherwise></c:choose>
                 </div>
                 <p class="field-note">日期填写 YYYY-MM-DD；“存在”适用于全部客户、无标签及行为条件；邮件打开数据可能受邮箱隐私代理影响。</p>
-                <div class="form-actions segment-actions"><button class="action-button" type="button" data-segment-preview><i class="fa fa-eye"></i>预览客户</button><button class="primary-button" type="submit" formaction="${ctx}/segments" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-save"></i>${editorSegment.existing ? '保存修改' : '创建分群'}</button></div>
+                <div class="form-actions segment-actions"><button class="action-button" type="button" data-segment-preview><i class="fa fa-eye"></i>预览客户</button><c:if test="${canExportCustomerData}"><button class="action-button" type="button" data-segment-export style="display:none" title="按上次成功预览的条件导出全部匹配客户"><i class="fa fa-download"></i> 导出预览客户</button><span data-segment-export-status role="status"></span></c:if><button class="primary-button" type="submit" formaction="${ctx}/segments" <c:if test="${not canManageCampaigns}">disabled hidden</c:if>><i class="fa fa-save"></i>${editorSegment.existing ? '保存修改' : '创建分群'}</button></div>
             </form>
         </section>
 
@@ -162,12 +162,20 @@
         policyToggle.title = policyToggle.getAttribute('aria-label');
     });
     var previewRequest;
+    var exportButton = document.querySelector('[data-segment-export]');
+    var exportPreviewData;
     function loadPreview(page) {
         if (!form.reportValidity()) return;
         if (previewRequest) previewRequest.abort();
-        previewRequest = new AbortController();
+        var request = new AbortController();
+        previewRequest = request;
         var data = new FormData(form);
         data.set('previewPage', page || '1');
+        exportPreviewData = null;
+        if (exportButton) {
+            exportButton.style.display = 'none';
+            document.querySelector('[data-segment-export-status]').textContent = '';
+        }
         previewPanel.hidden = false;
         previewLoading.hidden = false;
         previewResults.setAttribute('aria-busy', 'true');
@@ -178,16 +186,49 @@
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.text();
         }).then(function (html) {
+            if (previewRequest !== request) return;
             previewResults.innerHTML = html;
+            exportPreviewData = data;
+            if (exportButton) exportButton.style.display = '';
         }).catch(function (error) {
-            if (error.name === 'AbortError') return;
+            if (previewRequest !== request || error.name === 'AbortError') return;
             previewResults.innerHTML = '<div class="empty-state compact"><i class="fa fa-exclamation-circle"></i><strong>分群预览加载失败</strong><span>请稍后重新查询</span></div>';
         }).finally(function () {
+            if (previewRequest !== request) return;
             previewLoading.hidden = true;
             previewResults.removeAttribute('aria-busy');
         });
     }
     previewButton.addEventListener('click', function () { loadPreview(1); });
+
+    if (exportButton) exportButton.addEventListener('click', function () {
+        if (!exportPreviewData) return;
+        var status = document.querySelector('[data-segment-export-status]');
+        exportButton.disabled = true;
+        status.textContent = '正在导出…';
+        fetch('${ctx}/segments/export', { method: 'POST', body: exportPreviewData, credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (response) {
+                if (!response.ok || !(response.headers.get('Content-Type') || '').includes('spreadsheetml.sheet')) {
+                    throw new Error('Export failed');
+                }
+                return response.blob();
+            }).then(function (blob) {
+                var url = URL.createObjectURL(blob);
+                var download = document.createElement('a');
+                download.href = url;
+                download.download = '分组客户.xlsx';
+                document.body.appendChild(download);
+                download.click();
+                download.remove();
+                setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+                status.textContent = '';
+            }).catch(function () {
+                status.textContent = '导出失败，请缩小筛选范围或稍后重试';
+            }).finally(function () {
+                exportButton.disabled = false;
+            });
+    });
     previewResults.addEventListener('click', function (event) {
         var pageButton = event.target.closest('[data-segment-preview-page]');
         if (pageButton) { loadPreview(pageButton.dataset.segmentPreviewPage); return; }

@@ -76,7 +76,7 @@ for (const root of roots) {
 
   test(`${root.label}: segment deletion is confirmed and limited to campaign managers`, () => {
     const source = read(root, 'segments.jsp');
-    assert.match(source, /<c:if test="\$\{canManageCampaigns\}">\s*<form[^>]*method="post" action="\$\{ctx\}\/segments\/delete"[^>]*data-merchant-action-form/);
+    assert.match(source, /<c:if test="\$\{canManageCampaigns\}">(?:(?!<\/c:if>)[\s\S])*?<form[^>]*method="post" action="\$\{ctx\}\/segments\/delete"[^>]*data-merchant-action-form/);
     assert.match(source, /data-confirm-message="仅删除分组，不删除客户，已有活动快照保留"/);
     assert.match(source, /name="shop" value="\$\{segment\.shopDomain\}"/);
     assert.match(source, /name="segmentId" value="\$\{segment\.segmentId\}"/);

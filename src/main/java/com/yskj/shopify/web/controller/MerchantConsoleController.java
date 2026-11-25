@@ -866,6 +866,12 @@ public class MerchantConsoleController {
         return view("segments.delete",params,session,model,redirect);
     }
 
+    @PostMapping("/segments/copy")
+    public String copySegment(@RequestParam MultiValueMap<String, String> params,
+                              HttpSession session, Model model, RedirectAttributes redirect) {
+        return view("segments.copy", params, session, model, redirect);
+    }
+
     @GetMapping("/segments/editor")
     public String segmentEditor(@RequestParam MultiValueMap<String, String> params,
                                 HttpSession session, Model model, RedirectAttributes redirect) {
@@ -882,6 +888,57 @@ public class MerchantConsoleController {
     public String segmentPreviewResults(@RequestParam MultiValueMap<String, String> params,
                                         HttpSession session, Model model, RedirectAttributes redirect) {
         return view("segments.preview-results", params, session, model, redirect);
+    }
+
+    @PostMapping("/segments/export")
+    public void exportSegmentCustomers(@RequestParam MultiValueMap<String, String> params,
+                                       HttpSession session, javax.servlet.http.HttpServletResponse response)
+            throws IOException {
+        LoginedUser user = requireUser(session);
+        String shop = params.getFirst("shop");
+        JSONObject query = parameters(params);
+        query.remove("afterSourceType");
+        query.remove("afterSourceId");
+        var file = java.nio.file.Files.createTempFile("segment-customers-", ".xlsx");
+        try {
+            try (var output = java.nio.file.Files.newOutputStream(file)) {
+                customerImportTemplateExporter.writeCustomers(output, rows -> {
+                    String afterType;
+                    String afterId;
+                    do {
+                        JSONObject page = MerchantWebProtocol.validateResponse(client.exchange(
+                                "segments.export-page", user, shop, query, null)).getJSONObject("body");
+                        for (Object raw : page.getJSONArray("rows")) {
+                            JSONObject row = (JSONObject) raw;
+                            rows.accept(new CustomerImportTemplateExporter.CustomerRow(
+                                    row.getString("firstName"), row.getString("lastName"), row.getString("email")));
+                        }
+                        afterType = page.getString("nextSourceType");
+                        afterId = page.getString("nextSourceId");
+                        if (afterId != null && afterId.equals(query.getString("afterSourceId"))
+                                && java.util.Objects.equals(afterType, query.getString("afterSourceType"))) {
+                            throw new IllegalStateException("客户分组导出游标未前进");
+                        }
+                        query.put("afterSourceType", afterType);
+                        query.put("afterSourceId", afterId);
+                    } while (afterId != null);
+                });
+            }
+            long bytes = java.nio.file.Files.size(file);
+            if (bytes > 64L * 1024 * 1024) {
+                throw new IllegalArgumentException("导出文件超过 64 MiB，请缩小筛选范围后再导出");
+            }
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                    .filename("分组客户.xlsx", StandardCharsets.UTF_8).build().toString());
+            response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+            response.setContentLengthLong(bytes);
+            java.nio.file.Files.copy(file, response.getOutputStream());
+        } catch (IllegalArgumentException invalid) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, invalid.getMessage(), invalid);
+        } finally {
+            java.nio.file.Files.deleteIfExists(file);
+        }
     }
 
     @GetMapping("/segments/customer/detail")

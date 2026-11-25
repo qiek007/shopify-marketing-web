@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20260925-p124">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20260925-p124&amp;customerFacts=4">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>

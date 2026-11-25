@@ -29,9 +29,14 @@ class CustomerTagDetailJspRenderingTest {
         Tomcat.addServlet(context, "fixture", new HttpServlet() {
             @Override protected void doGet(HttpServletRequest request, HttpServletResponse response)
                     throws java.io.IOException, javax.servlet.ServletException {
-                request.setAttribute("customerDetail", Map.of("customer", Map.of(
-                        "sourceId", "customer-1", "shopDomain", "test.example", "sourceType", "SHOPIFY", "consentState", "SUBSCRIBED", "suppressed", false,
-                        "tags", List.of("VIP", "常客 <春季>"))));
+                boolean editable = Boolean.parseBoolean(request.getParameter("editable"));
+                var customer = Map.of("sourceId", "customer-1", "shopDomain", "test.example",
+                        "sourceType", editable ? "SHOPIFY" : "IMPORTED", "consentState", "SUBSCRIBED",
+                        "suppressed", false, "tags", List.of("VIP", "常客 <春季>"));
+                request.setAttribute("customerDetail", editable
+                        ? Map.of("customer", customer, "createdAt", "2026-11-20T02:03:04Z",
+                                "updatedAt", "2026-11-25T01:02:03Z")
+                        : Map.of("customer", customer));
                 request.setAttribute("selectedShop", "test.example");
                 request.setAttribute("canEditCustomerTags", Boolean.valueOf(request.getParameter("editable")));
                 String theme = "shopify-theme2".equals(request.getParameter("theme")) ? "shopify-theme2" : "shopify";
@@ -57,6 +62,17 @@ class CustomerTagDetailJspRenderingTest {
                     assertThat(root.select("[data-remove-customer-tag]")).hasSize(editable ? 2 : 0);
                     assertThat(root.select("[data-customer-tag-search][role=combobox]")).hasSize(editable ? 1 : 0);
                     var page = Jsoup.parse(response.body());
+                    assertThat(page.selectFirst(".campaign-customer-facts").children()).hasSize(8);
+                    var created = page.selectFirst("dt:matchesOwn(^创建时间$)").nextElementSibling();
+                    var updated = page.selectFirst("dt:matchesOwn(^更新时间$)").nextElementSibling();
+                    if (editable) {
+                        assertThat(created.text()).isEqualTo("2026-11-20T02:03:04Z 首次同步");
+                        assertThat(created.select("time").attr("datetime")).isEqualTo("2026-11-20T02:03:04Z");
+                        assertThat(updated.select("time").attr("datetime")).isEqualTo("2026-11-25T01:02:03Z");
+                    } else {
+                        assertThat(created.text()).isEqualTo("— 首次导入");
+                        assertThat(updated.text()).isEqualTo("—");
+                    }
                     assertThat(page.select("[data-customer-subscription-value]").text()).isEqualTo("SUBSCRIBED");
                     assertThat(page.select("[data-customer-subscription-form]")).hasSize(editable ? 1 : 0);
                     assertThat(page.select("[data-customer-suppression-value]").text()).isEqualTo("否");

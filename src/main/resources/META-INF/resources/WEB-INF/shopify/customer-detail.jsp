@@ -52,6 +52,8 @@
                 <div class="detail-stat"><span>客户来源</span><c:choose><c:when test="${customerDetail.customer.sourceType eq 'IMPORTED'}"><strong>文件导入</strong><small>可参与营销活动并记录邮件与行为时间线</small></c:when><c:otherwise><strong>Shopify · <c:out value="${customerDetail.stateLabel}"/></strong><small>账号状态与营销订阅、发件抑制状态相互独立</small></c:otherwise></c:choose></div>
                 <div class="detail-stat"><span>购买频次</span><strong><c:out value="${customerDetail.frequency}" default="0"/></strong></div>
                 <div class="detail-stat"><span>RFM 消费额</span><strong><c:out value="${customerDetail.monetary}"/></strong></div>
+                <div class="detail-stat"><span>创建时间</span><strong><%@ include file="/WEB-INF/shared/customer-detail-created-at.jspf" %></strong></div>
+                <div class="detail-stat"><span>更新时间</span><strong><%@ include file="/WEB-INF/shared/customer-detail-updated-at.jspf" %></strong></div>
             </div>
             <div class="detail-stat"><span>订阅状态</span><%@ include file="/WEB-INF/shared/customer-detail-subscription.jspf" %></div>
             <div class="detail-stat"><span>抑制名单</span><%@ include file="/WEB-INF/shared/customer-detail-suppression.jspf" %></div>
