@@ -332,12 +332,15 @@ body.shopify-console {
 .customer-bulk-actions { display: inline-flex; align-items: center; gap: 2px; margin-right: auto; padding: 3px; border: 1px solid #dbe4e0; border-radius: 6px; background: #f4f7f6; box-shadow: inset 0 1px 0 rgba(255,255,255,.72); }
 .customer-bulk-actions[hidden] { display: none; }
 .filter-actions .customer-bulk-actions .secondary-button { min-height: 28px; height: 28px; gap: 7px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: #40515d; font-weight: 600; box-shadow: none; transition: color .16s ease, background .16s ease, box-shadow .16s ease; }
+.filter-actions .customer-bulk-actions .secondary-button:enabled, .filter-actions [data-customer-results-reset]:enabled { cursor: pointer; }
 .customer-bulk-actions .secondary-button i { width: 13px; text-align: center; }
 .customer-bulk-actions .customer-tag-add-action i { color: #16845b; }
 .customer-bulk-actions .customer-tag-add-action:hover, .customer-bulk-actions .customer-tag-add-action:focus-visible { background: #fff; color: #126b49; box-shadow: 0 1px 4px rgba(31,73,56,.12); }
 .customer-bulk-actions .customer-tag-remove-action { border-left: 1px solid #dbe4e0; border-radius: 0 4px 4px 0; }
-.customer-bulk-actions .customer-tag-remove-action i { color: #9a6265; }
-.customer-bulk-actions .customer-tag-remove-action:hover, .customer-bulk-actions .customer-tag-remove-action:focus-visible { background: #fff; color: #9b3036; box-shadow: 0 1px 4px rgba(91,38,42,.10); }
+.customer-bulk-actions .customer-tag-remove-action i, .customer-bulk-actions .customer-delete-action i { color: #9a6265; }
+.customer-bulk-actions .customer-tag-remove-action:is(:hover, :focus-visible),
+.customer-bulk-actions .customer-delete-action:enabled:is(:hover, :focus-visible) { background: #fff; color: #9b3036; box-shadow: 0 1px 4px rgba(91,38,42,.10); }
+.customer-bulk-actions .customer-delete-action:disabled { cursor: not-allowed; opacity: .55; }
 .customer-bulk-actions .customer-segment-save-action { border-left: 1px solid #dbe4e0; border-radius: 0 4px 4px 0; }
 .customer-bulk-actions .customer-segment-save-action i { color: #326c91; }
 .customer-bulk-actions .customer-segment-save-action:hover, .customer-bulk-actions .customer-segment-save-action:focus-visible { background: #fff; color: #245d82; box-shadow: 0 1px 4px rgba(36,93,130,.12); }
