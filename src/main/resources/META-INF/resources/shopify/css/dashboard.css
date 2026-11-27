@@ -582,9 +582,9 @@ body.shopify-console [hidden] { display: none !important; }
 .ga4-utm-parameters code { min-width: 0; overflow-wrap: anywhere; color: var(--ink); background: transparent; font-family: Consolas, "SFMono-Regular", monospace; font-size: 13px; font-weight: 600; }
 @media (max-width: 620px) { .ga4-utm-parameters { grid-template-columns: 1fr; } .ga4-utm-parameters > div + div { border-top: 1px solid var(--line); border-left: 0; } }
 .campaign-detail-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, .55fr); gap: 16px; }
-.campaign-preview-panel { overflow: hidden; }
-.campaign-preview-panel iframe { display: block; width: 100%; height: 520px; border: 0; background: #fff; }
-.campaign-subject { display: flex; align-items: baseline; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.campaign-preview-panel { display: flex; flex-direction: column; overflow: hidden; }
+.campaign-preview-panel iframe { display: block; flex: 1 0 auto; width: 100%; height: 520px; border: 0; background: #fff; }
+.campaign-subject { display: flex; flex: none; align-items: baseline; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
 .campaign-subject span { color: var(--muted); font-size: 12px; }
 .campaign-subject strong { font-size: 17px; }
 .job-list { display: grid; gap: 10px; padding: 14px; }

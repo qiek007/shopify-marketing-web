@@ -409,7 +409,7 @@ class ThemeResourceParityTest {
         String styles = Files.readString(ROOT.resolve("shopify/css/dashboard.css"));
 
         assertThat(detail).contains(
-                "目标受众", "dashboard.css?v=20261023-readable-recipients",
+                "目标受众", "dashboard.css?v=20261127-preview-stretch",
                 "campaignDetail.audienceSourceDisplayName",
                 "campaignDetail.hasSegmentAudience",
                 "campaignDetail.includeTagModeDisplayName",
@@ -726,9 +726,9 @@ class ThemeResourceParityTest {
         }
 
         assertThat(Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-detail.jsp")))
-                .contains("dashboard.css?v=20261023-readable-recipients");
+                .contains("dashboard.css?v=20261127-preview-stretch");
         assertThat(Files.readString(ROOT.resolve("WEB-INF/shopify-theme2/campaign-detail.jsp")))
-                .contains("dashboard.css?v=20261023-readable-recipients");
+                .contains("dashboard.css?v=20261127-preview-stretch");
         String script = Files.readString(ROOT.resolve("shopify/js/automations.js"));
         assertThat(script).contains(
                 "definition.utmSource, 'auw'",

@@ -11,6 +11,8 @@
             if (current && !isNaN(current.getTime())) planned.textContent = current.toLocaleString(undefined, {year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', timeZoneName:'short'});
         }
         var reset = api.installActionGuard(forms, function (message) { return root.confirm(message); });
+        api.installTemplatePreview(root.document.querySelector('[data-mobile-template-preview-open]'),
+            root.document.querySelector('[data-mobile-template-preview]'));
         var loading = root.document.querySelector('[data-mobile-action-loading]');
         if (loading) loading.hidden = true;
         root.addEventListener('pageshow', function (event) { if (event.persisted) reset(); });
@@ -77,5 +79,17 @@
         };
     }
 
-    return { installActionGuard: installActionGuard, scheduleInstant: scheduleInstant, parseInstant: parseInstant };
+    function installTemplatePreview(trigger, dialog) {
+        if (!trigger || !dialog || typeof dialog.showModal !== 'function') return;
+        var frame = dialog.querySelector('[data-mobile-template-preview-frame]');
+        if (!frame || !frame.dataset.previewSrc) return;
+        trigger.addEventListener('click', function () {
+            if (dialog.open) return;
+            dialog.showModal();
+            if (!frame.hasAttribute('src')) frame.setAttribute('src', frame.dataset.previewSrc);
+        });
+    }
+
+    return { installActionGuard: installActionGuard, scheduleInstant: scheduleInstant, parseInstant: parseInstant,
+        installTemplatePreview: installTemplatePreview };
 }));

@@ -41,6 +41,10 @@ class MobileOverviewRenderingTest {
                 req.setAttribute("campaigns", List.of(Map.of("shopDomain", "a.myshopify.com", "campaignId", "c-1", "name", "测试活动", "status", "COMPLETED", "statusDisplayName", "已完成", "templateName", "欢迎模板", "audienceCount", 25, "updatedAt", "2026-11-01")));
                 req.setAttribute("canManageCampaigns", true);
                 req.setAttribute("campaignDetail", Map.ofEntries(Map.entry("shopDomain", "a.myshopify.com"), Map.entry("campaignId", "c-1"), Map.entry("name", "测试活动"), Map.entry("status", "RUNNING"), Map.entry("templateName", "欢迎模板"), Map.entry("providers", List.of("TEST")), Map.entry("summary", Map.of("audience", 25, "progressPercent", 60, "accepted", 15, "failed", 0, "unknown", 0, "delivered", 10, "orders", 1)), Map.entry("jobs", List.of())));
+                if (!"no-preview".equals(req.getParameter("mode"))) {
+                    req.setAttribute("campaignPreview", Map.of("subject", "原活动主题 <试用>",
+                            "sourceLabel", "执行模板快照（客户专属变量为占位符）"));
+                }
                 req.setAttribute("providerAliases", Map.of("TEST", "测试通道"));
                 boolean existing = "existing".equals(req.getParameter("mode"));
                 req.setAttribute("editorCampaign", existing ? Map.of("existing", true, "status", "DRAFT", "campaignId", "c-1", "providerSelections", Map.of("TEST", true)) : Map.of("existing", false));
@@ -157,6 +161,19 @@ class MobileOverviewRenderingTest {
             assertThat(detailResult.statusCode()).as(detailResult.body()).isEqualTo(200);
             var detail = Jsoup.parse(detailResult.body());
             assertThat(detail.text()).contains("测试活动", "发送中", "60%", "暂停发送", "取消发送");
+            assertThat(detail.select("dd:has([data-mobile-template-preview-open])").text()).isEqualTo("欢迎模板 预览");
+            var preview = detail.selectFirst("dialog[data-mobile-template-preview]");
+            assertThat(preview.text()).contains("原活动主题 <试用>", "执行模板快照");
+            assertThat(preview.select("form[method=dialog] button")).hasSize(1);
+            var frame = preview.select("iframe[sandbox][data-mobile-template-preview-frame]:not([src])");
+            assertThat(frame).hasSize(1);
+            var previewUrl = URI.create(frame.attr("data-preview-src"));
+            assertThat(previewUrl.getPath()).matches("/web/campaigns/preview(?:;jsessionid=[^;]+)?");
+            assertThat(previewUrl.getRawQuery()).isEqualTo("shop=a.myshopify.com&campaignId=c-1");
+            var noPreview = client.send(HttpRequest.newBuilder(URI.create(root + "?page=campaign-detail&mode=no-preview"))
+                    .timeout(Duration.ofSeconds(15)).build(), HttpResponse.BodyHandlers.ofString());
+            assertThat(noPreview.statusCode()).isEqualTo(200);
+            assertThat(Jsoup.parse(noPreview.body()).select("[data-mobile-template-preview-open]")).isEmpty();
             assertThat(detail.select("form[action='/web/mobile/campaigns/action'] input[name=action][value=PAUSE]")).hasSize(1);
             assertThat(detail.select("[data-mobile-recipients] form [name=lifecycle] option[value=OPENED]")).hasSize(1);
             assertThat(detail.select("[data-mobile-recipients] form [name=campaignId]").val()).isEqualTo("c-1");

@@ -51,6 +51,20 @@ class CampaignStatisticsJspRenderingTest {
     // Match browser requests so JSTL resolves a formatting locale instead of echoing the raw Number.
     var response=client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+tomcat.getConnector().getLocalPort()+"/web/fixture?theme="+theme+"&mode="+mode)).header("Accept-Language","zh-CN,zh;q=0.9").build(),HttpResponse.BodyHandlers.ofString());
     assertThat(response.statusCode()).as(response.body()).isEqualTo(200);var doc=Jsoup.parse(response.body());boolean ready=List.of("INCREMENTAL","FROZEN","FROZEN_CONTROL","legacy","CANCELLED","CANCELLED_ARCHIVED").contains(mode);
+    if (!theme.equals("mobile")) {
+     var linkClicks = doc.select("#campaign-job-list + section[data-campaign-link-clicks]");
+     assertThat(linkClicks).hasSize(1);
+     assertThat(linkClicks.attr("data-campaign-link-clicks")).contains("/campaigns/link-clicks", "shop=", "campaignId=");
+     assertThat(linkClicks.select("#campaign-link-click-title").text()).isEqualTo("链接点击分布");
+     assertThat(linkClicks.select("summary")).isEmpty();
+     assertThat(linkClicks.select("dialog[data-clc-link-dialog] h3").text()).isEqualTo("全部链接");
+     assertThat(linkClicks.select("dialog form[method=dialog] button.clc-icon-button[aria-label=关闭全部链接] i.fa-times"))
+             .hasSize(1);
+     assertThat(linkClicks.select("[data-clc-list-toggle]")).isEmpty();
+     assertThat(linkClicks.select("[data-clc-refresh][aria-label=刷新链接统计] i.fa-refresh")).hasSize(1);
+     assertThat(doc.select("link[href*=campaign-link-clicks.css]").attr("href"))
+             .startsWith("/web/shopify/css/campaign-link-clicks.css?v=");
+    }
     if(mode.startsWith("CANCELLED")){
         assertThat(doc.select("[data-campaign-cancel-notice]").text()).contains("尚未提交","无法撤回","回调","归档");
         if(mode.equals("CANCELLED_ARCHIVED"))assertThat(doc.select(theme.equals("mobile")?".md-detail-status":"#campaign-current-status").text()).isEqualTo("已归档");

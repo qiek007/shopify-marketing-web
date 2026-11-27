@@ -50,6 +50,17 @@
     .md-detail-list { font-size:13px; }
     .md-detail-list dt { flex:0 0 64px; }
     .md-detail-list dd { min-width:0; }
+    .md-template-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:4px 10px; }
+    .md-template-button { min-height:44px; padding:6px 12px; border:1px solid #bfd7c9; border-radius:8px; background:#fff; color:#17644a; font:inherit; font-weight:700; cursor:pointer; }
+    .md-template-button:hover { background:#eef6f1; }
+    .md-template-dialog { box-sizing:border-box; width:min(720px,calc(100% - 24px)); max-width:none; max-height:calc(100% - 24px); padding:0; border:1px solid #dce8e2; border-radius:12px; background:#fff; color:#123e31; }
+    .md-template-dialog::backdrop { background:rgba(16,46,36,.55); }
+    .md-template-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:14px 16px; border-bottom:1px solid #dce8e2; }
+    .md-template-header h2 { margin:0; font-size:18px; }
+    .md-template-header p { margin:6px 0 0; overflow-wrap:anywhere; }
+    .md-template-header form { margin:0; flex:none; }
+    .md-template-source { color:#526b60; font-size:12px; }
+    .md-template-frame { display:block; width:100%; height:min(68vh,640px); height:min(68dvh,640px); border:0; }
     .md-detail-section details { border-top:1px solid #edf2ef; margin-top:8px; padding-top:8px; }
     #md-actions-title { scroll-margin-top:16px; }
   </style>
@@ -148,7 +159,13 @@
         <div><dt>受众</dt><dd><c:out value="${campaignDetail.audienceSourceDisplayName}"/> <c:out value="${campaignDetail.segmentName}"/></dd></div>
         <c:if test="${campaignDetail.hasIncludeTags}"><div><dt>包含标签（<c:out value="${campaignDetail.includeTagModeDisplayName}"/>）</dt><dd><c:out value="${campaignDetail.includeTagsDisplayName}"/></dd></div></c:if>
         <c:if test="${campaignDetail.hasExcludeTags}"><div><dt>排除标签</dt><dd><c:out value="${campaignDetail.excludeTagsDisplayName}"/></dd></div></c:if>
-        <div><dt>邮件模板</dt><dd><c:out value="${campaignDetail.templateName}"/></dd></div>
+        <div><dt>邮件模板</dt><dd class="md-template-actions">
+          <span><c:out value="${campaignDetail.templateName}" default="—"/></span>
+          <c:if test="${not empty campaignPreview}">
+            <button type="button" class="md-template-button" data-mobile-template-preview-open
+                    aria-haspopup="dialog" aria-controls="md-template-preview">预览</button>
+          </c:if>
+        </dd></div>
         <div><dt>发送通道</dt><dd><c:forEach items="${campaignDetail.providers}" var="provider" varStatus="item"><c:if test="${not item.first}">、</c:if><c:out value="${providerAliases[provider]}" default="${provider}"/></c:forEach></dd></div>
       </dl>
       <details><summary>更多活动设置</summary><dl class="md-detail-list">
@@ -278,8 +295,27 @@
       <div data-recipient-results></div>
     </section>
   </main>
+  <c:if test="${not empty campaignPreview}">
+    <c:url var="templatePreviewUrl" value="/campaigns/preview">
+      <c:param name="shop" value="${campaignDetail.shopDomain}"/>
+      <c:param name="campaignId" value="${campaignDetail.campaignId}"/>
+    </c:url>
+    <dialog id="md-template-preview" class="md-template-dialog" data-mobile-template-preview
+            aria-labelledby="md-template-preview-title">
+      <header class="md-template-header">
+        <div>
+          <h2 id="md-template-preview-title">邮件预览</h2>
+          <c:if test="${not empty campaignPreview.subject}"><p><strong><c:out value="${campaignPreview.subject}"/></strong></p></c:if>
+          <c:if test="${not empty campaignPreview.sourceLabel}"><p class="md-template-source"><c:out value="${campaignPreview.sourceLabel}"/></p></c:if>
+        </div>
+        <form method="dialog"><button type="submit" class="md-template-button" autofocus>关闭</button></form>
+      </header>
+      <iframe class="md-template-frame" data-mobile-template-preview-frame title="活动邮件正文"
+              sandbox referrerpolicy="no-referrer" data-preview-src="<c:out value='${templatePreviewUrl}'/>"></iframe>
+    </dialog>
+  </c:if>
   <%@ include file="fragments/footer.jspf" %>
-  <script src="${ctx}/shopify/mobile/campaign-detail.js?v=20261108-schedule" defer></script>
+  <script src="${ctx}/shopify/mobile/campaign-detail.js?v=20261127-template-preview" defer></script>
   <script src="${ctx}/shopify/mobile/campaign-recipients.js?v=20261110-3" defer></script>
 </body>
 </html>

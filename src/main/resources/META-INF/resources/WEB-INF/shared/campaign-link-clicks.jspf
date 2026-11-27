@@ -1,0 +1,33 @@
+<%@ page pageEncoding="UTF-8" %>
+<%-- Shared by the two desktop campaign themes. --%>
+<c:url var="campaignLinkClicksUrl" value="/campaigns/link-clicks">
+    <c:param name="shop" value="${campaignDetail.shopDomain}"/>
+    <c:param name="campaignId" value="${campaignDetail.campaignId}"/>
+</c:url>
+<section class="campaign-link-clicks" aria-labelledby="campaign-link-click-title"
+         data-campaign-link-clicks="<c:out value='${campaignLinkClicksUrl}'/>">
+    <h3 id="campaign-link-click-title">链接点击分布</h3>
+    <div class="clc-toolbar">
+        <p class="clc-status" data-clc-status role="status" aria-live="polite"></p>
+        <button type="button" class="clc-icon-button" data-clc-refresh title="刷新链接统计" aria-label="刷新链接统计">
+            <i class="fa fa-refresh" aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="clc-chart" data-clc-chart hidden></div>
+    <section class="clc-details" data-clc-details aria-live="polite" hidden></section>
+    <div class="clc-legend" data-clc-legend hidden></div>
+    <dialog id="campaign-link-click-dialog" class="clc-dialog" data-clc-link-dialog
+            aria-labelledby="campaign-link-click-dialog-title">
+        <header class="clc-dialog-header">
+            <h3 id="campaign-link-click-dialog-title">全部链接</h3>
+            <form method="dialog">
+                <button type="submit" class="clc-icon-button" title="关闭" aria-label="关闭全部链接" autofocus>
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </button>
+            </form>
+        </header>
+        <div class="clc-list-heading" aria-hidden="true"><span>链接</span><span>点击次数</span><span>占比</span></div>
+        <div class="clc-all-links" data-clc-all-links></div>
+    </dialog>
+</section>
+<script src="${ctx}/shopify/js/campaign-link-clicks.js?v=20261127-link-dialog" defer></script>

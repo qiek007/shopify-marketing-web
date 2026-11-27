@@ -22,6 +22,32 @@ function fixture(message) {
     return { button, form, event };
 }
 
+test('template preview loads the activity body only when the dialog opens', () => {
+    const { installTemplatePreview } = subject();
+    const loads = [];
+    const frame = {
+        dataset: { previewSrc: '/web/campaigns/preview?shop=a.myshopify.com&campaignId=c-1' },
+        hasAttribute: () => loads.length > 0,
+        setAttribute(name, value) { assert.equal(name, 'src'); loads.push(value); }
+    };
+    const trigger = { addEventListener(type, listener) { this[type] = listener; } };
+    const dialog = {
+        open: false,
+        querySelector: () => frame,
+        showModal() { this.open = true; }
+    };
+
+    installTemplatePreview(trigger, dialog);
+    assert.deepEqual(loads, []);
+    trigger.click();
+    assert.equal(dialog.open, true);
+    assert.deepEqual(loads, [frame.dataset.previewSrc]);
+    dialog.open = false;
+    trigger.click();
+    assert.equal(dialog.open, true);
+    assert.deepEqual(loads, [frame.dataset.previewSrc]);
+});
+
 test('canceling confirmation keeps the form usable', () => {
     const { installActionGuard } = subject();
     const a = fixture('确认发送？');

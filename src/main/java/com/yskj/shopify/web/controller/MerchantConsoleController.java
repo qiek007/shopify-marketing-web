@@ -831,6 +831,13 @@ public class MerchantConsoleController {
         }
     }
 
+    @GetMapping("/campaigns/link-clicks")
+    public ResponseEntity<?> campaignLinkClicks(@RequestParam MultiValueMap<String, String> params, HttpSession session) {
+        var response = body("campaigns.link-clicks", params, session, null);
+        return ResponseEntity.status(response.getStatusCode()).headers(response.getHeaders())
+                .cacheControl(org.springframework.http.CacheControl.noStore()).body(response.getBody());
+    }
+
     @GetMapping("/campaigns/preview")
     public ResponseEntity<?> campaignPreview(@RequestParam MultiValueMap<String, String> params,
                                              HttpSession session) {

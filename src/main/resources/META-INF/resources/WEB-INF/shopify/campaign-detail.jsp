@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>营销活动 - Shopify 邮件营销</title>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
+    <link rel="stylesheet" href="${ctx}/shopify/css/campaign-link-clicks.css?v=20261127-link-dialog-icon">
 <c:url var="campaignListReturnUrl" value="/campaigns">
     <c:param name="shop" value="${campaignDetail.shopDomain}"/>
     <c:param name="page" value="${empty param.listPage ? 1 : param.listPage}"/>
@@ -46,7 +47,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261023-readable-recipients">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261127-preview-stretch">
 <link rel="stylesheet" href="${ctx}/shopify/css/manual-campaign-receipts.css?v=20261028-manual">
     <style data-campaign-detail-status-styles>
         #campaign-current-status { color: #475569; background: #f1f5f9; font-weight: 600; white-space: nowrap; }
@@ -365,6 +366,7 @@
                 <div id="campaign-job-list" aria-live="polite"><c:choose><c:when test="${empty campaignDetail.jobs}"><div class="empty-state compact"><i class="fa fa-clock-o"></i><strong>尚未创建发送任务</strong><span>活动批准后执行发送才会产生任务。</span></div></c:when><c:otherwise>
                     <div class="job-list"><c:forEach items="${campaignDetail.jobs}" var="job"><article><div><strong><c:out value="${providerAliases[job.provider]}"/> · <c:out value="${job.status}"/></strong><span><c:out value="${job.jobId}"/></span></div><div class="job-progress"><span style="width:${job.progressPercent}%"></span></div><small><c:out value="${job.processed}"/> / <c:out value="${job.total}"/> · 失败 <c:out value="${job.failed}"/></small></article></c:forEach></div>
                 </c:otherwise></c:choose></div>
+                <%@ include file="/WEB-INF/shared/campaign-link-clicks.jspf" %>
             </section>
         </div>
 
