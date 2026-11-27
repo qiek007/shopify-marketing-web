@@ -73,10 +73,7 @@
                             </div>
                         </section>
                         </fieldset>
-                        <fieldset class="campaign-content-panel"><legend>UTM参数</legend>
-                        <div class="form-grid two"><label><span>UTM 来源（utm_source）</span><input name="utmSource" value="<c:out value='${editorCampaign.utmSource}'/>" maxlength="128" required><small class="field-note">用于邮件链接归因，默认 auw。</small></label><label><span>UTM 媒介（utm_medium）</span><input name="utmMedium" value="<c:out value='${editorCampaign.utmMedium}'/>" maxlength="128" required><small class="field-note">用于邮件链接归因，默认 email。</small></label></div>
-                        <div class="form-grid two"><label><span>UTM 活动（utm_campaign）</span><input name="utmCampaign" value="<c:out value='${editorCampaign.utmCampaign}'/>" maxlength="255" placeholder="留空时使用活动名称"><small class="field-note">可选；留空时使用活动名称。</small></label><label><span>UTM 内容（utm_content）</span><input name="utmContent" value="<c:out value='${editorCampaign.utmContent}'/>" maxlength="255" placeholder="留空时按链接自动生成"><small class="field-note">可选；留空时按链接自动生成。</small></label></div>
-                        </fieldset>
+                        <%@ include file="/WEB-INF/shared/campaign-utm-settings.jspf" %>
                         <fieldset class="channel-selector">
                             <legend>发送邮件通道</legend><c:if test="${shoplineDraftEditor}"><p class="field-note">可先保存草稿。发送前需选择已配置发件身份的通道，并由平台分配邮件额度。</p></c:if>
                             <p class="field-note">可多选，拖动所选通道下方的滑块或输入权重，调整计划发送比例。</p>

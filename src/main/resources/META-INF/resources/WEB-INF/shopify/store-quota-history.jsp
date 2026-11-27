@@ -23,7 +23,9 @@
         </section>
         <section class="content-section">
             <div class="section-heading"><div><h2><c:out value="${selectedShopDisplayName}" default="${selectedShop}"/></h2><p><c:out value="${selectedShop}"/> · 所有记录均为只读</p></div><c:if test="${quotaLedgerAvailable}"><span class="section-count">共 <c:out value="${quotaLedger.totalElements}"/> 条</span></c:if></div>
-            <c:choose><c:when test="${!quotaLedgerAvailable}"><div class="empty-state"><i class="fa fa-clock-o"></i><strong>暂时无法读取额度变更记录</strong><span>请稍后刷新页面。</span></div></c:when><c:otherwise>
+            <%@ include file="/WEB-INF/shared/store-quota-history-filter.jspf" %>
+            <c:choose><c:when test="${not empty quotaDateError}"><div class="flash-message danger" role="alert"><c:out value="${quotaDateError}"/></div></c:when>
+            <c:when test="${!quotaLedgerAvailable}"><div class="empty-state"><i class="fa fa-clock-o"></i><strong>暂时无法读取额度变更记录</strong><span>请稍后刷新页面。</span></div></c:when><c:otherwise>
                 <div class="table-wrap"><table class="status-table store-quota-ledger-table"><thead><tr><th>操作时间</th><th>类型</th><th>额度变更</th><th>变更后总量</th><th>变更后预留</th><th>变更后可用</th><th>额度批次／关联任务</th><th>本次回收</th><th>累计回收</th><th>操作人</th><th>备注</th></tr></thead><tbody>
                 <c:forEach items="${quotaLedger.entries}" var="entry"><tr>
                     <td><time data-browser-time="<c:out value='${entry.operatedAt}'/>" datetime="<c:out value='${entry.operatedAt}'/>"><c:out value="${entry.operatedAt}"/></time></td>
@@ -34,11 +36,11 @@
                     <td><strong><c:out value="${entry.operatorName}" default="系统"/></strong><small class="cell-note"><c:out value="${entry.operatorId}"/></small></td>
                     <td><c:out value="${entry.note}" default="-"/><c:if test="${not empty entry.reasonCode}"><small class="cell-note">原因：<c:out value="${entry.reasonCode}"/></small></c:if></td>
                 </tr></c:forEach>
-                <c:if test="${empty quotaLedger.entries}"><tr><td colspan="11"><div class="empty-state compact"><i class="fa fa-list-alt"></i><strong>暂无额度变更记录</strong><span>后续额度变化会显示在这里。</span></div></td></tr></c:if>
+                <c:if test="${empty quotaLedger.entries}"><tr><td colspan="11"><div class="empty-state compact"><i class="fa fa-list-alt"></i><strong>${empty quotaFromDate and empty quotaToDate ? '暂无额度变更记录' : '此日期范围内没有额度变更记录'}</strong><c:if test="${empty quotaFromDate and empty quotaToDate}"><span>后续额度变化会显示在这里。</span></c:if></div></td></tr></c:if>
                 </tbody></table></div>
                 <div class="pagination-bar"><span>第 <c:out value="${quotaLedger.pageNumber}"/> 页</span><div class="pagination-actions">
-                    <c:if test="${quotaLedger.pageNumber gt 1}"><c:url var="previousUrl" value="/stores/quota/history"><c:param name="shop" value="${selectedShop}"/><c:param name="page" value="${quotaLedger.pageNumber - 1}"/></c:url><a class="action-button" href="${previousUrl}">上一页</a></c:if>
-                    <c:if test="${quotaLedger.pageNumber * quotaLedger.pageSize lt quotaLedger.totalElements}"><c:url var="nextUrl" value="/stores/quota/history"><c:param name="shop" value="${selectedShop}"/><c:param name="page" value="${quotaLedger.pageNumber + 1}"/></c:url><a class="action-button" href="${nextUrl}">下一页</a></c:if>
+                    <c:if test="${quotaLedger.pageNumber gt 1}"><c:url var="previousUrl" value="/stores/quota/history"><c:param name="shop" value="${selectedShop}"/><c:param name="fromDate" value="${quotaFromDate}"/><c:param name="toDate" value="${quotaToDate}"/><c:param name="page" value="${quotaLedger.pageNumber - 1}"/></c:url><a class="action-button" href="${previousUrl}">上一页</a></c:if>
+                    <c:if test="${quotaLedger.pageNumber * quotaLedger.pageSize lt quotaLedger.totalElements}"><c:url var="nextUrl" value="/stores/quota/history"><c:param name="shop" value="${selectedShop}"/><c:param name="fromDate" value="${quotaFromDate}"/><c:param name="toDate" value="${quotaToDate}"/><c:param name="page" value="${quotaLedger.pageNumber + 1}"/></c:url><a class="action-button" href="${nextUrl}">下一页</a></c:if>
                 </div></div>
             </c:otherwise></c:choose>
         </section>

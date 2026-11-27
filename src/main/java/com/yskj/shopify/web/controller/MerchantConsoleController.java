@@ -132,8 +132,20 @@ public class MerchantConsoleController {
             support.applyBody(response);
             throw new IllegalStateException("Expected trend JSON response");
         }
-        byte[] content = remoteTrendExcelExporter.export(response.getJSONObject("body"));
-        return xlsx(content, "daily-marketing-trend.xlsx");
+        JSONObject trend = response.getJSONObject("body");
+        String period = params.getFirst("period");
+        if (period != null && !period.isBlank()) {
+            if (!period.equals(trend.getString("period")) || !trend.getBooleanValue("ready")) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "所选周期的趋势尚未汇总");
+            }
+            if ("custom".equals(period)
+                    && (!java.util.Objects.equals(params.getFirst("fromDate"), trend.getString("fromDate"))
+                        || !java.util.Objects.equals(params.getFirst("toDate"), trend.getString("toDate")))) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "趋势数据与所选日期范围不一致");
+            }
+            return xlsx(remoteTrendExcelExporter.export(trend), "marketing-trend-" + period + ".xlsx");
+        }
+        return xlsx(remoteTrendExcelExporter.export(trend), "daily-marketing-trend.xlsx");
     }
 
     @GetMapping("/issues")
@@ -326,6 +338,18 @@ public class MerchantConsoleController {
                     .contentType(MediaType.APPLICATION_JSON).body(object.get("items"));
         }
         return response;
+    }
+
+    @GetMapping("/customers/tags")
+    public String customerTagCatalog(@RequestParam MultiValueMap<String, String> params,
+                                     HttpSession session, Model model, RedirectAttributes redirect) {
+        return view("customer-tags.catalog", params, session, model, redirect);
+    }
+
+    @PostMapping("/customers/tags")
+    public String changeCustomerTagCatalog(@RequestParam MultiValueMap<String, String> params,
+                                           HttpSession session, Model model, RedirectAttributes redirect) {
+        return view("customer-tags.catalog.change", params, session, model, redirect);
     }
 
     @PostMapping(value = "/customers/tags/add", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -702,7 +726,44 @@ public class MerchantConsoleController {
     @GetMapping("/campaigns/detail")
     public String campaignDetail(@RequestParam MultiValueMap<String, String> params,
                                  HttpSession session, Model model, RedirectAttributes redirect) {
-        return view("campaigns.detail", params, session, model, redirect);
+        LoginedUser user = requireUser(session);
+        JSONObject response = client.exchange("campaigns.detail", user, params.getFirst("shop"),
+                parameters(params), null);
+        String viewName = support.applyView(response, model, redirect);
+        if (MerchantWebProtocol.VIEW.equals(response.getString("kind"))) {
+            recoverCampaignUtmStatus(model, user);
+        }
+        return viewName;
+    }
+
+    private void recoverCampaignUtmStatus(Model model, LoginedUser user) {
+        if (!Boolean.TRUE.equals(model.getAttribute("canManageCampaigns"))
+                || !(model.getAttribute("campaignDetail") instanceof JSONObject detail)
+                || detail.get("utmEnabled") != null) return;
+        String status = detail.getString("status");
+        if (!"DRAFT".equals(status) && !"PENDING_APPROVAL".equals(status)) return;
+        String campaignId = detail.getString("campaignId");
+        if (!(model.getAttribute("selectedShop") instanceof String shop) || shop.isBlank()
+                || campaignId == null || campaignId.isBlank()) return;
+
+        // Older deployments can provide the saved flag through the editor but omit it from the overview.
+        try {
+            JSONObject result = client.exchange("campaigns.editor", user, shop,
+                    new JSONObject(Map.of("campaignId", campaignId)), null);
+            if (!MerchantWebProtocol.VIEW.equals(result.getString("kind"))) return;
+            JSONObject editorModel = result.getJSONObject("model");
+            if (editorModel == null || !shop.equals(editorModel.getString("selectedShop"))) return;
+            JSONObject editor = editorModel.getJSONObject("editorCampaign");
+            if (editor != null && campaignId.equals(editor.getString("campaignId"))
+                    && editor.get("utmEnabled") instanceof Boolean enabled) {
+                JSONObject updatedDetail = new JSONObject(new LinkedHashMap<>(detail));
+                updatedDetail.put("utmEnabled", enabled);
+                model.addAttribute("campaignDetail", updatedDetail);
+            }
+        } catch (RuntimeException unavailable) {
+            // The optional lookup can fail, for example if the campaign leaves its editable state.
+            // The overview still renders with an unknown UTM status.
+        }
     }
 
     @GetMapping("/campaigns/detail/recipients")

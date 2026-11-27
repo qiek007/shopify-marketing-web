@@ -1,0 +1,8 @@
+<%@ page pageEncoding="UTF-8" %>
+<label>
+    <span>本批次客户标签</span>
+    <small>可输入或选择，留空使用「导入客户」</small>
+    <input type="text" name="customerTag" maxlength="100" placeholder="导入客户"
+           list="import-customer-tag-options" data-import-tag-url="${ctx}/customers/tags/options">
+    <datalist id="import-customer-tag-options"></datalist>
+</label>

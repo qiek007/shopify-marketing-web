@@ -1,0 +1,10 @@
+<%@ page pageEncoding="UTF-8" %>
+<div class="customer-tag-search-bar">
+    <div class="customer-tag-search-row">
+        <input type="search" data-customer-tag-search maxlength="100" autocomplete="off"
+               placeholder="搜索标签名称" aria-label="搜索标签名称">
+        <button type="button" class="secondary-button compact customer-tag-search-clear"
+                data-customer-tag-search-clear aria-label="清空标签搜索" disabled>清空</button>
+    </div>
+    <p class="customer-tag-search-status" data-customer-tag-search-status role="status" hidden></p>
+</div>

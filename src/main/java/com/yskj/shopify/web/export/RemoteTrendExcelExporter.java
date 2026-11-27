@@ -17,15 +17,30 @@ public class RemoteTrendExcelExporter {
         if (trend == null) throw new IllegalArgumentException("trend is required");
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            var sheet = workbook.createSheet("每日趋势");
+            String period = trend.getString("period");
+            String grain = trend.getString("granularity");
+            boolean hourly = "hour".equals(grain) || "day".equals(period);
+            boolean monthly = "month".equals(grain) || "year".equals(period);
+            boolean yearly = "year".equals(grain);
+            var sheet = workbook.createSheet(hourly ? "小时趋势" : monthly ? "月度趋势" : yearly ? "年度趋势" : "每日趋势");
             var title = sheet.createRow(0);
-            title.createCell(0).setCellValue("近 30 天营销趋势");
+            title.createCell(0).setCellValue(period == null ? "近 30 天营销趋势"
+                    : "店铺趋势 " + text(trend, "fromDate") + " 至 " + text(trend, "toDate"));
             var shop = sheet.createRow(1);
             shop.createCell(0).setCellValue("店铺");
             shop.createCell(1).setCellValue(text(trend, "shopDomain"));
             var zone = sheet.createRow(2);
             zone.createCell(0).setCellValue("统计时区");
             zone.createCell(1).setCellValue(text(trend, "timeZone"));
+            if (trend.getBooleanValue("incomplete")) {
+                sheet.createRow(3).createCell(0).setCellValue("部分历史数据待汇总");
+            }
+            if ("day".equals(period) && trend.getBooleanValue("ga4Connected")) {
+                var ga4 = sheet.createRow(4);
+                ga4.createCell(0).setCellValue("GA4 当天收入");
+                numeric(ga4.createCell(1), trend.getString("dayGa4Revenue"));
+                ga4.createCell(2).setCellValue(text(trend, "ga4Currency"));
+            }
 
             String[] headers = {"日期", "邮件发送数", "Shopify 订单数",
                     "Shopify 订单金额", "GA4 邮件购买收入", "邮件送达数", "邮件打开人数", "邮件点击人数", "邮件退订数"};
@@ -48,9 +63,12 @@ public class RemoteTrendExcelExporter {
                 for (int index = 0; index < days.size(); index++) {
                     JSONObject day = days.getJSONObject(index);
                     var row = sheet.createRow(7 + index);
-                    row.createCell(0).setCellValue(text(day, "date"));
-                    row.createCell(1).setCellValue(day.getLongValue("emailSentCount"));
-                    row.createCell(2).setCellValue(day.getLongValue("shopifyOrderCount"));
+                    String date = text(day, "date");
+                    row.createCell(0).setCellValue(hourly ? date + " " + text(day, "label")
+                            : monthly && date.length() >= 7 ? date.substring(0, 7)
+                            : yearly ? text(day, "label") : date);
+                    numeric(row.createCell(1), day.getString("emailSentCount"));
+                    numeric(row.createCell(2), day.getString("shopifyOrderCount"));
                     numeric(row.createCell(3), day.getString("shopifyOrderAmount"));
                     numeric(row.createCell(4), day.getString("ga4PurchaseRevenue"));
                     numeric(row.createCell(5), day.getString("emailDeliveredCount"));
@@ -60,7 +78,7 @@ public class RemoteTrendExcelExporter {
                 }
             }
             for (int index = 0; index < headers.length; index++) {
-                sheet.setColumnWidth(index, index == 0 ? 14 * 256 : 22 * 256);
+                sheet.setColumnWidth(index, index == 0 && !"day".equals(period) ? 14 * 256 : 24 * 256);
             }
             sheet.createFreezePane(0, 7);
             workbook.write(output);

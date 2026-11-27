@@ -1,0 +1,25 @@
+<%@ page pageEncoding="UTF-8" %>
+<c:if test="${not empty errorMessage}">
+    <div class="flash-message danger" role="alert">
+        <i class="fa fa-exclamation-circle" aria-hidden="true"></i>
+        <div>
+            <span data-template-save-message-text><c:out value="${errorMessage}"/></span>
+            <c:if test="${not empty templateBlockingCampaigns}">
+                <ul>
+                    <c:forEach items="${templateBlockingCampaigns}" var="blockingCampaign">
+                        <c:url var="blockingCampaignUrl" value="/campaigns/detail">
+                            <c:param name="shop" value="${selectedShop}"/>
+                            <c:param name="campaignId" value="${blockingCampaign.campaignId}"/>
+                            <c:if test="${param.embedded eq '1'}"><c:param name="embedded" value="1"/></c:if>
+                        </c:url>
+                        <li data-blocking-campaign-id="<c:out value='${blockingCampaign.campaignId}'/>"
+                            data-blocking-campaign-name="<c:out value='${blockingCampaign.name}'/>">
+                            <c:out value="${empty blockingCampaign.name ? '未命名活动' : blockingCampaign.name}"/> · ID <c:out value="${blockingCampaign.campaignId}"/>
+                            <a href="<c:out value='${blockingCampaignUrl}'/>" target="_blank" rel="noopener">打开活动</a>
+                        </li>
+                    </c:forEach>
+                </ul>
+            </c:if>
+        </div>
+    </div>
+</c:if>

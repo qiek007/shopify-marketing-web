@@ -329,6 +329,13 @@ body.shopify-console {
 .customer-tag-options label { display: flex; align-items: center; gap: 8px; margin: 0; padding: 7px 8px; border-radius: 3px; cursor: pointer; }
 .customer-tag-options label:hover { background: #edf7f2; }
 .customer-tag-options input { width: 16px !important; height: 16px; min-height: 16px !important; margin: 0; }
+.customer-tag-search-bar { position: sticky; top: -7px; z-index: 1; padding: 4px 3px; background: #fff; }
+.customer-tag-search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; }
+.customer-tag-search-row > button.customer-tag-search-clear { min-height: 34px; padding-inline: 12px; white-space: nowrap; }
+.customer-tag-options input[data-customer-tag-search] { box-sizing: border-box; width: 100% !important; height: 34px; min-height: 34px !important; padding: 6px 9px; border: 1px solid #bcc7d1; border-radius: 4px; font: inherit; }
+.customer-tag-options input[data-customer-tag-search]::-webkit-search-cancel-button { -webkit-appearance: none; }
+.customer-tag-search-status { margin: 5px 1px 0; color: var(--muted); font-size: 12px; }
+[data-customer-results-form] .customer-tag-options [hidden] { display: none !important; }
 .campaign-audience-tags > .checkbox-row { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; padding: 10px 12px; border: 1px solid #d6dee6; border-radius: 5px; background: #f8fafb; color: #304455; cursor: pointer; }
 .campaign-audience-tags > .checkbox-row input[type="checkbox"] { flex: 0 0 auto; width: 16px !important; height: 16px; min-height: 16px !important; margin: 2px 0 0; }
 .campaign-audience-tags > .checkbox-row span { line-height: 1.55; }

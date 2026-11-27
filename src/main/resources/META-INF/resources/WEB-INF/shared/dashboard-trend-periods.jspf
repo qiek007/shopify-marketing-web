@@ -1,0 +1,37 @@
+<%@ page pageEncoding="UTF-8" %>
+<style>
+    .trend-period-bar { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .trend-periods { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid #d9e4e8; border-radius: 6px; background: #f4f8f8; }
+    .trend-periods button { min-width: 40px; min-height: 30px; border: 0; border-radius: 4px; background: transparent; color: #34515e; cursor: pointer; }
+    .trend-periods button[aria-pressed="true"] { background: #147455; color: #fff; font-weight: 600; }
+    .trend-periods button[data-trend-period="custom"] { padding-inline: 10px; }
+    .trend-window { margin-inline-start: auto; color: #5a707b; font-size: 12px; }
+    .trend-custom-range { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; margin: 0; }
+    .trend-custom-range[hidden] { display: none; }
+    .trend-custom-range label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #546b76; white-space: nowrap; }
+    .trend-custom-range input { box-sizing: border-box; max-width: 100%; min-height: 30px; padding: 3px 7px; border: 1px solid #bfcfd5; border-radius: 4px; background: #fff; color: #253e49; }
+    .trend-custom-range button { min-height: 30px; }
+    .trend-custom-range-error { flex-basis: 100%; margin: 0; color: #a53c3c; }
+    .trend-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 14px; }
+    .trend-totals[hidden] { display: none; }
+    .trend-totals > div { min-width: 0; padding: 8px 10px; border: 1px solid #e1eaed; border-radius: 5px; background: #f8fafb; }
+    .trend-totals span { display: block; color: #546b76; font-size: 12px; }
+    .trend-totals strong { display: block; margin-top: 3px; color: #153b35; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+</style>
+<div class="trend-period-bar">
+    <div class="trend-periods" role="group" aria-label="店铺趋势统计周期">
+        <button type="button" data-trend-period="day" aria-pressed="false">日</button>
+        <button type="button" data-trend-period="week" aria-pressed="false">周</button>
+        <button type="button" data-trend-period="month" aria-pressed="true">月</button>
+        <button type="button" data-trend-period="year" aria-pressed="false">年</button>
+        <button type="button" data-trend-period="custom" aria-pressed="false" aria-expanded="false" aria-controls="trend-custom-range">自定义</button>
+    </div>
+    <form id="trend-custom-range" class="trend-custom-range" data-trend-custom-form aria-label="自定义日期范围" hidden>
+        <label>开始日期<input type="date" name="fromDate" min="1000-01-01" max="9999-12-31" required></label>
+        <label>结束日期<input type="date" name="toDate" min="1000-01-01" max="9999-12-31" required></label>
+        <button class="action-button" type="submit">查询</button>
+        <p class="trend-custom-range-error" data-trend-custom-error role="alert" hidden></p>
+    </form>
+    <span class="trend-window" data-trend-range></span>
+</div>
+<div class="trend-totals" data-trend-totals aria-label="所选周期合计" hidden></div>

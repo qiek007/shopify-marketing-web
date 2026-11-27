@@ -38,18 +38,24 @@ test('the chart defaults to the top ranked link and keeps a manually selected li
     };
     const landing = 'https://shop.example/item?variant=2';
     const destination = landing + '&utm_content=link-3';
+    const firstKey = 'a'.repeat(64);
+    const secondKey = 'b'.repeat(64);
+    const previewSrc = '/web/campaigns/preview?shop=s.example&campaignId=c1';
+    const navigations = [];
+    const frame = { dataset: { previewSrc }, set src(value) { navigations.push(value); } };
     const dialog = panel.querySelector('[data-clc-link-dialog]');
     dialog.id = 'campaign-link-click-dialog';
     dialog.open = false;
     dialog.showModal = function () { this.open = true; };
     dialog.close = function () { this.open = false; };
     let links = [
-        { key: 'two', label: '了解更多', position: 4, clicks: 2, people: 2 },
+        { key: secondKey, label: '了解更多', position: 4, clicks: 2, people: 2 },
         { key: 'unmatched', label: '未匹配链接', clicks: 10, people: 10 },
-        { key: 'one', label: '购买', position: 3, clicks: 4, people: 2, destination, landing }
+        { key: firstKey, label: '购买', position: 3, clicks: 4, people: 2, destination, landing }
     ];
     const win = {
-        document: { createElement: tag => new Node(tag), createElementNS: (_, tag) => new Node(tag) },
+        document: { createElement: tag => new Node(tag), createElementNS: (_, tag) => new Node(tag),
+            getElementById: id => id === 'campaign-preview-frame' ? frame : null },
         navigator: { clipboard: { async writeText(value) { copied.push(value); } } },
         clearTimeout() {}, addEventListener() {},
         setTimeout() { assert.fail('a frozen campaign must not start polling'); },
@@ -75,6 +81,7 @@ test('the chart defaults to the top ranked link and keeps a manually selected li
     const details = parts.get('[data-clc-details]');
     assert.equal(details.hidden, false);
     assert.equal(details.children[0].textContent, '第 3 处 · 购买');
+    assert.deepEqual(navigations, [previewSrc + '#campaign-preview-link-' + firstKey]);
     assert.equal(details.children.length, 2, 'the raw address is not displayed');
     const summary = details.children[1];
     assert.equal(summary.className, 'clc-detail-summary');
@@ -92,9 +99,11 @@ test('the chart defaults to the top ranked link and keeps a manually selected li
     assert.deepEqual(copied, [destination]);
     slices[1].handlers.click();
     assert.equal(details.children[0].textContent, '第 4 处 · 了解更多');
+    assert.equal(navigations.at(-1), previewSrc + '#campaign-preview-link-' + secondKey);
     parts.get('[data-clc-refresh]').handlers.click();
     await new Promise(setImmediate);
     assert.equal(details.children[0].textContent, '第 4 处 · 了解更多');
+    assert.equal(navigations.length, 2, 'refresh keeps the preview at its current scroll position');
     assert.equal(parts.has('[data-clc-list-toggle]'), false);
     links = Array.from({ length: 10 }, (_, i) => ({ key: String(i), label: '链接 ' + i, clicks: i, people: i }));
     parts.get('[data-clc-refresh]').handlers.click();

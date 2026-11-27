@@ -308,9 +308,12 @@
             <div class="section-heading">
                 <div>
                     <h2>GA4 活动级购买评估</h2>
-                    <p>按当前活动配置的 UTM 参数和活动 ID 汇总</p>
+                    <p>${empty campaignDetail.utmEnabled ? '查看此活动保存的 UTM 参数' : (campaignDetail.utmEnabled eq false ? '此活动发送时不附加 UTM 参数' : '按当前活动配置的 UTM 参数和活动 ID 汇总')}</p>
                 </div>
-                <span class="status-pill neutral"><c:out value="${campaignDetail.ga4Evaluation.statusDisplayName}"/></span>
+                <span class="ga4-campaign-evaluation-summary-status">
+                    <span class="status-pill neutral" data-campaign-utm-status>${empty campaignDetail.utmEnabled ? 'UTM 状态未返回' : (campaignDetail.utmEnabled eq false ? 'UTM 已关闭' : 'UTM 已启用')}</span>
+                    <span class="status-pill neutral"><c:out value="${campaignDetail.ga4Evaluation.statusDisplayName}"/></span>
+                </span>
             </div>
             <div class="ga4-utm-parameters" aria-label="当前活动 UTM 配置">
                 <div><span>UTM 来源</span><code><c:out value="${campaignDetail.utmSource}"/></code></div>

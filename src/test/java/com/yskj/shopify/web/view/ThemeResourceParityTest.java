@@ -223,7 +223,7 @@ class ThemeResourceParityTest {
         String theme2 = Files.readString(ROOT.resolve("shopify-theme2/css/dashboard.css"));
 
         assertThat(classic).contains(
-                ".customer-import-fields { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr) max-content;",
+                ".customer-import-fields { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr) max-content;",
                 "@media (max-width: 1320px) { .customer-import-fields { grid-template-columns: repeat(2, minmax(0, 1fr));");
         assertThat(theme2).contains(
                 ".customer-import-fields { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.15fr) max-content;");
@@ -342,7 +342,7 @@ class ThemeResourceParityTest {
         String dashboard = Files.readString(ROOT.resolve("WEB-INF/shopify/dashboard.jsp"));
         String script = Files.readString(ROOT.resolve("shopify/js/dashboard-trend.js"));
 
-        assertThat(dashboard).contains("dashboard-trend.js?v=20261015-tooltip-follow");
+        assertThat(dashboard).contains("dashboard-trend.js?v=20261127-custom-range");
         assertThat(script).contains(
                 "event.clientY - visual.getBoundingClientRect().top + 14",
                 "visual.clientHeight - tooltip.offsetHeight - 8")
@@ -697,6 +697,10 @@ class ThemeResourceParityTest {
 
     @Test
     void ga4DetailPanelsShowTheEffectiveUtmConfiguration() throws Exception {
+        String campaignUtmSettings = Files.readString(ROOT.resolve("WEB-INF/shared/campaign-utm-settings.jspf"));
+        assertThat(campaignUtmSettings).contains(
+                "name=\"utmCampaign\"", "name=\"utmContent\"",
+                "留空时使用活动名称", "留空时按链接自动生成");
         for (String theme : Set.of("shopify", "shopify-theme2")) {
             Path root = ROOT.resolve("WEB-INF").resolve(theme);
             String campaign = Files.readString(root.resolve("campaign-detail.jsp"));
@@ -720,9 +724,7 @@ class ThemeResourceParityTest {
                     "data-automation-utm-campaign",
                     "data-automation-utm-content",
                     "name=\"utmCampaign\"", "name=\"utmContent\"");
-            assertThat(campaignEditor).contains(
-                    "name=\"utmCampaign\"", "name=\"utmContent\"",
-                    "留空时使用活动名称", "留空时按链接自动生成");
+            assertThat(campaignEditor).contains("file=\"/WEB-INF/shared/campaign-utm-settings.jspf\"");
         }
 
         assertThat(Files.readString(ROOT.resolve("WEB-INF/shopify/campaign-detail.jsp")))

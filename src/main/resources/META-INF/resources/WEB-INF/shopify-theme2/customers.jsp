@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css">
     <link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css">
     <link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20260925-p124&amp;customerFacts=4">
+    <link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261127-customer-tag-clear-padding&amp;customerFacts=4">
 </head>
 <body class="shopify-console">
 <%@ include file="fragments/header.jspf" %>
@@ -18,12 +18,12 @@
     <main class="console-main">
         <section class="page-heading"><div><p class="eyebrow">客户管理</p></div></section>
         <section class="content-section">
-            <div class="section-heading"><div><h2>客户列表</h2><p>每页显示 10 位客户，查询结果同步分页</p></div><div class="section-heading-actions"><span id="customer-result-count" class="section-count" data-customer-result-count>正在统计</span><c:if test="${not empty selectedShop and canManageCustomers}"><a class="secondary-button compact" href="${ctx}/customers/deleted?shop=${selectedShop}">已删除客户</a><a class="primary-button compact" href="${ctx}/customers/imports?shop=${selectedShop}"><i class="fa fa-upload"></i>导入客户</a></c:if></div></div>
+            <div class="section-heading"><div><h2>客户列表</h2><p>每页显示 10 位客户，查询结果同步分页</p></div><div class="section-heading-actions"><span id="customer-result-count" class="section-count" data-customer-result-count>正在统计</span><c:if test="${not empty selectedShop and canManageCustomers}"><c:url var="customerTagCatalogUrl" value="/customers/tags"><c:param name="shop" value="${selectedShop}"/></c:url><a class="action-button" href="<c:out value='${customerTagCatalogUrl}'/>"><i class="fa fa-tags" aria-hidden="true"></i><span>标签管理</span></a><a class="action-button" href="${ctx}/customers/deleted?shop=${selectedShop}"><i class="fa fa-trash-o" aria-hidden="true"></i><span>已删除客户</span></a><a class="primary-button compact" href="${ctx}/customers/imports?shop=${selectedShop}"><i class="fa fa-upload"></i>导入客户</a></c:if></div></div>
             <form class="workspace-form" method="get" action="${ctx}/customers/results" data-customer-results-form data-initial-page="${empty param.page ? 1 : param.page}" data-customer-tags-url="${ctx}/customers/tags/options">
                 <input type="hidden" name="shop" value="${selectedShop}">
                 <div class="form-grid">
                     <label><span>姓名或邮箱</span><input name="q" value="<c:out value='${customerFilter.search}'/>" placeholder="搜索姓名或邮箱"></label>
-                    <div class="customer-tag-field"><span>客户标签</span><details class="customer-tag-select"><summary><span data-customer-tag-summary>${empty customerFilter.tags ? '全部标签' : '已选标签'}</span><i class="fa fa-chevron-down"></i></summary><div class="customer-tag-options"><c:set var="untaggedSelected" value="false"/><c:forEach items="${customerFilter.tags}" var="selectedTag"><c:if test="${selectedTag eq '__UNTAGGED__'}"><c:set var="untaggedSelected" value="true"/></c:if></c:forEach><label class="customer-tag-option-special"><input type="checkbox" name="tag" value="__UNTAGGED__" data-untagged="true" data-tag-selected="${untaggedSelected}"${untaggedSelected ? ' checked' : ''}><span>无标签</span></label><c:forEach items="${customerFilter.tags}" var="selectedTag"><c:if test="${selectedTag ne '__UNTAGGED__'}"><label><input type="checkbox" name="tag" value="<c:out value='${selectedTag}'/>" data-tag-selected="true" checked><span><c:out value="${selectedTag}"/></span></label></c:if></c:forEach><span class="muted-text" data-no-customer-tags>正在加载标签…</span></div></details></div>
+                    <div class="customer-tag-field"><span>客户标签</span><details class="customer-tag-select"><summary><span data-customer-tag-summary>${empty customerFilter.tags ? '全部标签' : '已选标签'}</span><i class="fa fa-chevron-down"></i></summary><div class="customer-tag-options"><%@ include file="/WEB-INF/shared/customer-tag-search.jspf" %><c:set var="untaggedSelected" value="false"/><c:forEach items="${customerFilter.tags}" var="selectedTag"><c:if test="${selectedTag eq '__UNTAGGED__'}"><c:set var="untaggedSelected" value="true"/></c:if></c:forEach><label class="customer-tag-option-special"><input type="checkbox" name="tag" value="__UNTAGGED__" data-untagged="true" data-tag-selected="${untaggedSelected}"${untaggedSelected ? ' checked' : ''}><span>无标签</span></label><c:forEach items="${customerFilter.tags}" var="selectedTag"><c:if test="${selectedTag ne '__UNTAGGED__'}"><label><input type="checkbox" name="tag" value="<c:out value='${selectedTag}'/>" data-tag-selected="true" checked><span><c:out value="${selectedTag}"/></span></label></c:if></c:forEach><span class="muted-text" data-no-customer-tags>正在加载标签…</span></div></details></div>
                     <label><span class="customer-range-heading"><span>行为类型</span><small class="customer-filter-hint">（邮件打开数据可能受邮箱隐私代理影响，仅作为筛选参考）</small></span><select name="activity"><option value="">不限</option><optgroup label="站内行为"><option value="VIEWED"${customerFilter.activity eq 'VIEWED' ? ' selected' : ''}>有浏览记录</option><option value="CARTED"${customerFilter.activity eq 'CARTED' ? ' selected' : ''}>有加入购物车记录</option><option value="ORDERED"${customerFilter.activity eq 'ORDERED' ? ' selected' : ''}>有订单记录</option></optgroup><optgroup label="邮件互动"><option value="EMAIL_DELIVERED"${customerFilter.activity eq 'EMAIL_DELIVERED' ? ' selected' : ''}>已送达邮件</option><option value="EMAIL_OPENED"${customerFilter.activity eq 'EMAIL_OPENED' ? ' selected' : ''}>已打开邮件</option><option value="EMAIL_CLICKED"${customerFilter.activity eq 'EMAIL_CLICKED' ? ' selected' : ''}>已点击链接</option><option value="EMAIL_FAILED"${customerFilter.activity eq 'EMAIL_FAILED' ? ' selected' : ''}>发送失败/退信</option><option value="EMAIL_DELIVERED_NOT_OPENED"${customerFilter.activity eq 'EMAIL_DELIVERED_NOT_OPENED' ? ' selected' : ''}>最近送达未打开</option><option value="EMAIL_OPENED_NOT_CLICKED"${customerFilter.activity eq 'EMAIL_OPENED_NOT_CLICKED' ? ' selected' : ''}>最近打开未点击</option></optgroup></select></label>
                     <label class="customer-range-field"><span class="customer-range-heading"><span data-customer-date-label>最近活动日期范围</span><small class="customer-filter-hint" data-customer-date-hint>（按最近活动时间筛选，无活动记录时按客户资料更新时间）</small></span><span class="customer-range-control"><input aria-label="开始日期" name="fromDate" type="date" value="<c:out value='${customerFilter.fromDate}'/>"><span class="range-separator">至</span><input aria-label="结束日期" name="toDate" type="date" value="<c:out value='${customerFilter.toDate}'/>"></span></label>
                 </div>
@@ -68,6 +68,7 @@
         <script src="${ctx}/shopify/js/customer-timeline.js?v=20261105-shanghai1"></script>
         <link rel="stylesheet" href="${ctx}/shopify/css/customer-deletion-progress.css?v=20261123-soft-delete">
         <script src="${ctx}/shopify/js/customer-deletion-progress.js?v=20261124-hide-completed"></script>
+        <script src="${ctx}/shopify/js/customer-tag-search.js?v=20261127-clear"></script>
         <script>
             (function () {
                 var form = document.querySelector('[data-customer-results-form]');
@@ -120,6 +121,7 @@
                 }
                 if (!form || !host || form.dataset.resultsBound === 'true') return;
                 form.dataset.resultsBound = 'true';
+                if (window.CustomerTagSearch) window.CustomerTagSearch.bind(window, form, ensureTagChoice);
                 var activeRequest;
                 var lastSuccessfulQuery;
                 var lastSuccessfulPage = 1;

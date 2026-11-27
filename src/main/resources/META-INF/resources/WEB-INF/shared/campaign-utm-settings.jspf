@@ -1,0 +1,92 @@
+<%@ page pageEncoding="UTF-8" %>
+<c:set var="utmDisabled" value="${editorCampaign.utmEnabled eq false}"/>
+<style>
+    .workspace-form .campaign-utm-panel {
+        min-width: 0;
+        margin: 12px 0 0;
+        padding: 10px 12px;
+        border: 1px solid #d6dee6;
+        border-radius: 5px;
+        background: #f8fafb;
+    }
+    .workspace-form .campaign-utm-panel > legend {
+        width: auto;
+        margin: 0;
+        padding: 0 4px;
+        border: 0;
+        color: #4e5c69;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .campaign-utm-mode {
+        display: inline-flex;
+        gap: 12px;
+        margin-inline-start: 12px;
+        vertical-align: middle;
+    }
+    .workspace-form .campaign-utm-mode label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin: 0;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .workspace-form .campaign-utm-mode input[type="radio"] {
+        width: 15px;
+        min-height: 0;
+        height: 15px;
+        margin: 0;
+        accent-color: #16865a;
+    }
+    .workspace-form .campaign-utm-panel input[readonly] {
+        background: #eef2f5;
+        color: #536576;
+        cursor: default;
+    }
+</style>
+<fieldset id="campaign-utm-panel" class="campaign-content-panel campaign-utm-panel">
+    <legend>UTM 参数
+        <span class="campaign-utm-mode" role="radiogroup" aria-label="启用 UTM 参数">
+            <label><input type="radio" name="utmEnabled" value="true" aria-controls="campaign-utm-fields" <c:if test="${not utmDisabled}">checked</c:if>>开启</label>
+            <label><input type="radio" name="utmEnabled" value="false" aria-controls="campaign-utm-fields" <c:if test="${utmDisabled}">checked</c:if>>关闭</label>
+        </span>
+    </legend>
+    <div id="campaign-utm-fields" class="form-grid two">
+        <label>
+            <span>UTM 来源（utm_source）</span>
+            <input name="utmSource" value="<c:out value='${editorCampaign.utmSource}'/>" maxlength="128" required <c:if test="${utmDisabled}">readonly</c:if>>
+            <small class="field-note">用于邮件链接归因，默认 auw。</small>
+        </label>
+        <label>
+            <span>UTM 媒介（utm_medium）</span>
+            <input name="utmMedium" value="<c:out value='${editorCampaign.utmMedium}'/>" maxlength="128" required <c:if test="${utmDisabled}">readonly</c:if>>
+            <small class="field-note">用于邮件链接归因，默认 email。</small>
+        </label>
+        <label>
+            <span>UTM 活动（utm_campaign）</span>
+            <input name="utmCampaign" value="<c:out value='${editorCampaign.utmCampaign}'/>" maxlength="255" placeholder="留空时使用活动名称" <c:if test="${utmDisabled}">readonly</c:if>>
+            <small class="field-note">可选；留空时使用活动名称。</small>
+        </label>
+        <label>
+            <span>UTM 内容（utm_content）</span>
+            <input name="utmContent" value="<c:out value='${editorCampaign.utmContent}'/>" maxlength="255" placeholder="留空时按链接自动生成" <c:if test="${utmDisabled}">readonly</c:if>>
+            <small class="field-note">可选；留空时按链接自动生成。</small>
+        </label>
+    </div>
+</fieldset>
+<script>
+    (() => {
+        const panel = document.getElementById('campaign-utm-panel');
+        const mode = panel.querySelector('.campaign-utm-mode');
+        const off = mode.querySelector('[value="false"]');
+        const fields = panel.querySelectorAll('#campaign-utm-fields input');
+
+        function syncFields() {
+            fields.forEach(field => { field.readOnly = off.checked; });
+        }
+
+        mode.addEventListener('change', syncFields);
+        syncFields();
+    })();
+</script>

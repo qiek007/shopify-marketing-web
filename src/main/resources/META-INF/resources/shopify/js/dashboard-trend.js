@@ -11,6 +11,14 @@
   var note = root.querySelector('[data-trend-context]');
   var body = root.querySelector('[data-trend-rows]');
   var exportLink = root.querySelector('[data-trend-export]');
+  var periods = Array.from(root.querySelectorAll('[data-trend-period]'));
+  var range = root.querySelector('[data-trend-range]');
+  var totals = root.querySelector('[data-trend-totals]');
+  var detailLabel = root.querySelector('[data-trend-detail-label]');
+  var customForm = root.querySelector('[data-trend-custom-form]');
+  var customError = root.querySelector('[data-trend-custom-error]');
+  var lastRange = null;
+  var requestVersion = 0;
   var ns = 'http://www.w3.org/2000/svg';
   var colors = { sent: '#13805b', delivered: '#126f9b', opened: '#8d5ab0', clicked: '#b37b13', unsubscribed: '#bd4650', orders: '#697a91', shopify: '#bb7528', ga4: '#2a79b4' };
   var integer = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
@@ -36,6 +44,15 @@
       : money.format(number(value)) + (currency ? ' ' + currency : '');
   }
   function dateLabel(value) { return value ? value.slice(5) : ''; }
+  function bucketLabel(day) { return day.label || dateLabel(day.date); }
+  function grain(data) {
+    return data.granularity || (data.period === 'day' ? 'hour' : data.period === 'year' ? 'month' : 'day');
+  }
+  function bucketTitle(day, data) {
+    var unit = grain(data);
+    return unit === 'hour' ? day.date + ' ' + day.label
+      : unit === 'month' ? day.date.slice(0, 7) : unit === 'year' ? day.label : day.date;
+  }
   function monotonePath(values, xValue, yValue) {
     var path = '', points = [];
     function flush() {
@@ -92,15 +109,15 @@
     body.replaceChildren();
     data.days.slice().reverse().forEach(function (day) {
       var row = document.createElement('tr');
-      appendCell(row, day.date);
-      appendCell(row, integer.format(number(day.emailSentCount)));
-      appendCell(row, data.shopifyOrdersAvailable ? integer.format(number(day.shopifyOrderCount)) : '—');
+      appendCell(row, bucketTitle(day, data));
+      appendCell(row, day.future ? '—' : countLabel(day.emailSentCount));
+      appendCell(row, data.shopifyOrdersAvailable && !day.future ? countLabel(day.shopifyOrderCount) : '—');
       appendCell(row, data.shopifyRevenueMixed ? '币种混合' : amount(day.shopifyOrderAmount, data.shopifyCurrency));
       appendCell(row, data.ga4RevenueMixed ? '币种混合' : amount(day.ga4PurchaseRevenue, data.ga4Currency));
-      appendCell(row, countLabel(day.emailDeliveredCount));
-      appendCell(row, countLabel(day.emailOpenedCount));
-      appendCell(row, countLabel(day.emailClickedCount));
-      appendCell(row, countLabel(day.emailUnsubscribedCount));
+      appendCell(row, day.future ? '—' : countLabel(day.emailDeliveredCount));
+      appendCell(row, day.future ? '—' : countLabel(day.emailOpenedCount));
+      appendCell(row, day.future ? '—' : countLabel(day.emailClickedCount));
+      appendCell(row, day.future ? '—' : countLabel(day.emailUnsubscribedCount));
       body.appendChild(row);
     });
     details.hidden = false;
@@ -110,16 +127,16 @@
   function renderChart(data) {
     var days = data.days;
     var firstX = 125, lastX = 1475;
-    var x = function (index) { return firstX + (lastX - firstX) * index / (days.length - 1); };
-    var sent = days.map(function (day) { return number(day.emailSentCount); });
+    var x = function (index) { return firstX + (lastX - firstX) * index / Math.max(1, days.length - 1); };
+    var sent = days.map(function (day) { return optionalCount(day.emailSentCount); });
     var delivered = days.map(function (day) { return optionalCount(day.emailDeliveredCount); });
     var opened = days.map(function (day) { return optionalCount(day.emailOpenedCount); });
     var clicked = days.map(function (day) { return optionalCount(day.emailClickedCount); });
     var unsubscribed = days.map(function (day) { return optionalCount(day.emailUnsubscribedCount); });
-    var orders = days.map(function (day) { return data.shopifyOrdersAvailable ? number(day.shopifyOrderCount) : null; });
+    var orders = days.map(function (day) { return data.shopifyOrdersAvailable ? optionalCount(day.shopifyOrderCount) : null; });
     var shopify = days.map(function (day) { return data.shopifyRevenueMixed ? null
-      : day.shopifyOrderAmount === null ? null : number(day.shopifyOrderAmount); });
-    var ga4 = days.map(function (day) { return day.ga4PurchaseRevenue === null ? null : number(day.ga4PurchaseRevenue); });
+      : optionalCount(day.shopifyOrderAmount); });
+    var ga4 = days.map(function (day) { return data.ga4RevenueMixed ? null : optionalCount(day.ga4PurchaseRevenue); });
     var peak = function (values) { return Math.max(1, ...values.filter(function (item) { return item !== null; })); };
     var sentMax = peak(sent.concat(delivered, opened, clicked, unsubscribed)), orderMax = peak(orders);
     var sameCurrency = !!data.shopifyCurrency && data.shopifyCurrency === data.ga4Currency;
@@ -136,8 +153,9 @@
           stroke: fraction === 0 ? '#bccbd2' : '#e5ecef', 'stroke-dasharray': fraction === 0 ? '' : '3 4' }, svg);
       });
     });
-    label('数量 / 日', firstX, 20, { 'font-weight': '700', fill: '#304852' });
-    label('金额 / 日', firstX, 177, { 'font-weight': '700', fill: '#304852' });
+    var unit = { hour: '小时', day: '日', month: '月', year: '年' }[grain(data)];
+    label('数量 / ' + unit, firstX, 20, { 'font-weight': '700', fill: '#304852' });
+    label('金额 / ' + unit, firstX, 177, { 'font-weight': '700', fill: '#304852' });
     label(compact.format(sentMax), 112, 47, { 'text-anchor': 'end', fill: colors.sent });
     label('0', 112, 138, { 'text-anchor': 'end' });
     if (data.shopifyOrdersAvailable) {
@@ -148,14 +166,16 @@
       label(compact.format(shopifyMax) + ' ' + (data.shopifyCurrency || ''), 112, 204,
         { 'text-anchor': 'end', fill: colors.shopify });
     }
-    if (data.ga4Connected) {
+    if (data.ga4Connected && data.period !== 'day' && !data.ga4RevenueMixed) {
       label(compact.format(ga4Max) + ' ' + (data.ga4Currency || ''), 1488, 204,
         { fill: colors.ga4 });
     }
     label('0', 112, 295, { 'text-anchor': 'end' });
+    var tickStep = Math.max(1, Math.ceil((days.length - 1) / (data.period === 'year' ? 11 : 7)));
     for (var index = 0; index < days.length; index++) {
-      if (index % 5 !== 0 && index !== days.length - 1) continue;
-      label(dateLabel(days[index].date), x(index), 326, { 'text-anchor': 'middle' });
+      if (index % tickStep !== 0 && index !== days.length - 1) continue;
+      if (tickStep > 1 && index > 0 && days.length - 1 - index < tickStep / 2 && index !== days.length - 1) continue;
+      label(bucketLabel(days[index]), x(index), 326, { 'text-anchor': 'middle' });
     }
 
     var series = [
@@ -174,6 +194,12 @@
       });
       if (path) element('path', { d: path, fill: 'none', stroke: colors[line.key],
         'stroke-width': 2.6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, svg);
+      line.values.forEach(function (value, i) {
+        if (value !== null && line.values[i - 1] == null && line.values[i + 1] == null) {
+          element('circle', { cx: x(i), cy: y(value, line.max, line.top, line.bottom), r: 4,
+            fill: colors[line.key] }, svg);
+        }
+      });
     });
     var markers = element('g', { visibility: 'hidden' }, svg);
     var crosshair = element('line', { y1: 32, y2: 300, stroke: '#78919c',
@@ -182,7 +208,7 @@
       return element('circle', { r: 4.5, fill: '#fff', stroke: colors[line.key],
         'stroke-width': 2.4 }, markers);
     });
-    svg.addEventListener('pointermove', function (event) {
+    svg.onpointermove = function (event) {
       var rect = svg.getBoundingClientRect();
       var chartX = (event.clientX - rect.left) * 1600 / rect.width;
       var i = Math.max(0, Math.min(days.length - 1,
@@ -199,12 +225,17 @@
         }
       });
       var day = days[i];
-      tooltip.textContent = day.date + '\n邮件发送 ' + integer.format(sent[i])
+      if (day.future) {
+        markers.setAttribute('visibility', 'hidden');
+        tooltip.hidden = true;
+        return;
+      }
+      tooltip.textContent = bucketTitle(day, data) + '\n邮件发送 ' + countLabel(sent[i])
         + '\n邮件送达 ' + countLabel(delivered[i])
         + '\n邮件打开人数 ' + countLabel(opened[i])
         + '\n邮件点击人数 ' + countLabel(clicked[i])
         + '\n邮件退订 ' + countLabel(unsubscribed[i])
-        + '\nShopify 订单 ' + (orders[i] === null ? '—' : integer.format(orders[i]))
+        + '\nShopify 订单 ' + (data.shopifyOrdersAvailable ? countLabel(orders[i]) : '—')
         + '\nShopify 金额 ' + (data.shopifyRevenueMixed ? '币种混合' : amount(day.shopifyOrderAmount, data.shopifyCurrency))
         + '\nGA4 邮件收入 ' + (data.ga4RevenueMixed ? '币种混合'
           : amount(day.ga4PurchaseRevenue, data.ga4Currency));
@@ -214,17 +245,50 @@
       var tooltipTop = event.clientY - visual.getBoundingClientRect().top + 14;
       var maximumTooltipTop = Math.max(8, visual.clientHeight - tooltip.offsetHeight - 8);
       tooltip.style.top = Math.max(8, Math.min(maximumTooltipTop, tooltipTop)) + 'px';
-    });
-    svg.addEventListener('pointerleave', function () {
+    };
+    svg.onpointerleave = function () {
       markers.setAttribute('visibility', 'hidden');
       tooltip.hidden = true;
+    };
+  }
+
+  function renderTotals(data) {
+    var metrics = [
+      ['邮件发送数', 'emailSentCount'], ['邮件送达数', 'emailDeliveredCount'],
+      ['邮件打开人数', 'emailOpenedCount'], ['邮件点击人数', 'emailClickedCount'],
+      ['邮件退订数', 'emailUnsubscribedCount'],
+      ['Shopify 订单数', 'shopifyOrderCount', data.shopifyOrdersAvailable],
+      ['Shopify 订单金额', 'shopifyOrderAmount', data.shopifyOrdersAvailable, data.shopifyCurrency || '', data.shopifyRevenueMixed],
+      ['GA4 邮件购买收入', 'ga4PurchaseRevenue', data.ga4Connected, data.ga4Currency || '', data.ga4RevenueMixed]
+    ];
+    totals.replaceChildren();
+    var elapsed = data.days.filter(function (day) { return !day.future; });
+    metrics.forEach(function (metric) {
+      var values = data.period === 'day' && metric[1] === 'ga4PurchaseRevenue'
+        ? [data.dayGa4Revenue] : elapsed.map(function (day) { return day[metric[1]]; });
+      var known = values.filter(function (value) { return value != null; });
+      var sum = known.length ? known.reduce(function (total, value) { return total + number(value); }, 0) : null;
+      var value = metric[2] === false ? '—' : metric[4] ? '币种混合' : sum === null ? '待汇总'
+        : metric.length > 3 ? amount(sum, metric[3]) : integer.format(sum);
+      var card = document.createElement('div');
+      var name = document.createElement('span');
+      var count = document.createElement('strong');
+      name.textContent = metric[0];
+      count.textContent = value;
+      card.append(name, count);
+      totals.appendChild(card);
     });
+    totals.hidden = false;
   }
 
   function render(data) {
-    if (!data.ready || !data.days || data.days.length !== 30) {
-      state.textContent = '后台正在生成近 30 天汇总，请稍后刷新页面。';
-      updated.textContent = '数据准备中';
+    if (data.fromDate && data.toDate) lastRange = { fromDate: data.fromDate, toDate: data.toDate };
+    range.textContent = data.fromDate && data.toDate
+      ? (data.fromDate === data.toDate ? data.fromDate : data.fromDate + ' 至 ' + data.toDate) + ' · ' + data.timeZone
+      : '';
+    if (!data.ready || !Array.isArray(data.days) || !data.days.length) {
+      state.textContent = data.period === 'custom' ? '所选日期范围内暂无已汇总的趋势数据。' : '所选周期的趋势正在汇总。';
+      updated.textContent = data.period === 'custom' ? '暂无数据' : '数据准备中';
       return;
     }
     state.hidden = true;
@@ -234,19 +298,34 @@
       ? '汇总更新：' + synced.toLocaleString() : '已汇总';
     renderChart(data);
     renderTable(data);
+    renderTotals(data);
+    var grainLabel = { hour: '小时', day: '日', month: '月', year: '年' }[grain(data)];
+    detailLabel.textContent = '查看每' + grainLabel + '明细';
+    var exportUrl = new URL(exportLink.href);
+    exportUrl.searchParams.set('period', data.period);
+    if (data.period === 'custom') {
+      exportUrl.searchParams.set('fromDate', data.fromDate);
+      exportUrl.searchParams.set('toDate', data.toDate);
+    } else {
+      exportUrl.searchParams.delete('fromDate');
+      exportUrl.searchParams.delete('toDate');
+    }
+    exportLink.href = exportUrl.href;
     exportLink.hidden = false;
     var notes = ['统计日按 ' + data.timeZone,
       '邮件为服务商提交数；批量任务按请求开始日、旧模式按请求开始时间归集',
       '送达、退订为回执次数，按活动汇总创建日归集；打开、点击为活动内去重收件人数，按首次记录日归集',
       'Shopify 金额为未取消订单总额，未扣退款；GA4 为本平台邮件活动购买收入，两者口径独立'];
-    if (daysAwaitingEngagement(data.days)) notes.push('部分邮件回执指标待汇总，曲线留空、每日明细显示“待汇总”、Excel留空，不代表零次');
+    if (data.incomplete) notes.push('部分历史数据待汇总，合计仅包含已汇总的数据');
+    if (daysAwaitingEngagement(data.days)) notes.push('部分邮件回执指标待汇总');
     if (!data.shopifyOrdersAvailable) notes.push('当前店铺未接入 Shopify 订单，订单指标暂不可用');
     if (data.shopifyRevenueMixed) notes.push('Shopify 订单币种混合，订单金额不合计展示');
     if (data.ga4RevenueMixed) notes.push('GA4 报告币种混合，邮件购买收入不合计展示');
     if (!data.ga4Connected) notes.push('GA4 尚未连接，邮件购买收入暂不可用');
-    if (data.ga4Connected && !data.ga4RevenueMixed && data.days.some(function (day) {
-      return day.ga4PurchaseRevenue === null;
-    })) notes.push('GA4 未覆盖的日期显示“—”，不代表零收入');
+    if (data.ga4Connected && data.period === 'day') notes.push('GA4 邮件购买收入只提供当天汇总');
+    else if (data.ga4Connected && !data.ga4RevenueMixed && data.days.some(function (day) {
+      return !day.future && day.ga4PurchaseRevenue == null;
+    })) notes.push('GA4 未覆盖的时段留空');
     if (data.shopifyCurrency && data.ga4Currency && data.shopifyCurrency !== data.ga4Currency) {
       notes.push('两种金额币种不同，分别使用独立刻度，不可直接比较');
     }
@@ -254,24 +333,89 @@
   }
 
   function daysAwaitingEngagement(days) {
-    return days.some(function(day) { return day.emailDeliveredCount == null || day.emailOpenedCount == null || day.emailClickedCount == null || day.emailUnsubscribedCount == null; });
+    return days.some(function(day) { return !day.future && (day.emailDeliveredCount == null || day.emailOpenedCount == null || day.emailClickedCount == null || day.emailUnsubscribedCount == null); });
   }
 
   if (!root.dataset.shop) {
     state.textContent = '请选择店铺以查看趋势。';
     return;
   }
-  fetch(root.dataset.trendUrl + '?shop=' + encodeURIComponent(root.dataset.shop), {
-    credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' }
-  }).then(function (response) {
-    if (response.status === 404) throw new Error('当前服务尚未加载趋势接口，请重启店铺端。');
-    if (response.status === 401 || response.status === 403) {
-      throw new Error('没有权限读取当前店铺的趋势数据。');
+  function load(period, dates) {
+    var version = ++requestVersion;
+    periods.forEach(function (button) { button.setAttribute('aria-pressed', String(button.dataset.trendPeriod === period)); });
+    state.hidden = false;
+    state.textContent = '正在读取趋势…';
+    updated.textContent = '读取中';
+    visual.hidden = details.hidden = tooltip.hidden = totals.hidden = exportLink.hidden = true;
+    range.textContent = note.textContent = '';
+    var url = new URL(root.dataset.trendUrl, window.location.href);
+    url.searchParams.set('shop', root.dataset.shop);
+    url.searchParams.set('period', period);
+    if (dates) {
+      url.searchParams.set('fromDate', dates.fromDate);
+      url.searchParams.set('toDate', dates.toDate);
     }
-    if (!response.ok) throw new Error('趋势暂不可用，请确认 v38 数据库迁移和后台任务状态。');
-    return response.json();
-  }).then(render).catch(function (error) {
-    state.textContent = error && error.message ? error.message : '趋势暂不可用，请稍后重试。';
-    updated.textContent = '暂不可用';
+    var options = { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } };
+    var embedded = window.DidaShoplineWorkspace || new URL(window.location.href).searchParams.get('embedded') === '1';
+    var requests = window.ShopifyEmbeddedRequests;
+    if (embedded && (!requests || typeof requests.fetch !== 'function')) {
+      state.textContent = '嵌入会话暂不可用，请重新打开应用。';
+      updated.textContent = '暂不可用';
+      return;
+    }
+    (embedded ? requests.fetch(url.href, options) : fetch(url.href, options)).then(function (response) {
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('没有权限读取当前店铺的趋势数据。');
+      }
+      if (!response.ok || !(response.headers.get('Content-Type') || '').toLowerCase().includes('json')) {
+        throw new Error('趋势暂不可用，请稍后重试。');
+      }
+      return response.json();
+    }).then(function (data) {
+      if (version !== requestVersion) return;
+      if (data.period !== period) throw new Error('当前趋势服务尚未提供所选周期。');
+      if (dates && (data.fromDate !== dates.fromDate || data.toDate !== dates.toDate)) {
+        throw new Error('趋势服务返回的日期与选择不一致。');
+      }
+      render(data);
+    }).catch(function (error) {
+      if (version !== requestVersion) return;
+      state.textContent = error && error.message ? error.message : '趋势暂不可用，请稍后重试。';
+      updated.textContent = '暂不可用';
+    });
+  }
+  function showCustomForm(show) {
+    if (!customForm) return;
+    customForm.hidden = !show;
+    customError.hidden = true;
+    periods.forEach(function (button) {
+      if (button.dataset.trendPeriod === 'custom') button.setAttribute('aria-expanded', String(show));
+    });
+    if (show && lastRange) {
+      if (!customForm.elements.fromDate.value) customForm.elements.fromDate.value = lastRange.fromDate;
+      if (!customForm.elements.toDate.value) customForm.elements.toDate.value = lastRange.toDate;
+    }
+  }
+  periods.forEach(function (button) {
+    button.addEventListener('click', function () {
+      var period = button.dataset.trendPeriod;
+      showCustomForm(period === 'custom');
+      if (period !== 'custom') load(period);
+    });
   });
+  if (customForm) {
+    customForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var from = customForm.elements.fromDate.value;
+      var to = customForm.elements.toDate.value;
+      if (!from || !to || from > to) {
+        customError.textContent = '请选择起止日期，开始日期不能晚于结束日期。';
+        customError.hidden = false;
+        return;
+      }
+      customError.hidden = true;
+      load('custom', { fromDate: from, toDate: to });
+    });
+  }
+  load('month');
 }());

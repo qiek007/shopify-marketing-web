@@ -1,0 +1,88 @@
+<%@ page pageEncoding="UTF-8" %>
+<c:url var="customersUrl" value="/customers"><c:param name="shop" value="${selectedShop}"/></c:url>
+<c:url var="tagCatalogUrl" value="/customers/tags"/>
+<section class="page-heading"><div><p class="eyebrow">客户管理 / 标签管理</p></div></section>
+<section class="content-section">
+    <div class="section-heading">
+        <div><h2>标签管理</h2><p><c:out value="${selectedShopDisplayName}" default="${selectedShop}"/></p></div>
+        <div class="section-heading-actions">
+            <span class="section-count">共 <c:out value="${tagPage.totalElements}"/> 个标签</span>
+            <a class="action-button" href="<c:out value='${customersUrl}'/>"><i class="fa fa-arrow-left" aria-hidden="true"></i><span>返回客户列表</span></a>
+        </div>
+    </div>
+    <c:if test="${not empty successMessage}"><div class="flash-message success" role="status"><c:out value="${successMessage}"/></div></c:if>
+    <c:if test="${not empty errorMessage}"><div class="flash-message danger" role="alert"><c:out value="${errorMessage}"/></div></c:if>
+    <style>
+        .tag-catalog-toolbar { display: flex; flex-wrap: wrap; gap: 14px 24px; padding: 18px; }
+        .tag-catalog-toolbar .workspace-form { flex: 0 1 380px; min-width: 0; padding: 0; grid-template-columns: minmax(0, 1fr) max-content; align-items: end; gap: 10px; }
+        .tag-catalog-toolbar label { min-width: 0; }
+        .tag-catalog-toolbar .action-button { min-height: 36px; }
+        .tag-catalog-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    </style>
+    <div class="tag-catalog-toolbar">
+        <form class="workspace-form tag-catalog-search" method="get" action="<c:out value='${tagCatalogUrl}'/>">
+            <input type="hidden" name="shop" value="<c:out value='${selectedShop}'/>">
+            <label><span>查询标签</span><input name="q" type="search" maxlength="100" value="<c:out value='${tagPage.search}'/>" placeholder="按名称模糊查询"></label>
+            <button class="action-button" type="submit"><i class="fa fa-search" aria-hidden="true"></i><span>查询</span></button>
+        </form>
+        <form class="workspace-form tag-catalog-create" method="post" action="<c:out value='${tagCatalogUrl}'/>">
+            <input type="hidden" name="shop" value="<c:out value='${selectedShop}'/>">
+            <input type="hidden" name="action" value="CREATE">
+            <label><span>标签名称</span><input name="tag" maxlength="100" required></label>
+            <button class="action-button" type="submit"><i class="fa fa-plus" aria-hidden="true"></i><span>添加标签</span></button>
+        </form>
+    </div>
+    <c:choose>
+        <c:when test="${empty tagPage.rows}"><div class="empty-state compact"><strong>${empty tagPage.search ? '暂无标签' : '没有匹配的标签'}</strong></div></c:when>
+        <c:otherwise>
+            <div class="table-wrap"><table class="status-table">
+                <thead><tr><th scope="col">标签名称</th><th scope="col">创建时间</th><th scope="col">操作</th></tr></thead>
+                <tbody>
+                <c:forEach items="${tagPage.rows}" var="tag">
+                    <c:url var="tagCustomersUrl" value="/customers">
+                        <c:param name="shop" value="${selectedShop}"/>
+                        <c:param name="tag" value="${tag.name}"/>
+                    </c:url>
+                    <tr>
+                        <td><strong><c:out value="${tag.name}"/></strong></td>
+                        <td>
+                            <c:choose>
+                                <c:when test="${not empty tag.time}">
+                                    <c:if test="${tag.firstUse}">首次使用 · </c:if>
+                                    <time data-browser-time="<c:out value='${tag.time}'/>" datetime="<c:out value='${tag.time}'/>"><c:out value="${tag.time}"/></time>
+                                </c:when>
+                                <c:otherwise>—</c:otherwise>
+                            </c:choose>
+                        </td>
+                        <td><div class="tag-catalog-actions">
+                            <a class="action-button" href="<c:out value='${tagCustomersUrl}'/>"><i class="fa fa-users" aria-hidden="true"></i><span>查看客户</span></a>
+                            <c:if test="${not tag.hasCustomers}">
+                                <form method="post" action="<c:out value='${tagCatalogUrl}'/>" onsubmit="return window.confirm('确认删除这个空标签？');">
+                                    <input type="hidden" name="shop" value="<c:out value='${selectedShop}'/>">
+                                    <input type="hidden" name="tag" value="<c:out value='${tag.name}'/>">
+                                    <input type="hidden" name="action" value="DELETE">
+                                    <input type="hidden" name="confirm" value="DELETE_EMPTY_TAG">
+                                    <button class="action-button danger-action" type="submit"><i class="fa fa-trash-o" aria-hidden="true"></i><span>删除</span></button>
+                                </form>
+                            </c:if>
+                        </div></td>
+                    </tr>
+                </c:forEach>
+                </tbody>
+            </table></div>
+        </c:otherwise>
+    </c:choose>
+    <c:if test="${tagPage.totalPages gt 1}">
+        <nav class="pagination" aria-label="标签列表分页">
+            <c:if test="${tagPage.pageNumber gt 1}">
+                <c:url var="previousTags" value="/customers/tags"><c:param name="shop" value="${selectedShop}"/><c:param name="q" value="${tagPage.search}"/><c:param name="page" value="${tagPage.pageNumber - 1}"/></c:url>
+                <a class="action-button" href="<c:out value='${previousTags}'/>">上一页</a>
+            </c:if>
+            <span>第 <c:out value="${tagPage.pageNumber}"/> / <c:out value="${tagPage.totalPages}"/> 页</span>
+            <c:if test="${tagPage.pageNumber lt tagPage.totalPages}">
+                <c:url var="nextTags" value="/customers/tags"><c:param name="shop" value="${selectedShop}"/><c:param name="q" value="${tagPage.search}"/><c:param name="page" value="${tagPage.pageNumber + 1}"/></c:url>
+                <a class="action-button" href="<c:out value='${nextTags}'/>">下一页</a>
+            </c:if>
+        </nav>
+    </c:if>
+</section>

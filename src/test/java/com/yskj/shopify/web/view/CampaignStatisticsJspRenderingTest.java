@@ -41,6 +41,8 @@ class CampaignStatisticsJspRenderingTest {
     }
     if(mode.equals("FROZEN_CONTROL")){summary.putAll(Map.of("audience",960,"accepted",960,"delivered",959,"bounced",1,"opened",118,"openedRecipients",96,"clicked",456,"clickedRecipients",37,"unsubscribed",1,"unsubscribedRecipients",1));summary.put("orders",0);summary.put("convertedRecipients",0);summary.put("netRevenue","0.0");}
    var detail=new HashMap<String,Object>();detail.put("shopDomain","store.example");detail.put("campaignId","cmp");detail.put("name","测试活动");detail.put("status","COMPLETED");detail.put("summary",summary);detail.put("jobs",List.of());detail.put("providers",List.of("INFOBIP"));detail.put("audienceReady",true);detail.put("snapshotStatus","READY");detail.put("ga4Evaluation",Map.of("configured",false,"showMetrics",false,"status","NOT_CONNECTED"));
+   if (mode.equals("INCREMENTAL")) detail.put("utmEnabled", false);
+   if (mode.equals("FROZEN")) detail.put("utmEnabled", true);
     if(partial&&!mode.equals("FROZEN_PARTIAL_NO_JOBS")){detail.put("legacySendingProgress",Map.of("total",291644,"processed",291644,"accepted",291644,"progressPercent",100));detail.put("jobs",List.of(Map.of("jobId","job-1","status","COMPLETED","provider","INFOBIP","total",291644,"processed",291644,"accepted",291644,"progressPercent",100)));}
    if(mode.startsWith("CANCELLED")){detail.put("status","CANCELLED");summary.put("statisticsStatus","INCREMENTAL");if(mode.equals("CANCELLED_ARCHIVED"))req.setAttribute("campaignStatusDisplayName","已归档");}
    req.setAttribute("campaignDetail",detail);req.setAttribute("campaignFilter",Map.of("search","","provider","ALL","lifecycle","ALL","page",1,"pageSize",10));req.setAttribute("logineduser",Map.of("lastName","测试用户","domainid","tenant","id","user"));req.setAttribute("selectedShop","store.example");req.setAttribute("campaignActors",Map.of());
@@ -52,6 +54,9 @@ class CampaignStatisticsJspRenderingTest {
     var response=client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+tomcat.getConnector().getLocalPort()+"/web/fixture?theme="+theme+"&mode="+mode)).header("Accept-Language","zh-CN,zh;q=0.9").build(),HttpResponse.BodyHandlers.ofString());
     assertThat(response.statusCode()).as(response.body()).isEqualTo(200);var doc=Jsoup.parse(response.body());boolean ready=List.of("INCREMENTAL","FROZEN","FROZEN_CONTROL","legacy","CANCELLED","CANCELLED_ARCHIVED").contains(mode);
     if (!theme.equals("mobile")) {
+     assertThat(doc.select("#ga4-campaign-evaluation [data-campaign-utm-status]").text())
+             .isEqualTo(mode.equals("INCREMENTAL") ? "UTM 已关闭"
+                     : mode.equals("FROZEN") ? "UTM 已启用" : "UTM 状态未返回");
      var linkClicks = doc.select("#campaign-job-list + section[data-campaign-link-clicks]");
      assertThat(linkClicks).hasSize(1);
      assertThat(linkClicks.attr("data-campaign-link-clicks")).contains("/campaigns/link-clicks", "shop=", "campaignId=");

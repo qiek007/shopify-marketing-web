@@ -30,6 +30,8 @@ class CampaignDraftAudienceJspRenderingTest {
                         "includeTags",List.of("VIP"),"excludeTags",List.of("Blocked"),"providers",List.of(),
                         "providerSelections",Map.of(),"campaignVariablesJson","{}"));
                 editor.put("templateId","template-1");
+                editor.put("utmSource","newsletter");
+                if ("false".equals(req.getParameter("utmEnabled"))) editor.put("utmEnabled", false);
                 if (!"old".equals(req.getParameter("model"))) editor.put("segmentIds",List.of("seg-a","deleted"));
                 req.setAttribute("editorCampaign",editor);
                 req.setAttribute("logineduser",Map.of("lastName","测试用户","domainid","tenant","id","user"));
@@ -51,6 +53,17 @@ class CampaignDraftAudienceJspRenderingTest {
             var client = HttpClient.newHttpClient();
             for (String theme:List.of("shopify","shopify-theme2")) {
                 var draft = render(client,base+theme+"&status=DRAFT&access=yes");
+                assertThat(draft.select("fieldset.campaign-utm-panel > legend input[type=radio][name=utmEnabled]").eachAttr("value"))
+                        .as(theme).containsExactly("true", "false");
+                assertThat(draft.select("input[type=radio][name=utmEnabled][checked]").eachAttr("value"))
+                        .as(theme).containsExactly("true");
+                assertThat(draft.select("#campaign-utm-fields input[readonly]")).as(theme).isEmpty();
+                var withoutUtm = render(client,base+theme+"&status=DRAFT&access=yes&utmEnabled=false");
+                assertThat(withoutUtm.select("input[type=radio][name=utmEnabled][checked]").eachAttr("value"))
+                        .as(theme).containsExactly("false");
+                assertThat(withoutUtm.select("#campaign-utm-fields input[readonly]:not([disabled])").eachAttr("name"))
+                        .as(theme).containsExactly("utmSource", "utmMedium", "utmCampaign", "utmContent");
+                assertThat(withoutUtm.select("input[name=utmSource]").attr("value")).as(theme).isEqualTo("newsletter");
                 assertThat(draft.select("input[name=segmentIds][checked]").eachAttr("value")).containsExactly("seg-a","deleted");
                 assertThat(draft.select("input[name=segmentIds]").eachAttr("value")).contains("seg-b");
                 assertThat(draft.select("#campaign-segment-multi").text()).contains("原分群已失效");

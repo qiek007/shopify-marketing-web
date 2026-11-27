@@ -1,0 +1,28 @@
+<%@ page pageEncoding="UTF-8" %>
+<c:if test="${not empty selectedShop}">
+    <c:url var="quotaHistoryFilterUrl" value="/stores/quota/history"/>
+    <c:url var="quotaHistoryClearUrl" value="/stores/quota/history">
+        <c:param name="shop" value="${selectedShop}"/>
+    </c:url>
+    <style>
+        .list-filter-form.quota-history-filter {
+            grid-template-columns: repeat(2, minmax(0, 220px)) auto;
+            justify-content: start;
+            margin-bottom: 0;
+        }
+        @media (max-width: 640px) {
+            .list-filter-form.quota-history-filter { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .quota-history-filter .form-actions { grid-column: 1 / -1; }
+        }
+    </style>
+    <form class="workspace-form list-filter-form quota-history-filter" method="get"
+          aria-label="按操作时间筛选（北京时间）" action="<c:out value='${quotaHistoryFilterUrl}'/>">
+        <input type="hidden" name="shop" value="<c:out value='${selectedShop}'/>">
+        <label><span>操作开始日期</span><input type="date" name="fromDate" value="<c:out value='${quotaFromDate}'/>"></label>
+        <label><span>操作结束日期</span><input type="date" name="toDate" value="<c:out value='${quotaToDate}'/>"></label>
+        <div class="form-actions filter-actions">
+            <button class="action-button" type="submit"><i class="fa fa-search" aria-hidden="true"></i><span>查询</span></button>
+            <a class="secondary-button clear-filter-button" href="<c:out value='${quotaHistoryClearUrl}'/>"><i class="fa fa-eraser" aria-hidden="true"></i><span>清空条件</span></a>
+        </div>
+    </form>
+</c:if>

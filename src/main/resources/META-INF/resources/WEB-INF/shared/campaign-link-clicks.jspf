@@ -30,4 +30,4 @@
         <div class="clc-all-links" data-clc-all-links></div>
     </dialog>
 </section>
-<script src="${ctx}/shopify/js/campaign-link-clicks.js?v=20261127-link-dialog" defer></script>
+<script src="${ctx}/shopify/js/campaign-link-clicks.js?v=20261127-preview-locator" defer></script>

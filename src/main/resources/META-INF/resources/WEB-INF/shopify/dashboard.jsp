@@ -83,10 +83,11 @@
                          data-trend-url="${ctx}/dashboard/trends">
                     <details class="dashboard-trend-details" open>
                     <summary class="section-heading trend-heading">
-                        <div><h2>近 30 天趋势</h2><p>当前店铺每日邮件发送、Shopify 订单与 GA4 邮件购买表现</p></div>
+                        <div><h2>店铺趋势</h2><p>当前店铺邮件发送、Shopify 订单与 GA4 邮件购买表现</p></div>
                         <div class="trend-heading-actions"><span class="trend-updated" data-trend-updated>等待后台汇总</span><span class="trend-section-toggle" aria-hidden="true"><i class="fa fa-chevron-down"></i></span></div>
                     </summary>
                     <div class="trend-body">
+                        <%@ include file="/WEB-INF/shared/dashboard-trend-periods.jspf" %>
                         <div class="trend-legend" aria-label="趋势图图例">
                             <span><i class="trend-key sent"></i>邮件发送数</span>
                             <span><i class="trend-key delivered"></i>邮件送达数</span>
@@ -97,16 +98,16 @@
                             <span><i class="trend-key shopify-money"></i>Shopify 订单金额</span>
                             <span><i class="trend-key ga4-money"></i>GA4 邮件购买收入</span>
                         </div>
-                        <div class="trend-state" data-trend-state role="status">正在读取每日汇总…</div>
+                        <div class="trend-state" data-trend-state role="status">正在读取趋势…</div>
                         <div class="trend-visual" data-trend-visual hidden>
                             <svg class="trend-svg" viewBox="0 0 1600 350" role="img"
-                                 aria-label="近 30 天邮件发送、送达、打开、点击、退订、订单和购买收入折线图" data-trend-svg></svg>
+                                 aria-label="所选周期的邮件、订单和购买收入趋势图" data-trend-svg></svg>
                             <div class="trend-tooltip" data-trend-tooltip hidden></div>
                         </div>
                         <p class="trend-context" data-trend-context></p>
                         <div class="trend-detail-toolbar">
                         <details class="trend-details" data-trend-details data-trend-default-collapsed hidden>
-                            <summary>查看每日明细 <i class="fa fa-chevron-down" aria-hidden="true"></i></summary>
+                            <summary><span data-trend-detail-label>查看每日明细</span> <i class="fa fa-chevron-down" aria-hidden="true"></i></summary>
                             <div class="table-wrap"><table class="status-table">
                                 <thead><tr><th>日期</th><th>邮件发送数</th><th>Shopify 订单数</th><th>Shopify 订单金额</th><th>GA4 邮件购买收入</th><th>邮件送达数</th><th>邮件打开人数</th><th>邮件点击人数</th><th>邮件退订数</th></tr></thead>
                                 <tbody data-trend-rows></tbody>
@@ -122,7 +123,7 @@
 
             </c:otherwise>
         </c:choose>
-        <script src="${ctx}/shopify/js/dashboard-trend.js?v=20261015-tooltip-follow&amp;r=20261025-engagement"></script>
+        <script src="${ctx}/shopify/js/dashboard-trend.js?v=20261127-custom-range"></script>
     </main>
 </div>
 </body>

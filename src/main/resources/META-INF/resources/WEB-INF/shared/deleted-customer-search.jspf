@@ -1,0 +1,20 @@
+<%@ page pageEncoding="UTF-8" %>
+<style>
+    .workspace-form.deleted-customer-search {
+        grid-template-columns: minmax(0, 420px) max-content;
+        align-items: end;
+        justify-content: start;
+        gap: 10px;
+    }
+    .deleted-customer-search > label { min-width: 0; }
+    .deleted-customer-search .action-button,
+    .deleted-customer-search input[name="q"] { box-sizing: border-box; min-height: 36px; }
+</style>
+<form class="workspace-form deleted-customer-search" method="get" action="${ctx}/customers/deleted">
+    <input type="hidden" name="shop" value="<c:out value='${selectedShop}'/>">
+    <label>
+        <span>姓名、邮箱或客户 ID</span>
+        <input name="q" maxlength="255" value="<c:out value='${search}'/>" placeholder="搜索已删除客户">
+    </label>
+    <button class="action-button" type="submit"><i class="fa fa-search" aria-hidden="true"></i><span>查询</span></button>
+</form>

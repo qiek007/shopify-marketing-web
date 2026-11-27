@@ -347,9 +347,11 @@ body.shopify-console [hidden] { display: none !important; }
 .workspace-form input:focus, .workspace-form select:focus, .workspace-form textarea:focus { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .form-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.customer-import-fields { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr) max-content; align-items: end; max-width: none; }
+.customer-import-fields { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr) max-content; align-items: end; max-width: none; }
 .customer-import-fields .form-actions { padding-top: 0; }
-.customer-import-fields .customer-import-names-only { grid-column: 1 / -1; }
+@media (min-width: 1321px) { .customer-import-fields > .customer-import-submit-actions { grid-row: 1; grid-column: -2 / -1; } }
+.customer-import-fields .customer-import-validation-field { grid-column: 1 / 3; }
+.customer-import-fields .customer-import-names-only { grid-column: 3 / 5; }
 .customer-import-names-only > span { display: flex; align-items: center; gap: 6px; }
 .customer-import-names-only input[type="checkbox"] { width: 16px; min-height: 16px; height: 16px; margin: 0; }
 .customer-import-validation-option { display: flex !important; align-items: center; gap: 8px; min-height: 34px; color: var(--ink); font-weight: 600; }
@@ -371,6 +373,13 @@ body.shopify-console [hidden] { display: none !important; }
 .customer-tag-options label { display: flex; align-items: center; gap: 8px; margin: 0; padding: 7px 8px; border-radius: 3px; cursor: pointer; }
 .customer-tag-options label:hover { background: #edf7f2; }
 .customer-tag-options input { width: 16px !important; height: 16px; min-height: 16px !important; margin: 0; }
+.customer-tag-search-bar { position: sticky; top: -7px; z-index: 1; padding: 4px 3px; background: #fff; }
+.customer-tag-search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; }
+.customer-tag-search-row > button.customer-tag-search-clear { min-height: 34px; padding-inline: 12px; white-space: nowrap; }
+.customer-tag-options input[data-customer-tag-search] { box-sizing: border-box; width: 100% !important; height: 34px; min-height: 34px !important; padding: 6px 9px; border: 1px solid #bcc7d1; border-radius: 4px; font: inherit; }
+.customer-tag-options input[data-customer-tag-search]::-webkit-search-cancel-button { -webkit-appearance: none; }
+.customer-tag-search-status { margin: 5px 1px 0; color: var(--muted); font-size: 12px; }
+[data-customer-results-form] .customer-tag-options [hidden] { display: none !important; }
 .campaign-audience-tags > .checkbox-row { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; padding: 10px 12px; border: 1px solid #d6dee6; border-radius: 5px; background: #f8fafb; color: #304455; cursor: pointer; }
 .campaign-audience-tags > .checkbox-row input[type="checkbox"] { flex: 0 0 auto; width: 16px !important; height: 16px; min-height: 16px !important; margin: 2px 0 0; }
 .campaign-audience-tags > .checkbox-row span { line-height: 1.55; }
@@ -459,7 +468,7 @@ body.shopify-console [hidden] { display: none !important; }
 @media (max-width: 980px) { .template-catalog { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 1100px) { .sender-profile-grid { grid-template-columns: 1fr; } .sender-profile .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) { .form-grid, .form-grid.three { grid-template-columns: 1fr; } }
-@media (max-width: 1320px) { .customer-import-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } .customer-import-fields .form-actions { justify-content: flex-start; } }
+@media (max-width: 1320px) { .customer-import-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } .customer-import-fields .customer-import-validation-field, .customer-import-fields .customer-import-names-only { grid-column: auto; } .customer-import-fields .form-actions { justify-content: flex-start; } }
 @media (max-width: 720px) { .customer-import-fields { grid-template-columns: 1fr; } .customer-import-fields .form-actions { justify-content: flex-start; } }
 @media (max-width: 980px) { .campaign-list-filter { grid-template-columns: repeat(2, minmax(150px, 1fr)); } }
 @media (max-width: 620px) { .campaign-list-filter, .segment-list-filter { grid-template-columns: 1fr; } .campaign-list-filter .filter-actions { grid-column: auto; } .filter-actions { justify-content: flex-start; flex-wrap: wrap; } }

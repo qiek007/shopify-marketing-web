@@ -60,6 +60,8 @@
         var dialog = panel.querySelector('[data-clc-link-dialog]');
         var details = panel.querySelector('[data-clc-details]');
         var updateButton = panel.querySelector('[data-clc-refresh]');
+        var previewFrame = doc.getElementById('campaign-preview-frame');
+        var previewSelection = '';
         var timer, selected, report, renderedReport, pending = false, disposed = false;
 
         function element(tag, text) {
@@ -81,6 +83,14 @@
 
         function ratio(count) { return report.totalClicks > 0 ? percent.format(count / report.totalClicks) : '0%'; }
 
+        function locatePreview(key, reveal) {
+            if (!previewFrame || !previewFrame.dataset.previewSrc) return;
+            var fragment = typeof key === 'string' && /^[a-f0-9]{64}$/.test(key) ? '#campaign-preview-link-' + key : '';
+            if (fragment === previewSelection && !(reveal && fragment)) return;
+            previewFrame.src = previewFrame.dataset.previewSrc + fragment;
+            previewSelection = fragment;
+        }
+
         function show(row, reveal) {
             if (row.other) {
                 renderLinkList();
@@ -88,6 +98,7 @@
                 return;
             }
             if (reveal) selected = row.key;
+            locatePreview(row.key, reveal);
             details.hidden = false;
             var summary = element('div');
             summary.className = 'clc-detail-summary';
@@ -208,7 +219,10 @@
             var current = report.links.find(function (row) { return row.key === selected; })
                 || segments.find(function (row) { return !row.other && row.key !== 'unmatched'; });
             if (current) show(current);
-            else details.hidden = true;
+            else {
+                details.hidden = true;
+                locatePreview(null);
+            }
         }
 
         function schedule() {

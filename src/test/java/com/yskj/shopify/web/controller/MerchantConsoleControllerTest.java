@@ -265,6 +265,50 @@ class MerchantConsoleControllerTest {
     }
 
     @Test
+    void campaignDetailRecoversDisabledUtmFromTheSavedEditorWhenOverviewOmitsIt() {
+        String shop = "custom.example";
+        String campaignId = "campaign-1";
+        var params = new LinkedMultiValueMap<String, String>();
+        params.set("shop", shop);
+        params.set("campaignId", campaignId);
+        var detail = new JSONObject(Map.of("campaignId", campaignId, "shopDomain", shop,
+                "status", "PENDING_APPROVAL"));
+        when(client.exchange(eq("campaigns.detail"), any(), eq(shop), any(), eq(null)))
+                .thenReturn(MerchantWebProtocol.view("shopify/campaign-detail", new JSONObject(
+                        Map.of("selectedShop", shop, "canManageCampaigns", true, "campaignDetail", detail))));
+        when(client.exchange(eq("campaigns.editor"), any(), eq(shop),
+                eq(new JSONObject(Map.of("campaignId", campaignId))), eq(null)))
+                .thenReturn(MerchantWebProtocol.view("shopify/campaign-editor", new JSONObject(
+                        Map.of("selectedShop", shop, "editorCampaign", new JSONObject(
+                                Map.of("campaignId", campaignId, "utmEnabled", false))))));
+        var model = new ExtendedModelMap();
+
+        assertThat(controller.campaignDetail(params, session(), model, new RedirectAttributesModelMap()))
+                .isEqualTo("shopify/campaign-detail");
+        assertThat(((JSONObject) model.get("campaignDetail")).get("utmEnabled")).isEqualTo(false);
+        assertThat(detail).doesNotContainKey("utmEnabled");
+    }
+
+    @Test
+    void campaignDetailKeepsAnExplicitDisabledUtmWithoutLoadingTheEditor() {
+        String shop = "custom.example";
+        var params = new LinkedMultiValueMap<String, String>();
+        params.set("shop", shop);
+        params.set("campaignId", "campaign-1");
+        var detail = new JSONObject(Map.of("campaignId", "campaign-1", "shopDomain", shop,
+                "status", "PENDING_APPROVAL", "utmEnabled", false));
+        when(client.exchange(eq("campaigns.detail"), any(), eq(shop), any(), eq(null)))
+                .thenReturn(MerchantWebProtocol.view("shopify/campaign-detail", new JSONObject(
+                        Map.of("selectedShop", shop, "canManageCampaigns", true, "campaignDetail", detail))));
+        var model = new ExtendedModelMap();
+
+        controller.campaignDetail(params, session(), model, new RedirectAttributesModelMap());
+
+        assertThat(((JSONObject) model.get("campaignDetail")).get("utmEnabled")).isEqualTo(false);
+        verify(client, org.mockito.Mockito.never()).exchange(eq("campaigns.editor"), any(), any(), any(), any());
+    }
+
+    @Test
     void campaignAudiencePreviewForwardsTheReadOnlyPagingRequest() {
         JSONObject body = new JSONObject(Map.of("total", 51, "page", 2, "pageSize", 50));
         when(client.exchange(eq("campaigns.audience-preview"), any(),
@@ -561,6 +605,29 @@ class MerchantConsoleControllerTest {
         assertThat((byte[]) trends.getBody()).isNotEmpty();
         assertThat(trends.getHeaders().getFirst("Content-Disposition"))
                 .contains("daily-marketing-trend");
+    }
+
+    @Test
+    void exportsDashboardTrendOnlyForTheRequestedCustomDates() {
+        controller.setRemoteTrendExcelExporter(new RemoteTrendExcelExporter());
+        String shop = "demo.myshopify.com";
+        when(client.exchange(eq("dashboard.trends"), any(), eq(shop), any(), eq(null)))
+                .thenAnswer(call -> {
+                    JSONObject query = call.getArgument(3);
+                    assertThat(query).containsEntry("period", "custom")
+                            .containsEntry("fromDate", "2026-11-24").containsEntry("toDate", "2026-11-27");
+                    return MerchantWebProtocol.json(new JSONObject(Map.of("shopDomain", shop,
+                            "period", "custom", "fromDate", "2026-11-24", "toDate", "2026-11-27",
+                            "ready", true, "timeZone", "Asia/Shanghai")));
+                });
+        var params = new LinkedMultiValueMap<String, String>();
+        params.set("shop", shop);
+        params.set("period", "custom");
+        params.set("fromDate", "2026-11-24");
+        params.set("toDate", "2026-11-27");
+        var response = controller.exportTrends(params, session());
+        assertThat((byte[]) response.getBody()).isNotEmpty();
+        assertThat(response.getHeaders().getFirst("Content-Disposition")).contains("marketing-trend-custom.xlsx");
     }
 
     @Test
