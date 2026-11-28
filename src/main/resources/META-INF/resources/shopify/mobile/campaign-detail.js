@@ -1,10 +1,12 @@
 (function (root, factory) {
-    var api = factory();
+    var commonJs = typeof module === 'object' && module.exports;
+    var api = factory(commonJs ? require('../js/campaign-schedule-window.js') : root.CampaignScheduleWindow);
     if (typeof module === 'object' && module.exports) module.exports = api;
     if (root && root.document) {
         var forms = Array.prototype.slice.call(root.document.querySelectorAll('[data-mobile-campaign-action]'));
         var timezone = root.document.querySelector('[data-mobile-schedule-timezone]');
-        if (timezone) timezone.textContent = '按当前浏览器时区 ' + (Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区') + ' 选择时间';
+        if (timezone) timezone.textContent = '按当前浏览器时区 ' + (Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区')
+            + ' 选择时间。' + root.CampaignScheduleWindow.message + '。';
         var planned = root.document.querySelector('[data-mobile-scheduled-time]');
         if (planned && planned.dataset.scheduledAt) {
             var current = api.parseInstant(planned.dataset.scheduledAt);
@@ -17,7 +19,7 @@
         if (loading) loading.hidden = true;
         root.addEventListener('pageshow', function (event) { if (event.persisted) reset(); });
     }
-}(typeof window === 'undefined' ? null : window, function () {
+}(typeof window === 'undefined' ? null : window, function (scheduleWindow) {
     'use strict';
 
     function localDateTimeValue(date) {
@@ -31,7 +33,7 @@
     }
     function scheduleInstant(value, now) {
         var selected = new Date(value);
-        if (!value || isNaN(selected.getTime()) || selected <= now) return { error: '请选择晚于当前时间的发送日期和时间' };
+        if (!value || !scheduleWindow.contains(selected, now.getTime())) return { error: scheduleWindow.message };
         var nextDay = new Date(selected.getTime() + 24 * 60 * 60000);
         var offsetChange = nextDay.getTimezoneOffset() - selected.getTimezoneOffset();
         var ambiguous = offsetChange > 0 && localDateTimeValue(new Date(selected.getTime() + offsetChange * 60000)) === value;
@@ -47,10 +49,11 @@
             var reason = form.dataset.rejectAction === 'true' && form.elements ? form.elements.reason : null;
             if (local) {
                 var current = parseInstant(form.dataset.scheduledAt);
-                var minimum = new Date(Date.now() + 60000);
-                local.min = localDateTimeValue(minimum);
-                local.value = localDateTimeValue(current && !isNaN(current.getTime()) && current > minimum ? current : new Date(Date.now() + 10 * 60000));
-                local.addEventListener('input', function () { local.setCustomValidity(''); });
+                scheduleWindow.initialize(local, current, Date.now());
+                local.addEventListener('input', function () {
+                    scheduleWindow.setBounds(local, Date.now());
+                    local.setCustomValidity('');
+                });
             }
             if (reason) reason.addEventListener('input', function () { reason.setCustomValidity(''); });
             Array.prototype.forEach.call(form.querySelectorAll('button[type="submit"]'), function (button) {
@@ -63,7 +66,9 @@
                     event.preventDefault(); reason.setCustomValidity('请填写驳回原因'); reason.reportValidity(); return;
                 }
                 if (local) {
-                    var schedule = scheduleInstant(local.value, new Date());
+                    var now = new Date();
+                    scheduleWindow.setBounds(local, now.getTime());
+                    var schedule = scheduleInstant(local.value, now);
                     if (schedule.error) { event.preventDefault(); local.setCustomValidity(schedule.error); local.reportValidity(); return; }
                     form.elements.scheduledAt.value = schedule.value;
                 }

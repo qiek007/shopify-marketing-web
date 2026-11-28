@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>导入客户 - Shopify 邮件营销</title><c:set var="ctx" value="${pageContext.request.contextPath}"/>
-<link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css"><link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css"><link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261018-import-email-validation&amp;r=20261127-import-submit-row">
+<link rel="stylesheet" href="${ctx}/baseui/static/h-ui/css/H-ui.min.css"><link rel="stylesheet" href="${ctx}/baseui/static/h-ui.admin/css/H-ui.admin.css"><link rel="stylesheet" href="${ctx}/baseui/lib/font-awesome-4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="${ctx}${uiAssetBase}/css/dashboard.css?v=20261018-import-email-validation&amp;r=20261128-import-checkbox-alignment">
 <link rel="stylesheet" href="${ctx}/shopify/css/customer-import-errors.css?v=20261123-close-button"></head><body class="shopify-console"><%@ include file="fragments/header.jspf" %><div class="console-layout"><%@ include file="fragments/navigation.jspf" %>
 <main class="console-main"><section class="page-heading"><div><p class="eyebrow">导入客户</p></div></section>
 <c:if test="${not empty successMessage}"><div class="flash-message success"><i class="fa fa-check-circle"></i><c:out value="${successMessage}"/></div></c:if><c:if test="${not empty errorMessage}"><div class="flash-message danger"><i class="fa fa-exclamation-circle"></i><c:out value="${errorMessage}"/></div></c:if>

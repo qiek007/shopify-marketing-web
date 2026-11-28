@@ -120,16 +120,29 @@ test('send controls show current shop, template, audience and channels for revie
     }
 });
 
-test('scheduled times reject past and daylight-saving gaps or overlaps and convert to UTC', () => {
+test('scheduled times enforce the inclusive time window and reject daylight-saving gaps or overlaps', () => {
     const { scheduleInstant } = subject();
+    const scheduleWindow = require('../../main/resources/META-INF/resources/shopify/js/campaign-schedule-window.js');
     const original = process.env.TZ;
     process.env.TZ = 'America/New_York';
     try {
-        const now = new Date('2026-01-01T00:00:00Z');
-        assert.equal(scheduleInstant('2026-02-01T09:15', now).value, '2026-02-01T14:15:00.000Z');
-        assert.ok(scheduleInstant('2025-01-01T09:15', now).error);
-        assert.ok(scheduleInstant('2026-03-08T02:30', now).error);
-        assert.ok(scheduleInstant('2026-11-01T01:30', now).error);
+        const now = new Date('2026-01-01T14:00:00Z');
+        const input = {};
+        scheduleWindow.initialize(input, null, now.getTime());
+        assert.equal(input.min, '2026-01-01T10:00');
+        assert.equal(input.value, input.min);
+        const partialMinute = new Date('2026-01-01T14:00:01Z');
+        scheduleWindow.initialize(input, null, partialMinute.getTime());
+        assert.equal(input.min, '2026-01-01T10:01');
+        assert.equal(input.value, input.min);
+        assert.equal(scheduleInstant(input.value, partialMinute).value, '2026-01-01T15:01:00.000Z');
+        assert.match(scheduleInstant('2026-01-01T10:00', partialMinute).error, /60 分钟后至 30 天内/);
+        assert.equal(scheduleInstant('2026-01-01T10:00', now).value, '2026-01-01T15:00:00.000Z');
+        assert.equal(scheduleInstant('2026-01-31T09:00', now).value, '2026-01-31T14:00:00.000Z');
+        assert.match(scheduleInstant('2026-01-01T09:59', now).error, /60 分钟后至 30 天内/);
+        assert.match(scheduleInstant('2026-01-31T09:01', now).error, /60 分钟后至 30 天内/);
+        assert.match(scheduleInstant('2026-03-08T02:30', new Date('2026-03-07T12:00:00Z')).error, /夏令时/);
+        assert.match(scheduleInstant('2026-11-01T01:30', new Date('2026-10-31T12:00:00Z')).error, /夏令时/);
         assert.ok(scheduleInstant('', now).error);
     } finally { process.env.TZ = original; }
 });
@@ -142,13 +155,15 @@ test('invalid schedule does not confirm, submit or lock controls; valid schedule
     a.form.dataset.scheduleAction = 'true';
     a.form.elements = {scheduleLocal: local, scheduledAt: {value: ''}};
     installActionGuard([a.form], () => { prompts++; return true; });
+    assert.ok(local.min && local.max && local.value < local.max);
+    assert.equal(local.value, local.min);
     local.value = '';
     a.form.submit(a.event);
     assert.equal(a.event.prevented, true);
     assert.equal(a.button.disabled, false);
     assert.equal(prompts, 0);
     const next = { prevented:false, preventDefault() { this.prevented = true; } };
-    local.value = '2099-02-01T09:15';
+    local.value = local.max;
     a.form.submit(next);
     assert.equal(next.prevented, false);
     assert.equal(a.form.elements.scheduledAt.value, new Date(local.value).toISOString());

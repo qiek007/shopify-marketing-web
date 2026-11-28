@@ -352,7 +352,7 @@ body.shopify-console [hidden] { display: none !important; }
 @media (min-width: 1321px) { .customer-import-fields > .customer-import-submit-actions { grid-row: 1; grid-column: -2 / -1; } }
 .customer-import-fields .customer-import-validation-field { grid-column: 1 / 3; }
 .customer-import-fields .customer-import-names-only { grid-column: 3 / 5; }
-.customer-import-names-only > span { display: flex; align-items: center; gap: 6px; }
+.customer-import-names-only > span { display: flex; align-items: center; gap: 6px; min-height: 34px; }
 .customer-import-names-only input[type="checkbox"] { width: 16px; min-height: 16px; height: 16px; margin: 0; }
 .customer-import-validation-option { display: flex !important; align-items: center; gap: 8px; min-height: 34px; color: var(--ink); font-weight: 600; }
 .customer-import-validation-option input[type="checkbox"] { flex: 0 0 auto; width: 16px !important; height: 16px; min-height: 16px !important; margin: 0; }

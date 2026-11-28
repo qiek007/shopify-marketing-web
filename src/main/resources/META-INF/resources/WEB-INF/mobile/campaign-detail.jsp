@@ -315,7 +315,8 @@
     </dialog>
   </c:if>
   <%@ include file="fragments/footer.jspf" %>
-  <script src="${ctx}/shopify/mobile/campaign-detail.js?v=20261127-template-preview" defer></script>
+  <script src="${ctx}/shopify/js/campaign-schedule-window.js?v=20261128-60min" defer></script>
+  <script src="${ctx}/shopify/mobile/campaign-detail.js?v=20261128-schedule-window" defer></script>
   <script src="${ctx}/shopify/mobile/campaign-recipients.js?v=20261110-3" defer></script>
 </body>
 </html>

@@ -404,6 +404,7 @@
         <script src="${ctx}/shopify/js/customer-timeline.js?v=20261105-shanghai1"></script>
     </main>
 </div>
+<script src="${ctx}/shopify/js/campaign-schedule-window.js?v=20261128-60min"></script>
 <div id="provider-alias-data" hidden><c:forEach items="${providerAliases}" var="entry"><span data-provider-code="<c:out value='${entry.key}'/>" data-provider-alias="<c:out value='${entry.value}'/>"></span></c:forEach></div>
 <script>
     (function () {
@@ -470,15 +471,13 @@
 
         showScheduledTime(scheduleTime ? scheduleTime.dataset.scheduledAt : '');
         if (scheduleDialog && scheduleOpen && scheduleForm && scheduleLocal) {
+            var scheduleWindow = window.CampaignScheduleWindow;
             var zone = Intl.DateTimeFormat().resolvedOptions().timeZone || '浏览器本地时区';
-            setText('campaign-schedule-timezone', '按当前浏览器时区 ' + zone + ' 选择时间');
+            setText('campaign-schedule-timezone', '按当前浏览器时区 ' + zone + ' 选择时间。' + scheduleWindow.message + '。');
             scheduleOpen.addEventListener('click', function () {
-                var minimum = new Date(Date.now() + 60000);
-                scheduleLocal.min = localDateTimeValue(minimum);
                 var current = scheduleTime && scheduleTime.dataset.scheduledAt
                         ? normalizeInstantValue(scheduleTime.dataset.scheduledAt) : null;
-                scheduleLocal.value = localDateTimeValue(current && current > minimum
-                        ? current : new Date(Date.now() + 10 * 60000));
+                scheduleWindow.initialize(scheduleLocal, current, Date.now());
                 scheduleLocal.setCustomValidity('');
                 scheduleDialog.showModal();
             });
@@ -487,13 +486,16 @@
                 if (event.target === scheduleDialog) scheduleDialog.close();
             });
             scheduleLocal.addEventListener('input', function () {
+                scheduleWindow.setBounds(scheduleLocal, Date.now());
                 scheduleLocal.setCustomValidity('');
             });
             scheduleForm.addEventListener('submit', function (event) {
                 var selected = new Date(scheduleLocal.value);
-                if (!scheduleLocal.value || isNaN(selected.getTime()) || selected <= new Date()) {
+                var now = Date.now();
+                scheduleWindow.setBounds(scheduleLocal, now);
+                if (!scheduleLocal.value || !scheduleWindow.contains(selected, now)) {
                     event.preventDefault();
-                    scheduleLocal.setCustomValidity('请选择晚于当前时间的发送日期和时间');
+                    scheduleLocal.setCustomValidity(scheduleWindow.message);
                     scheduleLocal.reportValidity();
                     return;
                 }
